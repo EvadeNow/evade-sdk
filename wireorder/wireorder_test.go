@@ -2,6 +2,7 @@ package wireorder
 
 import (
 	"errors"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -327,6 +328,285 @@ func TestWebKitAmbiguityFailsClosedUntilAPinCaseDecides(t *testing.T) {
 	}
 }
 
+func TestOrderUniversalSelectsAnAdmissibleWebKitHistory(t *testing.T) {
+	r := targetSafari()
+	if _, err := Order(r); !errors.As(err, new(*UnwitnessedError)) {
+		t.Fatalf("strict order without an install pin = %v, want unwitnessed", err)
+	}
+	outcomes, err := Outcomes(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, err := OrderUniversal(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := OrderUniversal(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(first.Header, second.Header) || !slices.Equal(first.Pseudo, second.Pseudo) {
+		t.Fatalf("universal order changed between calls: %v/%v then %v/%v", first.Pseudo, first.Header, second.Pseudo, second.Header)
+	}
+	if !slices.ContainsFunc(outcomes, func(outcome []string) bool { return slices.Equal(outcome, first.Header) }) {
+		t.Fatalf("universal order %v is not one of the engine law's %d admissible outcomes", first.Header, len(outcomes))
+	}
+}
+
+func TestOrderUniversalKeepsPageSetWebKitTailNamesInTheDictionary(t *testing.T) {
+	r := Request{
+		Engine: Engine{Kind: WebKit, Major: 26, Minor: 6}, Class: ClassXHR, Method: "POST", HTTP2: true,
+		Calls: []string{"accept", "content-type", "x-requested-with", "accept-language", "x-g1-area-code", "x-csrf-token"},
+		Added: Added{Origin: true, Referer: true, Body: true, Priority: true},
+	}
+	if _, err := Order(r); !errors.As(err, new(*UnwitnessedError)) {
+		t.Fatalf("strict page-set accept-language order = %v, want unwitnessed", err)
+	}
+	got, err := OrderUniversal(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	count := 0
+	for _, name := range got.Header {
+		if name == "accept-language" {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Fatalf("accept-language occurs %d times in %v", count, got.Header)
+	}
+	if tail := got.Header[len(got.Header)-2:]; !slices.Equal(tail, []string{"priority", "accept-encoding"}) {
+		t.Fatalf("CFNetwork tail = %v in %v", tail, got.Header)
+	}
+	if !slices.Equal(got.Pseudo, []string{":method", ":scheme", ":authority", ":path"}) {
+		t.Fatalf("pseudo order = %v", got.Pseudo)
+	}
+	r.Engine.Major = 17
+	if _, err := Order(r); !errors.As(err, new(*UnwitnessedError)) {
+		t.Fatalf("strict uncovered WebKit build = %v, want unwitnessed", err)
+	}
+	uncovered, err := OrderUniversal(r)
+	if err != nil || !slices.Equal(uncovered.Header, got.Header) || !slices.Equal(uncovered.Pseudo, got.Pseudo) {
+		t.Fatalf("uncovered WebKit build = %v (%v), want late's %v (HYPOTHESIS(webkit-uncovered-generation-late))", uncovered, err, got)
+	}
+	r.Engine.Major = 26
+	r.Calls = append(r.Calls, "accept")
+	if _, err := OrderUniversal(r); !errors.As(err, new(*InputError)) {
+		t.Fatalf("duplicate page call = %v, want input error", err)
+	}
+}
+
+// targetSafari calls shape:b before shape:a; testInstall's shape:a < shape:b
+// outranks that supplied order instead of cycling with it.
+func TestOrderUniversalHonorsInstallPins(t *testing.T) {
+	r := targetSafari(testInstall)
+	_, err := Order(r)
+	wantErr[*AmbiguousError](t, err)
+	pinned, err := Outcomes(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := OrderUniversal(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.ContainsFunc(pinned, func(o []string) bool { return slices.Equal(o, got.Header) }) {
+		t.Fatalf("universal order %v is none of the %d outcomes under the install pin", got.Header, len(pinned))
+	}
+	if !precedes(got.Header, targetPrefix+"a", targetPrefix+"b") {
+		t.Fatalf("universal order %v breaks the install precedence shape:a < shape:b", got.Header)
+	}
+	reversed := &Pin{ID: "test-install-reversed", Engine: "webkit", Install: [][2]string{{"shape:b", "shape:a"}}}
+	r.Pins = []*Pin{testInstall, reversed}
+	_, err = OrderUniversal(r)
+	wantErr[*UnwitnessedError](t, err)
+}
+
+// A matching case's wire precedences constrain the emitted order, not the
+// insertion history; no admitted outcome obeying them fails closed.
+func TestOrderUniversalObeysMatchingWireCases(t *testing.T) {
+	r := targetSafari(testInstall)
+	outcomes, err := Outcomes(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(outcomes) < 2 {
+		t.Fatalf("%d outcomes; the test needs the law to leave a choice", len(outcomes))
+	}
+	for _, o := range [][]string{outcomes[0], outcomes[len(outcomes)-1]} {
+		// Without an install pin strict Order refuses the Shape block before
+		// reading cases, so only the universal path applies this one.
+		cased := targetSafari(decidingPin(t, r, o))
+		if _, err := Order(cased); !errors.As(err, new(*UnwitnessedError)) {
+			t.Fatalf("strict order without an install pin = %v, want unwitnessed", err)
+		}
+		got, err := OrderUniversal(cased)
+		if err != nil || !slices.Equal(got.Header, o) {
+			t.Errorf("case on %v: got %v (%v)", o, got.Header, err)
+		}
+	}
+	dict := dictionaryOf(t, r, outcomes[0])
+	a, b := slices.Index(dict, targetPrefix+"a"), slices.Index(dict, targetPrefix+"b")
+	dict[a], dict[b] = dict[b], dict[a]
+	contrary := &Pin{ID: "test-contrary", Engine: "webkit", Cases: []PinCase{{Dictionary: dict,
+		Wire: [][2]string{{targetPrefix + "b", targetPrefix + "a"}}, Generations: []string{"late"}, Witnesses: []Witness{{HAR: "test"}}}}}
+	r.Pins = []*Pin{testInstall, contrary}
+	_, err = OrderUniversal(r)
+	wantErr[*UnwitnessedError](t, err)
+}
+
+// Strict Order orders an early build as late (HYPOTHESIS(webkit_early_falls_back_to_late));
+// OrderUniversal's callers pass generation-correct added headers, so it keeps
+// the early generation's facts: accept-language and accept-encoding inside the
+// CF dictionary, cookie the whole tail, and no priority header.
+func TestOrderUniversalKeepsEarlyGenerationFacts(t *testing.T) {
+	r := targetSafari()
+	r.Engine.Minor, r.Added.Priority = 0, false
+	if _, err := Order(r); !errors.As(err, new(*UnwitnessedError)) {
+		t.Fatalf("strict early order without an install pin = %v, want unwitnessed", err)
+	}
+	got, err := OrderUniversal(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Header[len(got.Header)-1] != "cookie" || slices.Contains(got.Header, "priority") {
+		t.Fatalf("early tail in %v, want cookie alone and no priority", got.Header)
+	}
+	for _, name := range []string{"accept-language", "accept-encoding", "cookie"} {
+		if n := len(slices.DeleteFunc(slices.Clone(got.Header), func(h string) bool { return h != name })); n != 1 {
+			t.Errorf("%s occurs %d times in %v", name, n, got.Header)
+		}
+	}
+	r.Added.Priority = true
+	_, err = OrderUniversal(r)
+	wantErr[*InputError](t, err)
+}
+
+// Strict Order resolves this Safari 18.0 XHR by late's law
+// (HYPOTHESIS(webkit_early_falls_back_to_late)): it accepts priority, ends in
+// late's tail and takes late's captured cases. None of that is the early
+// generation's: OrderUniversal refuses the priority header and keeps early's
+// tail although late's law leaves this dictionary unambiguous, exactly as it
+// does on a dictionary late's law leaves open, and only early's own captured
+// case orders it. No early capture holds these names; the universal order is
+// HYPOTHESIS(webkit-universal-order)'s canonical history (late's commons,
+// x-a, then early's Inside accept-language and accept-encoding) in the CF
+// table, then early's cookie tail.
+func TestOrderUniversalIgnoresStrictLateFallback(t *testing.T) {
+	r := Request{Engine: Engine{Kind: WebKit, Major: 18}, Class: ClassXHR, Method: "GET", HTTP2: true,
+		Calls: []string{"x-a"}, Added: Added{Referer: true, Cookie: true, Priority: true}}
+	if strict, err := Order(r); err != nil || !slices.Contains(strict.Header, "priority") {
+		t.Fatalf("strict late fallback = %v (%v), want late's priority", strict.Header, err)
+	}
+	_, err := OrderUniversal(r)
+	wantErr[*InputError](t, err)
+
+	r.Added.Priority = false
+	strict, err := Order(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lateTail := []string{"accept-language", "accept-encoding", "cookie"}
+	if !slices.Equal(strict.Header[len(strict.Header)-len(lateTail):], lateTail) {
+		t.Fatalf("strict late fallback %v does not end in late's tail %v", strict.Header, lateTail)
+	}
+	got, err := OrderUniversal(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"accept", "sec-fetch-site", "accept-encoding", "x-a", "sec-fetch-mode", "user-agent", "referer", "sec-fetch-dest", "accept-language", "cookie"}
+	if !slices.Equal(got.Header, want) {
+		t.Fatalf("universal early order %v, want the canonical early order %v", got.Header, want)
+	}
+	open := targetSafari()
+	open.Engine.Minor, open.Added.Priority = 0, false
+	if o, err := OrderUniversal(open); err != nil || o.Header[len(o.Header)-1] != "cookie" ||
+		o.Header[len(o.Header)-2] == "accept-encoding" && o.Header[len(o.Header)-3] == "accept-language" {
+		t.Fatalf("universal early order on an open dictionary = %v (%v), want early's tail", o.Header, err)
+	}
+
+	l := testLaw(t)
+	calls, shape, err := l.validate(&r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	early := l.WebKit.generation(r.Engine)
+	names := newWebkitDictionary(&l.WebKit, &r, calls, shape).names
+	own := early.dictionary(&r, names)
+	slices.Reverse(own)
+	r.Pins = []*Pin{capturedPin(own, early.Name)}
+	ownWant := slices.Concat(own, early.tail(&r, calls))
+	if s, err := Order(r); err != nil || !slices.Equal(s.Header, ownWant) {
+		t.Fatalf("strict own captured case = %v (%v), want %v", s.Header, err, ownWant)
+	}
+	if o, err := OrderUniversal(r); err != nil || !slices.Equal(o.Header, ownWant) {
+		t.Errorf("universal own captured case = %v (%v), want %v", o.Header, err, ownWant)
+	}
+	lateSet := slices.Clone(names) // late's Inside is empty
+	slices.Reverse(lateSet)
+	r.Pins = []*Pin{capturedPin(lateSet, "late")}
+	if s, err := Order(r); err != nil || !slices.Equal(s.Header[:len(lateSet)], lateSet) {
+		t.Fatalf("strict late fallback under late's captured case %v = %v (%v)", lateSet, s.Header, err)
+	}
+	if o, err := OrderUniversal(r); err != nil || !slices.Equal(o.Header, got.Header) {
+		t.Errorf("late's captured case ordered the early build: %v (%v), want %v", o.Header, err, got.Header)
+	}
+}
+
+// Late's counterwitnesses and cases are stated on dictionaries without early's Inside names: an early
+// build's request whose own names are probe-safari-16#19's dictionary is refused by it, although early adds
+// accept-language and accept-encoding to its CF table.
+func TestOrderUniversalEarlyKeepsLateCounterwitnesses(t *testing.T) {
+	r := Request{Engine: Engine{Kind: WebKit, Major: 18}, Class: ClassXHR, Method: "GET", HTTP2: true,
+		Calls: []string{"x-beta", "x-alpha"}, Added: Added{Referer: true}}
+	for name, order := range map[string]func(Request) (Wire, error){"strict": Order, "universal": OrderUniversal} {
+		_, err := order(r)
+		if u := wantErr[*UnwitnessedError](t, err); !strings.Contains(u.Reason, "probe-safari-16#19") {
+			t.Errorf("%s: %v, want the probe-safari-16#19 counterwitness", name, err)
+		}
+	}
+}
+
+// HYPOTHESIS(webkit-uncovered-generation-late): an exact captured case of the
+// late generation on the request's dictionary orders an uncovered build ahead
+// of the canonical history, as strict Order honours it on a late build; a
+// captured case on another generation or dictionary does not.
+func TestOrderUniversalHonorsLateCapturedCaseOnUncoveredBuilds(t *testing.T) {
+	late := Request{Engine: Engine{Kind: WebKit, Major: 18, Minor: 7}, Class: ClassXHR, Method: "GET", HTTP2: true,
+		Calls: []string{"x-a"}, Added: Added{Referer: true, Cookie: true, Priority: true}}
+	canonical, err := OrderUniversal(late)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dict := dictionaryOf(t, late, canonical.Header)
+	captured := slices.Clone(dict)
+	slices.Reverse(captured)
+	want := slices.Concat(captured, canonical.Header[len(dict):])
+	late.Pins = []*Pin{capturedPin(captured, "late")}
+	if got, err := Order(late); err != nil || !slices.Equal(got.Header, want) {
+		t.Fatalf("strict late captured %v: got %v (%v), want %v", captured, got.Header, err, want)
+	}
+	for _, e := range []Engine{{Kind: WebKit, Major: 18, Minor: 2}, {Kind: WebKit, Major: 26, Minor: 2, WebView: true}} {
+		r := late
+		r.Engine = e
+		_, err := Order(r)
+		wantErr[*UnwitnessedError](t, err)
+		got, err := OrderUniversal(r)
+		if err != nil || !slices.Equal(got.Header, want) || !slices.Equal(got.Pseudo, canonical.Pseudo) {
+			t.Errorf("%s: got %v %v (%v), want late's captured %v", e, got.Pseudo, got.Header, err, want)
+		}
+		for name, pins := range map[string][]*Pin{
+			"another generation": {capturedPin(captured, "law")},
+			"another dictionary": {capturedPin(append(slices.Clone(captured), "x-b"), "late")},
+		} {
+			r.Pins = pins
+			if got, err := OrderUniversal(r); err != nil || !slices.Equal(got.Header, canonical.Header) {
+				t.Errorf("%s, %s: got %v (%v), want the canonical %v", e, name, got.Header, err, canonical.Header)
+			}
+		}
+	}
+}
+
 func TestWebKitPinCasesBindThePhysicalNames(t *testing.T) {
 	// Another Shape prefix moves every CF home: a case witnessed on
 	// targetPrefix must not decide it.
@@ -535,6 +815,110 @@ func TestWebKitFacts(t *testing.T) {
 	}
 }
 
+// WebKitFactsUniversal states a witnessed build's own generation, exactly as
+// strict WebKitFacts does (Safari 18.0 keeps early's no-priority facts), and
+// an uncovered build's as late under
+// HYPOTHESIS(webkit-uncovered-generation-late), which Hypothesis names.
+// Strict WebKitFacts still refuses the uncovered builds.
+func TestWebKitFactsUniversal(t *testing.T) {
+	for _, e := range []Engine{
+		{Kind: WebKit, Major: 18}, {Kind: WebKit, Major: 18, Minor: 3}, {Kind: WebKit, Major: 18, Minor: 7},
+		{Kind: WebKit, Major: 26}, {Kind: WebKit, Major: 18, Minor: 6, WebView: true}, {Kind: WebKit, Major: 26, Minor: 6, WebView: true},
+	} {
+		strict, err := WebKitFacts(e)
+		if err != nil {
+			t.Fatal(err)
+		}
+		universal, err := WebKitFactsUniversal(e)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if universal.Hypothesis != "" || !reflect.DeepEqual(universal, strict) {
+			t.Errorf("%s: universal facts %+v, strict %+v", e, universal, strict)
+		}
+	}
+	early, err := WebKitFactsUniversal(Engine{Kind: WebKit, Major: 18})
+	if err != nil || early.Generation.Name != "early" || early.Generation.Priority {
+		t.Fatalf("Safari 18.0 = %+v (%v), want early without priority", early.Generation, err)
+	}
+	late, err := WebKitFacts(Engine{Kind: WebKit, Major: 18, Minor: 7})
+	if err != nil {
+		t.Fatal(err)
+	}
+	late.Hypothesis = HypothesisUncoveredGenerationLate
+	for _, e := range []Engine{
+		{Kind: WebKit, Major: 18, Minor: 2}, {Kind: WebKit, Major: 18, Minor: 1}, {Kind: WebKit, Major: 17, Minor: 6},
+		{Kind: WebKit, Major: 18, Minor: 7, WebView: true}, {Kind: WebKit, Major: 26, Minor: 2, WebView: true},
+	} {
+		_, err := WebKitFacts(e)
+		wantErr[*UnwitnessedError](t, err)
+		got, err := WebKitFactsUniversal(e)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(got, late) {
+			t.Errorf("%s: universal facts %+v, want late's under %s: %+v", e, got, HypothesisUncoveredGenerationLate, late)
+		}
+	}
+	for _, e := range []Engine{{Kind: Chromium, Major: 151}, {}} {
+		_, err := WebKitFactsUniversal(e)
+		wantErr[*UnwitnessedError](t, err)
+	}
+}
+
+// An otherwise valid XHR or fetch on an uncovered WebKit build (Safari 18.2,
+// Chrome for iOS on iOS 18.7 and 26.2) is refused by strict Order and
+// Outcomes and ordered by OrderUniversal exactly as the same request on a
+// late build. Input, client-hint and counterwitness refusals still apply.
+func TestOrderUniversalOrdersUncoveredBuildsAsLate(t *testing.T) {
+	base := Request{Class: ClassXHR, Method: "POST", HTTP2: true,
+		Calls: []string{"accept", "content-type", "x-requested-with", "accept-language", "x-csrf-token"},
+		Added: Added{Origin: true, Referer: true, Body: true, Priority: true}}
+	lateReq := base
+	lateReq.Engine = Engine{Kind: WebKit, Major: 18, Minor: 7}
+	want, err := OrderUniversal(lateReq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range []Engine{
+		{Kind: WebKit, Major: 18, Minor: 2}, {Kind: WebKit, Major: 18, Minor: 7, WebView: true}, {Kind: WebKit, Major: 26, Minor: 2, WebView: true},
+	} {
+		r := base
+		r.Engine = e
+		_, err := Order(r)
+		wantErr[*UnwitnessedError](t, err)
+		_, err = Outcomes(r)
+		wantErr[*UnwitnessedError](t, err)
+		got, err := OrderUniversal(r)
+		if err != nil {
+			t.Fatalf("%s: %v", e, err)
+		}
+		if !slices.Equal(got.Header, want.Header) || !slices.Equal(got.Pseudo, want.Pseudo) {
+			t.Errorf("%s: %v, want late's %v", e, got, want)
+		}
+		hinted := r
+		hinted.Added.ClientHints = []string{"sec-ch-ua"}
+		_, err = OrderUniversal(hinted)
+		wantErr[*UnwitnessedError](t, err)
+		bad := r
+		bad.Calls = append(slices.Clone(r.Calls), "accept")
+		_, err = OrderUniversal(bad)
+		wantErr[*InputError](t, err)
+	}
+	r := Request{Engine: Engine{Kind: WebKit, Major: 18, Minor: 2}, Class: ClassFetch, Method: "GET", HTTP2: true,
+		Calls: []string{"x-probe"}}
+	cw := *law
+	cw.WebKit.Counterwitness = []Counterwitness{{HAR: "probe", Entry: 1, Reason: "test",
+		Dictionary: []string{"x-probe", "accept", "user-agent", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest"}}}
+	if _, err := law.universalWebkitOrder(&r); err != nil {
+		t.Fatalf("without the counterwitness: %v", err)
+	}
+	_, err = cw.universalWebkitOrder(&r)
+	if u := wantErr[*UnwitnessedError](t, err); !strings.Contains(u.Reason, "probe#1") {
+		t.Fatalf("refusal does not name the counterwitness: %v", u)
+	}
+}
+
 func TestWebKitCounterwitnessRefusesItsDictionary(t *testing.T) {
 	r := Request{Engine: Engine{Kind: WebKit, Major: 26}, Class: ClassFetch, Method: "GET", HTTP2: true,
 		Calls: []string{"x-probe"}}
@@ -621,6 +1005,89 @@ func TestLawDataIsWellFormed(t *testing.T) {
 			if got := law.WebKit.generation(EngineFromUserAgent(w.UserAgent)); got == nil || got.Name != g.Name {
 				t.Errorf("generation %s witness %s: %q resolves to %v", g.Name, w.HAR, w.UserAgent, got)
 			}
+		}
+	}
+}
+
+// OrderUniversal's mechanism data is consistent: the browser-owned GET insertion is the inserted-script law's
+// plus upgrade-insecure-requests, each WebKit generation has exactly one browser-owned GET law, and Chromium's
+// form runs cover the witnessed majors in order.
+func TestUniversalLawDataIsWellFormed(t *testing.T) {
+	w := &law.WebKit
+	load := slices.DeleteFunc(slices.Clone(w.BrowserLoad.Insertion), func(n string) bool { return n == "upgrade-insecure-requests" })
+	if !slices.Equal(load, w.InsertedScript.Insertion) || len(load) != len(w.BrowserLoad.Insertion)-1 {
+		t.Errorf("browser-owned GET insertion %v is not the inserted-script law %v plus upgrade-insecure-requests", w.BrowserLoad.Insertion, w.InsertedScript.Insertion)
+	}
+	for _, n := range w.BrowserLoad.RedirectCarried {
+		if !slices.Contains(w.CFNetworkTail, n) {
+			t.Errorf("redirect-carried %s is no CFNetwork tail name", n)
+		}
+	}
+	for _, n := range w.BrowserLoad.Reinserted {
+		if !slices.Contains(w.BrowserLoad.Insertion, n) {
+			t.Errorf("re-inserted %s is no browser-owned GET name", n)
+		}
+	}
+	for _, n := range w.Preflight.Insertion {
+		if !slices.Contains(w.CommonHeaders, n) {
+			t.Errorf("preflight name %s is not a WebKit common header", n)
+		}
+	}
+	for _, g := range w.Generations {
+		if g.ScriptLaw == (len(g.BrowserGet) != 0) {
+			t.Errorf("generation %s: script law %v with captured browser-owned GET %v", g.Name, g.ScriptLaw, g.BrowserGet)
+		}
+		for _, n := range g.BrowserGet {
+			if !slices.Contains(w.BrowserLoad.Insertion, n) && !slices.Contains(g.Inside, n) {
+				t.Errorf("generation %s browser-owned GET name %s is neither loader-set nor inside", g.Name, n)
+			}
+		}
+		for _, n := range g.Inside {
+			if !g.ScriptLaw && !slices.Contains(g.BrowserGet, n) {
+				t.Errorf("generation %s browser-owned GET does not place inside name %s", g.Name, n)
+			}
+		}
+	}
+	c := &law.Chromium
+	runs := c.Form.Majors
+	if len(runs) == 0 || runs[0].From != c.Witnessed[0] || runs[len(runs)-1].To != c.Witnessed[1] {
+		t.Fatalf("form runs %v do not span the witnessed majors %v", runs, c.Witnessed)
+	}
+	for i, m := range runs {
+		if m.From > m.To || i > 0 && m.From <= runs[i-1].To || len(m.Witnesses) == 0 || !slices.Contains(m.BrowserSet, "origin") {
+			t.Errorf("form run %d %+v is empty, unordered, unwitnessed or without origin", i, m)
+		}
+	}
+}
+
+// Strict Order is unchanged beside OrderUniversal: it refuses every class without a strict law on both engines,
+// keeps its WebKit fetch/XHR refusals, and ignores the universal-only inputs.
+func TestStrictOrderKeepsItsRefusals(t *testing.T) {
+	for _, e := range []Engine{{Kind: Chromium, Major: 151}, {Kind: WebKit, Major: 18, Minor: 7}} {
+		for _, class := range []Class{ClassForm, ClassPreflight, ClassNoCORS} {
+			_, err := Order(Request{Engine: e, Class: class, Method: "POST", HTTP2: true, Added: Added{Origin: true, Body: true}})
+			wantErr[*UnwitnessedError](t, err)
+		}
+	}
+	for _, class := range []Class{ClassNavigation, ClassScript} {
+		_, err := Order(Request{Engine: Engine{Kind: WebKit, Major: 18, Minor: 7}, Class: class, Method: "GET", HTTP2: true,
+			Added: Added{Referer: true, Priority: true, UpgradeInsecureRequests: class == ClassNavigation}})
+		wantErr[*UnwitnessedError](t, err)
+	}
+	_, err := Order(targetSafari())
+	wantErr[*UnwitnessedError](t, err)
+	_, err = Order(targetSafari(testInstall))
+	wantErr[*AmbiguousError](t, err)
+	nav := Request{Engine: Engine{Kind: Chromium, Major: 154}, Class: ClassNavigation, Method: "GET", HTTP2: true,
+		Added: Added{ClientHints: []string{"sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform"}, FetchUser: true, Priority: true}}
+	for _, r := range []Request{chromeXHR(151, "content-type"), nav} {
+		want, err := Order(r)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r.Added.UpgradeInsecureRequests, r.Added.RequestHeaders = true, true
+		if got, err := Order(r); err != nil || !reflect.DeepEqual(got, want) {
+			t.Errorf("%s %s with universal-only inputs: %v (%v), want %v", r.Engine, r.Class, got, err, want)
 		}
 	}
 }

@@ -2,17 +2,30 @@ package shape
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 )
+
+// WarningSendTooEarly means the protected request was early: the headers
+// are generated for a later instant, and the caller sends the request no
+// earlier than Response.SendAfterUnixMS (Response.WaitForSend).
+const WarningSendTooEarly = "send_too_early"
 
 type Response struct {
 	Success bool    `json:"success"`
 	Headers Headers `json:"headers"`
 	// UserAgent is the exact User-Agent the protected request must carry.
-	UserAgent       string   `json:"user_agent"`
-	Timings         Timings  `json:"timings"`
-	Warnings        []string `json:"warnings,omitempty"` // Debug only
+	UserAgent string  `json:"user_agent"`
+	Timings   Timings `json:"timings"`
+	// Warnings are non-fatal solve conditions. Callers may ignore values
+	// they do not need to treat as diagnostics.
+	Warnings []string `json:"warnings,omitempty"`
+	// SendAfterUnixMS is the Unix ms instant an early request's headers
+	// were generated for (WarningSendTooEarly): send the protected request
+	// no earlier. 0 when the request was not early.
+	SendAfterUnixMS int64    `json:"send_after_unix_ms,omitempty"`
 	SessionID       string   `json:"session_id,omitempty"`
 	SessionReused   bool     `json:"session_reused,omitempty"`
 	SessionStep     uint64   `json:"session_step,omitempty"`
@@ -20,6 +33,23 @@ type Response struct {
 	FingerprintHash string   `json:"fingerprint_hash,omitempty"`
 	SolveID         string   `json:"solve_id,omitempty"` // identifies this solve to ReportOutcome
 	Debug           *Debug   `json:"debug,omitempty"`    // Request.Debug only
+}
+
+// WaitForSend blocks until SendAfterUnixMS (at once when it is 0 or past)
+// or until ctx is done, returning ctx's error then.
+func (r Response) WaitForSend(ctx context.Context) error {
+	wait := time.Until(time.UnixMilli(r.SendAfterUnixMS))
+	if r.SendAfterUnixMS == 0 || wait <= 0 {
+		return ctx.Err()
+	}
+	timer := time.NewTimer(wait)
+	defer timer.Stop()
+	select {
+	case <-timer.C:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 // Header is one generated header.
@@ -114,28 +144,25 @@ type Timings struct {
 	OtherNetworkMS      int64 `json:"other_network_ms"`
 	GenerationMS        int64 `json:"generation_ms"`
 	PayloadVerifyMS     int64 `json:"payload_verification_ms"`
-	// NetworkMS is the solver's time on the wire (challenge fetch, ZeroNaught exchange); OtherMS is the rest.
+	// NetworkMS is the solver's time on the wire (challenge fetch, ZeroNaught exchange); OtherMS is the rest, less Stages.ZeronaughtWaitMS.
 	NetworkMS int64   `json:"network_ms"`
 	OtherMS   int64   `json:"other_ms"`
 	Stages    *Stages `json:"stages,omitempty"`
 }
 
-// Stages is the solve's own CPU work split at its seams, in microseconds;
-// the network waits (Timings.NetworkMS) are outside them.
+// Stages is the solve's own work split at its seams, in milliseconds
+// (0.01 ms resolution), plus ZeronaughtWaitMS, the solver's hold until the
+// document's ZeroNaught request's planned send instant. Seams that stay
+// under 2 ms are not reported.
 type Stages struct {
-	SetupUS          int64 `json:"setup_us"`
-	LookupUS         int64 `json:"lookup_us"` // SetupUS's first half
-	ClientUS         int64 `json:"client_us"` // SetupUS's second half
-	ChallengeFetchUS int64 `json:"challenge_fetch_us"`
-	FetchWallUS      int64 `json:"fetch_wall_us"`
-	FetchNetUS       int64 `json:"fetch_net_us"`
-	BuildUS          int64 `json:"build_us"`
-	SessionInputsUS  int64 `json:"session_inputs_us"`
-	SessionOpenUS    int64 `json:"session_open_us"`
-	SessionStateUS   int64 `json:"session_state_us"`
-	ScheduleUS       int64 `json:"schedule_us"`
-	GenerateUS       int64 `json:"generate_us"`
-	TailUS           int64 `json:"tail_us"`
+	ChallengeFetchMS float64 `json:"challenge_fetch_ms"`
+	FetchWallMS      float64 `json:"fetch_wall_ms"`
+	FetchNetMS       float64 `json:"fetch_net_ms"`
+	BuildMS          float64 `json:"build_ms"`
+	SessionOpenMS    float64 `json:"session_open_ms"`
+	GenerateMS       float64 `json:"generate_ms"`
+	TailMS           float64 `json:"tail_ms"`
+	ZeronaughtWaitMS float64 `json:"zeronaught_wait_ms"`
 }
 
 // Debug is a debug request's diagnostics of the generated request.
@@ -150,6 +177,27 @@ type Debug struct {
 	// received, in order, for the caller's browser jar.
 	SetCookies  []SetCookie `json:"set_cookies,omitempty"`
 	SessionStep int         `json:"session_step,omitempty"` // 1-based ordinal on the session's document
+	// DocumentAnchor is how the solver placed the request's document
+	// against its challenge token's issue.
+	DocumentAnchor *DocumentAnchor `json:"document_anchor,omitempty"`
+	// ZeronaughtSendLateMS is how far past its planned send instant the
+	// solver's ZeroNaught request left; absent when it sent none.
+	ZeronaughtSendLateMS *float64 `json:"zeronaught_send_late_ms,omitempty"`
+}
+
+// DocumentAnchor is a document's start against its challenge token's
+// issue: the path that placed it (token_issue: the laws' own draw admitted
+// the send; token_issue_send_window: drawn on the part of the bands the
+// send admits; token_issue_early_finalize: the page's early first send
+// fixed the collector origin), the navigation-to-issue delay and the law
+// it was drawn on, and the collector start lag and origin after the issue.
+type DocumentAnchor struct {
+	Path                    string  `json:"path"`
+	IssuedUnixMS            float64 `json:"issued_unix_ms"`
+	NavigationIssueDelayMS  float64 `json:"navigation_issue_delay_ms"`
+	NavigationIssueDelayLaw string  `json:"navigation_issue_delay_law"`
+	CollectorStartLagMS     float64 `json:"collector_start_lag_ms"`
+	OriginAfterIssueMS      float64 `json:"origin_after_issue_ms"`
 }
 
 // Build identifies the challenge scripts a solve generated from.

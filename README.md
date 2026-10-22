@@ -98,6 +98,25 @@ res, err := cloudflare.Solve(ctx, client, cloudflare.Request{
 // res.Token is the Turnstile response token.
 ```
 
+## User-Agents
+
+Each solver lists the exact User-Agents its `/solve` runs on
+(`GET /user-agents`). Pass one of them as the solve's User-Agent:
+
+```go
+all, err := client.UserAgents(ctx, shape.Task)
+iphones, err := client.UserAgents(ctx, shape.Task, "ios_safari", "ios_chrome")
+desktop, err := client.UserAgents(ctx, datadome.Task, "windows", "macos")
+```
+
+A filter is an OS (`windows`, `macos`, `linux`, `chromeos`, `android`, `ios`),
+a browser (`chrome`, `safari`, `firefox`, `edge`, `opera`, `webview`), or
+`<os>_<browser>` (`ios_safari`, `ios_chrome`, `macos_chrome`, ...). Several
+filters keep values matching any of them, in the server's order; none keeps
+all. `ios_chrome` is Chrome for iOS (`CriOS`). An unknown filter fails before
+any request. While filtering, a listed User-Agent the SDK cannot classify fails
+the call instead of being dropped.
+
 ## Retries
 
 The client retries a request answered `429` or `503` (nothing else) and re-sends

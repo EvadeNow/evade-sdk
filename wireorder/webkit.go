@@ -77,6 +77,36 @@ func cfInsert(names []string) ([]string, error) {
 	return out, nil
 }
 
+// cfCanonical inserts one deterministic history admitted by pred: whenever
+// several names are available, the request's supplied name order wins. It is
+// the non-blocking WebKit policy's universal insertion history.
+func cfCanonical(names []string, pred []uint64) ([]string, error) {
+	if len(names) != len(pred) {
+		return nil, fmt.Errorf("%d names have %d predecessor sets", len(names), len(pred))
+	}
+	if len(names) > 64 {
+		return nil, fmt.Errorf("%d names exceed the canonical history width", len(names))
+	}
+	history := make([]string, 0, len(names))
+	var done uint64
+	for range names {
+		next := -1
+		for i := range names {
+			bit := uint64(1) << i
+			if done&bit == 0 && pred[i]&^done == 0 {
+				next = i
+				break
+			}
+		}
+		if next < 0 {
+			return nil, fmt.Errorf("the precedence constraints admit no insertion history")
+		}
+		history = append(history, names[next])
+		done |= uint64(1) << next
+	}
+	return cfInsert(history)
+}
+
 const webkitStateLimit = 1 << 18
 
 // cfOutcomes returns the distinct CF bucket orders of every insertion history obeying pred (bitset of names preceding name i).
@@ -225,6 +255,16 @@ func ambiguousNames(outcomes [][]string) []string {
 func precedes(order []string, a, b string) bool {
 	i, j := slices.Index(order, a), slices.Index(order, b)
 	return i >= 0 && j >= 0 && i < j
+}
+
+// obeys reports whether order puts every wire pair's first name before its second.
+func obeys(order []string, wire [][2]string) bool {
+	for _, e := range wire {
+		if !precedes(order, e[0], e[1]) {
+			return false
+		}
+	}
+	return true
 }
 
 func shapeRole(name, prefix string) (string, bool) {

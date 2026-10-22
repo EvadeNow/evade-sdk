@@ -69,6 +69,16 @@ var (
 	mobileRe = regexp.MustCompile(`\bMobile(?:[\s;)]|$)`)
 )
 
+// Third-party iOS browsers carry Safari's tokens but send their own headers.
+var thirdPartyIOS = [...]struct {
+	token, name string
+	browser     Browser
+}{
+	{"CriOS", "Chrome for iOS", BrowserChrome},
+	{"FxiOS", "Firefox for iOS", BrowserFirefox},
+	{"EdgiOS", "Edge for iOS", BrowserEdge},
+}
+
 // Parse never defaults a field: anything it cannot classify fails with *UnsupportedError naming the reason.
 func Parse(ua string) (Agent, error) {
 	unsupported := func(reason string) (Agent, error) {
@@ -78,12 +88,6 @@ func Parse(ua string) (Agent, error) {
 		return unsupported("empty User-Agent")
 	}
 	tokens := productTokens(ua)
-	// Third-party iOS browsers carry Safari's tokens but send their own headers.
-	thirdPartyIOS := [...]struct{ token, name string }{
-		{"CriOS", "Chrome for iOS"},
-		{"FxiOS", "Firefox for iOS"},
-		{"EdgiOS", "Edge for iOS"},
-	}
 	for _, b := range thirdPartyIOS {
 		if has(tokens, b.token) {
 			return unsupported(fmt.Sprintf("%s (%s/) is not a supported browser", b.name, b.token))
@@ -166,6 +170,54 @@ func Parse(ua string) (Agent, error) {
 		return unsupported(fmt.Sprintf("%s User-Agent declares no recognized operating system", a.Family))
 	}
 	return a, nil
+}
+
+// Browser is the browser product a User-Agent names, whatever engine runs
+// it: Chrome for iOS is BrowserChrome on OSIOS.
+type Browser string
+
+const (
+	BrowserChrome  Browser = "chrome"
+	BrowserEdge    Browser = "edge"
+	BrowserOpera   Browser = "opera"
+	BrowserWebView Browser = "webview" // Android System WebView
+	BrowserSafari  Browser = "safari"
+	BrowserFirefox Browser = "firefox"
+)
+
+// Classify names ua's operating system and browser product. It places
+// everything Parse accepts plus the third-party iOS browsers Parse refuses
+// (CriOS/, FxiOS/, EdgiOS/); anything else fails with *UnsupportedError.
+func Classify(ua string) (OS, Browser, error) {
+	tokens := productTokens(ua)
+	for _, b := range thirdPartyIOS {
+		if !has(tokens, b.token) {
+			continue
+		}
+		if os, ok := declaredOS(ua); !ok || os != OSIOS {
+			return "", "", &UnsupportedError{UserAgent: ua, Reason: fmt.Sprintf("%s/ token without an iOS device", b.token)}
+		}
+		return OSIOS, b.browser, nil
+	}
+	a, err := Parse(ua)
+	if err != nil {
+		return "", "", err
+	}
+	switch a.Family {
+	case FamilyChrome:
+		return a.OS, BrowserChrome, nil
+	case FamilyEdge:
+		return a.OS, BrowserEdge, nil
+	case FamilyOpera:
+		return a.OS, BrowserOpera, nil
+	case FamilyAndroidWebView:
+		return a.OS, BrowserWebView, nil
+	case FamilySafariIOS, FamilySafariMacOS:
+		return a.OS, BrowserSafari, nil
+	case FamilyFirefox:
+		return a.OS, BrowserFirefox, nil
+	}
+	return "", "", &UnsupportedError{UserAgent: ua, Reason: fmt.Sprintf("family %s names no browser", a.Family)}
 }
 
 // First value wins so a later repeat cannot override a token.

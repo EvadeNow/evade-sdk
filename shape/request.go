@@ -4,21 +4,37 @@ package shape
 
 type Request struct {
 	// SessionID continues a retained session; repeated session-fixed fields must match its opening values.
-	SessionID            string               `json:"session_id,omitempty"`
-	Proxy                string               `json:"proxy"`
-	TargetURL            string               `json:"target_url"`
-	ShapeJSURL           string               `json:"shape_js_url"`
-	TargetAPI            string               `json:"target_api"`
-	TargetAPIMethod      string               `json:"target_api_method"` // GET, POST or PUT
-	TargetAPIContentType string               `json:"target_api_content_type,omitempty"`
-	InteractionMode      InteractionMode      `json:"interaction_mode,omitempty"`
+	SessionID            string          `json:"session_id,omitempty"`
+	Proxy                string          `json:"proxy"`
+	TargetURL            string          `json:"target_url"`
+	ShapeJSURL           string          `json:"shape_js_url"`
+	TargetAPI            string          `json:"target_api"`
+	TargetAPIMethod      string          `json:"target_api_method"` // GET, POST or PUT
+	TargetAPIContentType string          `json:"target_api_content_type,omitempty"`
+	InteractionMode      InteractionMode `json:"interaction_mode,omitempty"`
+	// InteractionBody is the protected request's exact body. Optional: the solver
+	// types each field the page's statement types in the shape of its value (never
+	// keeping the value); send it only to a solver whose GET /solve/fields lists
+	// interaction_body, since an older one refuses unknown members.
 	InteractionBody      string               `json:"interaction_body,omitempty"`
 	AuxiliaryNetworkMode AuxiliaryNetworkMode `json:"auxiliary_network_mode,omitempty"`
 	Referer              string               `json:"referer,omitempty"`
 	ReferrerPolicy       string               `json:"referrer_policy,omitempty"`
-	PageHTML             string               `json:"page_html,omitempty"` // embedding the challenge skips fetching ShapeJSURL
-	LoaderSource         string               `json:"loader_source,omitempty"`
-	ChallengeSource      string               `json:"challenge_source,omitempty"`
+	// PageHTML is the exact body the caller's browser received for TargetURL
+	// when that navigation was answered with a Shape interstitial (an inline
+	// VM and a replay script, e.g. p-bandai.jp item pages). The protected
+	// request is then TargetURL's own GET replay (TargetAPI = TargetURL),
+	// ShapeJSURL and LoaderSource stay empty, and Cookies are the browser's
+	// for TargetURL. The solver reads the challenge from it and fetches
+	// nothing; without it the solver navigates to TargetURL itself. Fresh
+	// solves only; refused beside ShapeJSURL or a stored page profile. It
+	// must be valid UTF-8 (Solve refuses other bytes: see NotUTF8Error).
+	PageHTML string `json:"page_html,omitempty"`
+	// LoaderSource is the exact body of ShapeJSURL the caller's browser
+	// fetched, sent instead of the solver's own GET (a body that does not
+	// parse as a loader is fetched as without it); valid UTF-8 only.
+	LoaderSource    string `json:"loader_source,omitempty"`
+	ChallengeSource string `json:"challenge_source,omitempty"`
 	// UA is an exact User-Agent or an OS selector (OSIOS, ...); empty selects the iOS pool.
 	UA string `json:"ua,omitempty"`
 	// FingerprintRecordID pins the solve to one stored device record; UA, when set, must name its User-Agent or OS.

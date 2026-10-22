@@ -243,3 +243,37 @@ func TestParseRejects(t *testing.T) {
 		})
 	}
 }
+
+// TestClassify: the third-party iOS browsers Parse refuses are their own
+// brand on iOS (EdgiOS beside Version/ is Edge, not Safari); everything
+// else is Parse's family, both Safaris one browser.
+func TestClassify(t *testing.T) {
+	for _, tt := range []struct {
+		ua      string
+		os      OS
+		browser Browser
+	}{
+		{"Mozilla/5.0 (iPhone; CPU iPhone OS 26_6_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/149.0.7827.137 Mobile/15E148 Safari/604.1", OSIOS, BrowserChrome},
+		{"Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/127.0 Mobile/15E148 Safari/605.1.15", OSIOS, BrowserFirefox},
+		{"Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 EdgiOS/126.2592.86 Mobile/15E148 Safari/605.1.15", OSIOS, BrowserEdge},
+		{"Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Mobile/15E148 Safari/604.1", OSIOS, BrowserSafari},
+		{"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.2 Safari/605.1.15", OSMacOS, BrowserSafari},
+		{"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36", OSMacOS, BrowserChrome},
+		{"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0", OSWindows, BrowserEdge},
+		{"Mozilla/5.0 (Linux; Android 13; SM-S918B Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/151.0.7103.60 Mobile Safari/537.36", OSAndroid, BrowserWebView},
+	} {
+		os, browser, err := Classify(tt.ua)
+		if err != nil || os != tt.os || browser != tt.browser {
+			t.Errorf("Classify(%q) = %s, %s, %v; want %s, %s", tt.ua, os, browser, err, tt.os, tt.browser)
+		}
+	}
+	for _, ua := range []string{
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/149.0.0.0 Safari/604.1",
+		"curl/8.4.0",
+	} {
+		var unsupported *UnsupportedError
+		if _, _, err := Classify(ua); !errors.As(err, &unsupported) {
+			t.Errorf("Classify(%q) = %v, want *UnsupportedError", ua, err)
+		}
+	}
+}

@@ -22,6 +22,18 @@ var law = &lawFile{
 			ClientHints: []string{"sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform"},
 			BrowserSet:  []string{"upgrade-insecure-requests", "user-agent", "accept"},
 		},
+		Form: chromiumForm{
+			Prefix: []string{"content-length", "cache-control"},
+			Majors: []chromiumFormMajors{
+				{From: 141, To: 141, BrowserSet: []string{"origin", "content-type", "upgrade-insecure-requests", "user-agent", "accept"},
+					Witnesses: []string{"comcast-l#372"}},
+				// Chrome 155 forms are witnessed only with an automation Accept-Language override (bandai-jp-login-evidence-20261020c#275), whose accept-language precedes accept.
+				{From: 150, To: 155, BrowserSet: []string{"upgrade-insecure-requests", "content-type", "user-agent", "origin", "accept"},
+					Witnesses: []string{"bandai-login-android#217", "bandai-product#54", "bandai-login13#182", "vint#188", "chess-login#174", "prizepicks#186"}},
+			},
+		},
+		// Every captured Chrome 141-155 preflight (348: t_register#265, sky_login#60 on HTTP/1.1, bandai-login12#8 without referer).
+		Preflight: []string{"accept", "access-control-request-method", "access-control-request-headers", "origin", "user-agent", "sec-fetch-mode", "sec-fetch-site", "sec-fetch-dest", "referer", "accept-encoding", "accept-language"},
 	},
 	WebKit: webkitLaw{
 		CommonHeaders: []string{"accept", "accept-charset", "accept-language", "accept-encoding", "accept-ranges", "access-control-allow-credentials", "access-control-allow-headers", "access-control-allow-methods", "access-control-allow-origin", "access-control-expose-headers", "access-control-max-age", "access-control-request-headers", "access-control-request-method", "age", "authorization", "cache-control", "clear-site-data", "connection", "content-disposition", "content-encoding", "content-language", "content-length", "content-location", "content-security-policy", "content-security-policy-report-only", "content-type", "content-range", "cookie", "cookie2", "cross-origin-embedder-policy", "cross-origin-embedder-policy-report-only", "cross-origin-opener-policy", "cross-origin-opener-policy-report-only", "cross-origin-resource-policy", "date", "dnt", "default-style", "document-isolation-policy", "etag", "expect", "expires", "host", "if-match", "if-modified-since", "if-none-match", "if-range", "if-unmodified-since", "integrity-policy", "integrity-policy-report-only", "keep-alive", "last-event-id", "last-modified", "link", "location", "origin", "origin-agent-cluster", "ping-from", "ping-to", "pragma", "proxy-authorization", "range", "referer", "referrer-policy", "refresh", "report-to", "reporting-endpoints", "sec-fetch-dest", "sec-fetch-mode", "sec-fetch-site", "sec-gpc", "sec-purpose", "sec-speculation-tags", "speculation-rules", "sec-websocket-accept", "sec-websocket-extensions", "sec-websocket-key", "sec-websocket-protocol", "sec-websocket-version", "server-timing", "service-worker", "service-worker-allowed", "service-worker-navigation-preload", "set-cookie", "set-cookie2", "sourcemap", "te", "timing-allow-origin", "trailer", "transfer-encoding", "upgrade", "upgrade-insecure-requests", "use-as-dictionary", "user-agent", "vary", "via", "x-content-type-options", "x-frame-options", "x-sourcemap", "x-xss-protection", "x-temp-tablet", "icy-metaint", "icy-metadata"},
@@ -53,6 +65,20 @@ var law = &lawFile{
 					Reason:     "Safari 26.6.1 Shape VM fetched 63 ms after the document, inside the early-load burst whose every request puts user-agent before sec-fetch-dest; the session's later VM fetch (entry 192) and iphone17_ios26_safari_3#184 reproduce the law",
 				},
 			},
+		},
+		// Reproduces all 157 captured late navigations of these names, 31 of them redirect hops (target-ios12#39, #320,
+		// #404), and 1946 of 2052 parser scripts and no-cors element loads; the rest are 62 redirected loads, which
+		// OrderUniversal does not frame, and the 26.6.1 early-load burst's 44 (InsertedScript.Counterwitness's
+		// user-agent first, iphone17_ios26_safari_2#7).
+		BrowserLoad: webkitBrowserLoad{
+			Insertion:       []string{"accept", "upgrade-insecure-requests", "referer", "sec-fetch-dest", "sec-fetch-mode", "sec-fetch-site", "user-agent"},
+			RedirectCarried: []string{"accept-language", "priority"},
+			Reinserted:      []string{"sec-fetch-mode"},
+		},
+		// Reproduces all 413 captured late Safari preflights (target-iphone15#394, morerewards_ios_safari_oct20#127).
+		Preflight: webkitPreflight{
+			Insertion: []string{"access-control-request-method", "access-control-request-headers", "origin", "user-agent", "referer", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest", "content-length"},
+			Tail:      []string{"accept"},
 		},
 		Generations: []webkitGeneration{
 			{
@@ -88,6 +114,8 @@ var law = &lawFile{
 				},
 				Inside: []string{"accept-language", "accept-encoding"},
 				Tail:   []string{"cookie"},
+				// Every navigation and script of the early sessions (s-live testdata/webkit_generation_witness.json).
+				BrowserGet: []string{"accept", "sec-fetch-site", "sec-fetch-dest", "accept-language", "sec-fetch-mode", "user-agent", "referer", "accept-encoding"},
 			},
 			{
 				Name: "early-webview",
@@ -114,6 +142,8 @@ var law = &lawFile{
 				},
 				Inside: []string{"accept-language", "accept-encoding", "cookie"},
 				Tail:   []string{},
+				// ios18-crios-16#21; cookie, inside on these builds, last: HYPOTHESIS(webkit-early-browser-get).
+				BrowserGet: []string{"accept", "sec-fetch-site", "sec-fetch-dest", "accept-language", "sec-fetch-mode", "user-agent", "referer", "accept-encoding", "cookie"},
 			},
 			{
 				Name: "law",

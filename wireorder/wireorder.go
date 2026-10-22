@@ -8,6 +8,7 @@ package wireorder
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"slices"
@@ -52,6 +53,8 @@ func (e Engine) String() string {
 	return fmt.Sprintf("%s/%d", e.Kind, e.Major)
 }
 
+// Class is a request's kind. Order refuses ClassForm, ClassPreflight and ClassNoCORS (no strict law);
+// OrderUniversal frames every class but ClassUnknown.
 type Class uint8
 
 const (
@@ -60,9 +63,12 @@ const (
 	ClassFetch
 	// ClassNavigation is one top-level document GET hop (see Request.Redirected).
 	ClassNavigation
-	// Order refuses ClassForm, ClassPreflight and ClassNoCORS: no witnessed law.
+	// ClassForm is a form's POST submission, a navigation whose headers the browser sets.
 	ClassForm
+	// ClassPreflight is the browser's CORS OPTIONS preflight; Method is "OPTIONS".
 	ClassPreflight
+	// ClassNoCORS is an element subresource GET (image, stylesheet, media); the browser sets every header.
+	// A page's fetch(…, {mode: "no-cors"}) carries page calls and is ClassFetch.
 	ClassNoCORS
 	// ClassScript is a classic <script src> GET; the browser sets every header.
 	ClassScript
@@ -118,6 +124,12 @@ type Added struct {
 	Priority      bool
 	StorageAccess bool
 	FetchUser     bool
+	// UpgradeInsecureRequests: a WebKit navigation carries upgrade-insecure-requests; only OrderUniversal reads it
+	// (every Chromium navigation and form carries it).
+	UpgradeInsecureRequests bool
+	// RequestHeaders: a preflight carries access-control-request-headers (its request sets a header that is not
+	// CORS-safelisted); only OrderUniversal reads it.
+	RequestHeaders bool
 }
 
 func (a *Added) present(name string) bool {
@@ -136,6 +148,10 @@ func (a *Added) present(name string) bool {
 		return a.StorageAccess
 	case "sec-fetch-user":
 		return a.FetchUser
+	case "upgrade-insecure-requests":
+		return a.UpgradeInsecureRequests
+	case "access-control-request-headers":
+		return a.RequestHeaders
 	case "user-agent", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest",
 		"accept-encoding", "accept-language":
 		return true
@@ -197,6 +213,10 @@ type chromiumLaw struct {
 	Pseudo               []string
 	HintCounterwitnesses []HintCounterwitness
 	Navigation           chromiumNavigation
+	Form                 chromiumForm
+	// Preflight is the network service's CORS preflight: access-control-request-headers only with
+	// Added.RequestHeaders and referer only with Added.Referer; HTTP1Prefix before it, priority after it on HTTP/2.
+	Preflight []string
 }
 
 // HintCounterwitness is a capture whose Blink map the set order does not reproduce, blamed on hint Name.
@@ -212,6 +232,20 @@ type chromiumNavigation struct {
 	BrowserSet  []string
 }
 
+// chromiumForm is the browser process's form POST: HTTP1Prefix, Prefix, the navigation client hints, the major's
+// BrowserSet, then NetworkAfter and NetworkTail as on a navigation and priority on HTTP/2.
+type chromiumForm struct {
+	Prefix []string
+	Majors []chromiumFormMajors
+}
+
+// chromiumFormMajors: Chrome From through To (inclusive) sends BrowserSet, as the Witnesses (capture#entry) do.
+type chromiumFormMajors struct {
+	From, To   int
+	BrowserSet []string
+	Witnesses  []string
+}
+
 type webkitLaw struct {
 	CommonHeaders      []string
 	LoaderAdded        []string
@@ -223,7 +257,26 @@ type webkitLaw struct {
 	Counterwitness     []Counterwitness
 	UnwitnessedClasses map[string]string
 	InsertedScript     webkitInsertedScript
+	BrowserLoad        webkitBrowserLoad
+	Preflight          webkitPreflight
 	Generations        []webkitGeneration
+}
+
+// webkitBrowserLoad is OrderUniversal's browser-owned GET (navigation, script, no-cors subresource) on a
+// generation with the script law. Insertion is InsertedScript.Insertion plus upgrade-insecure-requests, which
+// only a navigation carries. A redirect hop's request carries the RedirectCarried tail names of the hop
+// before it into its dictionary, and WebKit re-sets Reinserted after them.
+type webkitBrowserLoad struct {
+	Insertion       []string
+	RedirectCarried []string
+	Reinserted      []string
+}
+
+// webkitPreflight: the preflight's names enter the CF dictionary in Insertion's order (access-control-request-headers
+// only with Added.RequestHeaders, referer only with Added.Referer); CFNetwork appends Tail before the generation's tail.
+type webkitPreflight struct {
+	Insertion []string
+	Tail      []string
 }
 
 // webkitGeneration: Inside are CFNetwork-tail names kept in the dictionary on these builds; Tail the rest, in wire order.
@@ -238,6 +291,9 @@ type webkitGeneration struct {
 	ScriptLaw      bool
 	PageSetTail    bool
 	Counterwitness []Counterwitness
+	// BrowserGet is the dictionary order every captured browser-owned GET of a generation without the script law
+	// has; OrderUniversal keeps the present names in this order.
+	BrowserGet []string
 }
 
 type webkitBuilds struct {
@@ -437,6 +493,72 @@ func Order(r Request) (Wire, error) {
 	return law.order(&r)
 }
 
+// OrderUniversal applies the engine law without requiring a site-specific
+// WebKit capture to select one admissible insertion history, and frames every
+// class but ClassUnknown on Chromium and WebKit; nothing it does is selected
+// by a site, page or captured order. Strict Order still wins for a fetch or
+// XHR whenever its evidence resolves the request, except on a generation
+// without the insertion law (early, early-webview): there strict Order's
+// HYPOTHESIS(webkit_early_falls_back_to_late) output carries late's priority,
+// tail and captured cases, so OrderUniversal orders those builds itself,
+// honouring only their own generation's captured cases. A Chromium
+// navigation, script, fetch or XHR is strict Order's frame.
+//
+// The classes strict Order refuses are framed by engine mechanism
+// (universalBrowserOrder): a Chromium form is the browser process's form
+// navigation list, a Chromium no-cors element load is a call-less Blink map,
+// a Chromium preflight is the network service's fixed sequence; a WebKit form
+// is the fetch/XHR CF dictionary of its content-type and the browser-owned
+// names, a WebKit navigation, script or no-cors element load is the
+// browser-owned GET insertion (a captured fixed order on early builds), and a
+// WebKit preflight is the preflight's network sequence, each with the build's
+// own generation's priority, Inside and Tail.
+//
+// HYPOTHESIS(webkit-universal-order): for a WebKit fetch, XHR or form left
+// open by missing install/case evidence, insert the request's common and
+// uncommon headers in its supplied program order (a form's content-type
+// first) wherever the source constraints and the pins' install precedences
+// do not decide them, then emit the resulting CF table order. A pin case
+// matching the dictionary constrains that emitted order: the supplied-order
+// outcome when it obeys the case's wire precedences, else the law's first
+// enumerated outcome that does. A known counterwitness, malformed request,
+// unsupported engine/class/build, impossible precedence graph, or case no
+// admitted outcome obeys still fails. Unlike strict Order's
+// HYPOTHESIS(webkit_early_falls_back_to_late), the build's own generation
+// decides priority, Inside and Tail: callers pass generation-correct added
+// headers (WebKitFactsUniversal states them).
+//
+// A WebKit build outside every witnessed generation range is ordered as the
+// late generation under HYPOTHESIS(webkit-uncovered-generation-late), stated
+// at WebKitFactsUniversal; its input, protocol, client-hint and
+// storage-access checks, late's captured cases and counterwitnesses and
+// every pin still apply.
+func OrderUniversal(r Request) (Wire, error) {
+	if err := universalInputs(&r); err != nil {
+		return Wire{}, err
+	}
+	switch {
+	case r.Class == ClassForm || r.Class == ClassPreflight || r.Class == ClassNoCORS,
+		r.Engine.Kind == WebKit && (r.Class == ClassNavigation || r.Class == ClassScript):
+		return law.universalBrowserOrder(&r)
+	case r.Engine.Kind != WebKit || r.Class != ClassXHR && r.Class != ClassFetch:
+		return law.order(&r)
+	}
+	if g := law.WebKit.generation(r.Engine); g != nil && !g.InsertionLaw {
+		return law.universalWebkitOrder(&r)
+	}
+	ordered, err := law.order(&r)
+	if err == nil {
+		return ordered, nil
+	}
+	var unwitnessed *UnwitnessedError
+	var ambiguous *AmbiguousError
+	if !errors.As(err, &unwitnessed) && !errors.As(err, &ambiguous) {
+		return Wire{}, err
+	}
+	return law.universalWebkitOrder(&r)
+}
+
 // Outcomes lists the header orders the WebKit insertion law admits for r before pin cases select (no install pin required), for deriving pins.
 func Outcomes(r Request) ([][]string, error) {
 	return law.outcomes(&r)
@@ -451,7 +573,13 @@ type WebKitLaw struct {
 	Unresolved               []string
 	HTTP1Prefix, HTTP1Suffix []string
 	Pseudo                   []string
+	// Hypothesis is empty when a witnessed generation range holds the build; otherwise it names the
+	// hypothesis that chose Generation (HypothesisUncoveredGenerationLate, from WebKitFactsUniversal only).
+	Hypothesis string
 }
+
+// HypothesisUncoveredGenerationLate names HYPOTHESIS(webkit-uncovered-generation-late), at WebKitFactsUniversal.
+const HypothesisUncoveredGenerationLate = "webkit-uncovered-generation-late"
 
 // WebKitGeneration is a run of WebKit builds sharing one header-list behaviour; Name is what PinCase.Generations states.
 type WebKitGeneration struct {
@@ -463,10 +591,12 @@ type WebKitGeneration struct {
 	// InsertionLaw: the CF insertion law orders fetch/XHR; otherwise a captured pin case does, else Order uses the
 	// late generation's (HYPOTHESIS(webkit_early_falls_back_to_late)).
 	InsertionLaw bool
-	// ScriptLaw: the inserted-script law orders JS-inserted script GETs; otherwise Order uses the late generation's.
+	// ScriptLaw: the inserted-script law orders JS-inserted script GETs; otherwise Order uses the late generation's
+	// and OrderUniversal the generation's captured browser-owned GET order.
 	ScriptLaw bool
 }
 
+// WebKitFacts is strict: a build outside every witnessed generation range is an UnwitnessedError.
 func WebKitFacts(e Engine) (WebKitLaw, error) {
 	w := &law.WebKit
 	if e.Kind != WebKit {
@@ -476,6 +606,32 @@ func WebKitFacts(e Engine) (WebKitLaw, error) {
 	if g == nil {
 		return WebKitLaw{}, &UnwitnessedError{Engine: e, Reason: w.uncovered()}
 	}
+	return w.facts(g, ""), nil
+}
+
+// WebKitFactsUniversal is WebKitFacts for callers that frame every WebKit
+// build (OrderUniversal's): a build in a witnessed generation range gets that
+// generation's own facts, exactly as WebKitFacts states them.
+//
+// HYPOTHESIS(webkit-uncovered-generation-late): a WebKit build outside every
+// witnessed range (Safari 18.1-18.2, Safari before 18.0, 19-25 or from 28;
+// Chrome for iOS on iOS 18.1-18.3, 18.7-26.5, before 18.0 or from 28) sends
+// the late generation's header list: priority, an empty Inside and late's
+// CFNetwork tail. Late is the nearest-generation default because every
+// witnessed Safari from 18.4 and every witnessed build from 26.0 is late or
+// law, which share late's tail and priority. Hypothesis names it. Falsified
+// by a capture of such a build whose priority presence, dictionary/tail split
+// or wire order differs from late's.
+func WebKitFactsUniversal(e Engine) (WebKitLaw, error) {
+	if e.Kind != WebKit {
+		return WebKitLaw{}, &UnwitnessedError{Engine: e, Reason: "not a WebKit build"}
+	}
+	w := &law.WebKit
+	g, hypothesis := w.universalGeneration(e)
+	return w.facts(g, hypothesis), nil
+}
+
+func (w *webkitLaw) facts(g *webkitGeneration, hypothesis string) WebKitLaw {
 	return WebKitLaw{
 		Generation: WebKitGeneration{Name: g.Name, Inside: slices.Clone(g.Inside), Tail: slices.Clone(g.Tail),
 			Priority: g.Priority, InsertionLaw: g.InsertionLaw, ScriptLaw: g.ScriptLaw},
@@ -484,7 +640,17 @@ func WebKitFacts(e Engine) (WebKitLaw, error) {
 		HTTP1Prefix:   slices.Clone(w.HTTP1Prefix),
 		HTTP1Suffix:   slices.Clone(w.HTTP1Suffix),
 		Pseudo:        slices.Clone(w.Pseudo),
-	}, nil
+		Hypothesis:    hypothesis,
+	}
+}
+
+// universalGeneration is e's witnessed generation, else late under
+// HYPOTHESIS(webkit-uncovered-generation-late), which the second result names.
+func (w *webkitLaw) universalGeneration(e Engine) (*webkitGeneration, string) {
+	if g := w.generation(e); g != nil {
+		return g, ""
+	}
+	return w.late(), HypothesisUncoveredGenerationLate
 }
 
 func (law *lawFile) order(r *Request) (Wire, error) {
@@ -685,7 +851,7 @@ func (law *lawFile) webkitOrder(r *Request, calls []string, shape map[string]str
 	}
 	var kept [][]string
 	for _, o := range outcomes {
-		if !slices.ContainsFunc(wire, func(e [2]string) bool { return !precedes(o, e[0], e[1]) }) {
+		if obeys(o, wire) {
 			kept = append(kept, o)
 		}
 	}
@@ -703,24 +869,109 @@ func (law *lawFile) webkitOrder(r *Request, calls []string, shape map[string]str
 	return Wire{Header: header, Pseudo: slices.Clone(w.Pseudo)}, nil
 }
 
+// universalWebkitOrder takes priority, Inside and Tail from the build's own
+// generation, never from late: an early build keeps accept-language and
+// accept-encoding in its CF dictionary and refuses a priority header. An
+// exact captured case of that generation (late's on an uncovered build) is
+// the order, as in strict Order; late's captured cases never order an early
+// build. Otherwise only the insertion law, which an early build lacks, is
+// late's: late's counterwitnesses refuse and late-scoped law cases select.
+func (law *lawFile) universalWebkitOrder(r *Request) (Wire, error) {
+	w := &law.WebKit
+	unwitnessed := func(format string, args ...any) error {
+		return &UnwitnessedError{Engine: r.Engine, Class: r.Class, Reason: fmt.Sprintf(format, args...)}
+	}
+	calls, shape, err := law.pageRequest(r)
+	if err != nil {
+		return Wire{}, err
+	}
+	if err := w.framed(r, unwitnessed); err != nil {
+		return Wire{}, err
+	}
+	actual, _ := w.universalGeneration(r.Engine)
+	if err := actual.priority(r); err != nil {
+		return Wire{}, err
+	}
+	model := actual
+	if !model.InsertionLaw {
+		model = w.late()
+	}
+	d := newWebkitDictionary(w, r, calls, shape)
+	var inside []string
+	for _, name := range actual.Inside {
+		if r.Added.present(name) && !slices.Contains(d.names, name) {
+			inside = append(inside, name)
+		}
+	}
+	dictionaryNames := len(d.names)
+	d.names = append(d.names, inside...)
+	if wire, ok := capturedOrder(actual, w, r, calls, d.names, r.Pins); ok {
+		return wire, nil
+	}
+	d.names = d.names[:dictionaryNames]
+	// model's counterwitnesses and cases are stated on its own dictionaries, which hold no Inside name: they
+	// match the requested names before actual's Inside names join the table.
+	if err := w.constrain(model, d, shape, r.Pins, unwitnessed); err != nil {
+		return Wire{}, err
+	}
+	var wire [][2]string
+	for _, p := range r.Pins {
+		if c := p.matchCase(model, d.names); c != nil {
+			wire = append(wire, c.Wire...)
+		}
+	}
+	for _, name := range inside {
+		d.names = append(d.names, name)
+		d.pred = append(d.pred, 0)
+	}
+	header, err := cfCanonical(d.names, d.pred)
+	if err != nil {
+		return Wire{}, unwitnessed("%v", err)
+	}
+	if !obeys(header, wire) {
+		outcomes, err := cfOutcomes(d.names, d.pred)
+		if err != nil {
+			return Wire{}, unwitnessed("%v", err)
+		}
+		i := slices.IndexFunc(outcomes, func(o []string) bool { return obeys(o, wire) })
+		if i < 0 {
+			return Wire{}, unwitnessed("the pins exclude every order the law admits")
+		}
+		header = outcomes[i]
+	}
+	header = w.frame(r, append(header, actual.tail(r, calls)...))
+	if !r.HTTP2 {
+		return Wire{Header: header}, nil
+	}
+	return Wire{Header: header, Pseudo: slices.Clone(w.Pseudo)}, nil
+}
+
 func (w *webkitLaw) build(r *Request, unwitnessed func(string, ...any) error) (*webkitGeneration, error) {
 	g := w.generation(r.Engine)
 	if g == nil {
 		return nil, unwitnessed("%s", w.uncovered())
 	}
-	switch {
-	case !r.HTTP2 && len(w.HTTP1Prefix) == 0:
-		return nil, unwitnessed("no witnessed HTTP/1.1 framing")
-	case r.HTTP2 && len(w.Pseudo) == 0:
-		return nil, unwitnessed("no witnessed HTTP/2 pseudo-header order")
-	}
-	if len(r.Added.ClientHints) != 0 {
-		return nil, unwitnessed("WebKit sends no client hints; an empty sec-ch-ua* is absent, not ordered")
-	}
-	if r.Added.StorageAccess {
-		return nil, unwitnessed("sec-fetch-storage-access is a Chromium header")
+	if err := w.framed(r, unwitnessed); err != nil {
+		return nil, err
 	}
 	return g, nil
+}
+
+// framed refuses a request no WebKit generation frames: an unwitnessed protocol, client hints or storage access.
+func (w *webkitLaw) framed(r *Request, unwitnessed func(string, ...any) error) error {
+	switch {
+	case !r.HTTP2 && len(w.HTTP1Prefix) == 0:
+		return unwitnessed("no witnessed HTTP/1.1 framing")
+	case r.HTTP2 && len(w.Pseudo) == 0:
+		return unwitnessed("no witnessed HTTP/2 pseudo-header order")
+	}
+	if len(r.Added.ClientHints) != 0 {
+		return unwitnessed("WebKit sends no client hints; an empty sec-ch-ua* is absent, not ordered")
+	}
+	if r.Added.StorageAccess {
+		return unwitnessed("sec-fetch-storage-access is a Chromium header")
+	}
+	return nil
 }
 
 func (g *webkitGeneration) priority(r *Request) error {
@@ -751,11 +1002,11 @@ func (w *webkitLaw) insertion(g *webkitGeneration, calls []string, unwitnessed f
 	return nil
 }
 
-// histories mutates d: it adds the pins' install precedences before enumerating.
-func (w *webkitLaw) histories(g *webkitGeneration, d *webkitDictionary, shape map[string]string, pins []*Pin, unwitnessed func(string, ...any) error) ([][]string, error) {
+// constrain refuses a dictionary g's law is counterwitnessed on and mutates d: it adds the pins' install precedences.
+func (w *webkitLaw) constrain(g *webkitGeneration, d *webkitDictionary, shape map[string]string, pins []*Pin, unwitnessed func(string, ...any) error) error {
 	for _, cw := range slices.Concat(w.Counterwitness, g.Counterwitness) {
 		if sameSet(cw.Dictionary, d.names) {
-			return nil, unwitnessed("the law does not reproduce %s#%d with this dictionary: %s", cw.HAR, cw.Entry, cw.Reason)
+			return unwitnessed("the law does not reproduce %s#%d with this dictionary: %s", cw.HAR, cw.Entry, cw.Reason)
 		}
 	}
 	resolve := func(token string) string {
@@ -773,6 +1024,14 @@ func (w *webkitLaw) histories(g *webkitGeneration, d *webkitDictionary, shape ma
 		for _, e := range p.Install {
 			d.before(resolve(e[0]), resolve(e[1]))
 		}
+	}
+	return nil
+}
+
+// histories mutates d: it adds the pins' install precedences before enumerating.
+func (w *webkitLaw) histories(g *webkitGeneration, d *webkitDictionary, shape map[string]string, pins []*Pin, unwitnessed func(string, ...any) error) ([][]string, error) {
+	if err := w.constrain(g, d, shape, pins, unwitnessed); err != nil {
+		return nil, err
 	}
 	outcomes, err := cfOutcomes(d.names, d.pred)
 	if err != nil {

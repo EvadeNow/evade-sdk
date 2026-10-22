@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	evade "github.com/EvadeNow/evade-sdk"
 	"github.com/EvadeNow/evade-sdk/shape"
@@ -106,11 +107,12 @@ func wantResponse() shape.Response {
 			LoaderProxyFallback: true, LoaderAgeMS: 1500, LoaderMS: 20, ChallengeMS: 5,
 			OtherNetworkMS: 2, GenerationMS: 60, PayloadVerifyMS: 5, NetworkMS: 40, OtherMS: 8,
 			Stages: &shape.Stages{
-				SetupUS: 1, LookupUS: 2, ClientUS: 3, ChallengeFetchUS: 4, FetchWallUS: 5, FetchNetUS: 6, BuildUS: 7,
-				SessionInputsUS: 8, SessionOpenUS: 9, SessionStateUS: 10, ScheduleUS: 11, GenerateUS: 12, TailUS: 13,
+				ChallengeFetchMS: 0.68, FetchWallMS: 1494.32, FetchNetMS: 1493.64, BuildMS: 0.39,
+				SessionOpenMS: 0.28, GenerateMS: 2.59, TailMS: 0.01, ZeronaughtWaitMS: 1210.5,
 			},
 		},
-		Warnings:        []string{"must_not_leak_without_debug"},
+		Warnings:        []string{shape.WarningSendTooEarly},
+		SendAfterUnixMS: 1700000003410,
 		SessionID:       "0123456789abcdef0123456789abcdef",
 		SessionReused:   true,
 		SessionStep:     2,
@@ -125,13 +127,16 @@ func wantResponse() shape.Response {
 			GenMS:       &genMS,
 			SetCookies:  []shape.SetCookie{{URL: "https://www.southwest.com/assets/app/scripts/swa-common.js", SetCookie: "bm=1; Path=/; Secure"}},
 			SessionStep: 2,
+			DocumentAnchor: &shape.DocumentAnchor{Path: "token_issue_early_finalize", IssuedUnixMS: 1700000000000, NavigationIssueDelayMS: 1031.25,
+				NavigationIssueDelayLaw: "HYPOTHESIS(navigation-issue-delay-band) morerewards.ca webkit/ios", CollectorStartLagMS: 1955.5, OriginAfterIssueMS: 924},
+			ZeronaughtSendLateMS: new(1.25),
 		},
 	}
 }
 
 // responseGolden carries every member a /solve 200 body can hold; its
 // headers object is in emission order, which Headers keeps.
-const responseGolden = `{"success":true,"headers":{"Cookie":"session=cookie","challenge-specific-name":"generated"},"user_agent":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1","timings":{"request_total_ms":112,"loader_queue_hit":true,"loader_queue_wait_ms":9,"loader_queue_capacity":4,"loader_queue_ready":3,"loader_queue_inflight":1,"loader_proxy_fallback":true,"loader_age_ms":1500,"loader_ms":20,"challenge_ms":5,"other_network_ms":2,"generation_ms":60,"payload_verification_ms":5,"network_ms":40,"other_ms":8,"stages":{"setup_us":1,"lookup_us":2,"client_us":3,"challenge_fetch_us":4,"fetch_wall_us":5,"fetch_net_us":6,"build_us":7,"session_inputs_us":8,"session_open_us":9,"session_state_us":10,"schedule_us":11,"generate_us":12,"tail_us":13}},"warnings":["must_not_leak_without_debug"],"session_id":"0123456789abcdef0123456789abcdef","session_reused":true,"session_step":2,"one_time":true,"fingerprint_hash":"profile123456789","solve_id":"0199e2a4-5b1c-7d3e-8f40-1a2b3c4d5e6f","debug":{"device_record":"rec-0123","challenge_id":"challenge-7f3a","build":{"vm_program_sha256":"vm-program-digest","vm_sha256":"vm-digest","loader_sha256":"loader-digest","runtime":"wasm-dispatch"},"tls_profile":"safari_ios_18_5","slots":[{"index":3,"label":"canvas"}],"gen_ms":41.5,"set_cookies":[{"url":"https://www.southwest.com/assets/app/scripts/swa-common.js","set_cookie":"bm=1; Path=/; Secure"}],"session_step":2}}`
+const responseGolden = `{"success":true,"headers":{"Cookie":"session=cookie","challenge-specific-name":"generated"},"user_agent":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1","timings":{"request_total_ms":112,"loader_queue_hit":true,"loader_queue_wait_ms":9,"loader_queue_capacity":4,"loader_queue_ready":3,"loader_queue_inflight":1,"loader_proxy_fallback":true,"loader_age_ms":1500,"loader_ms":20,"challenge_ms":5,"other_network_ms":2,"generation_ms":60,"payload_verification_ms":5,"network_ms":40,"other_ms":8,"stages":{"challenge_fetch_ms":0.68,"fetch_wall_ms":1494.32,"fetch_net_ms":1493.64,"build_ms":0.39,"session_open_ms":0.28,"generate_ms":2.59,"tail_ms":0.01,"zeronaught_wait_ms":1210.5}},"warnings":["send_too_early"],"send_after_unix_ms":1700000003410,"session_id":"0123456789abcdef0123456789abcdef","session_reused":true,"session_step":2,"one_time":true,"fingerprint_hash":"profile123456789","solve_id":"0199e2a4-5b1c-7d3e-8f40-1a2b3c4d5e6f","debug":{"device_record":"rec-0123","challenge_id":"challenge-7f3a","build":{"vm_program_sha256":"vm-program-digest","vm_sha256":"vm-digest","loader_sha256":"loader-digest","runtime":"wasm-dispatch"},"tls_profile":"safari_ios_18_5","slots":[{"index":3,"label":"canvas"}],"gen_ms":41.5,"set_cookies":[{"url":"https://www.southwest.com/assets/app/scripts/swa-common.js","set_cookie":"bm=1; Path=/; Secure"}],"session_step":2,"document_anchor":{"path":"token_issue_early_finalize","issued_unix_ms":1700000000000,"navigation_issue_delay_ms":1031.25,"navigation_issue_delay_law":"HYPOTHESIS(navigation-issue-delay-band) morerewards.ca webkit/ios","collector_start_lag_ms":1955.5,"origin_after_issue_ms":924},"zeronaught_send_late_ms":1.25}}`
 
 // TestResponseGoldenDecodesEveryField decodes strictly: a member the golden
 // carries without a Response field fails here, so the types cover the wire.
@@ -151,6 +156,29 @@ func TestResponseGoldenDecodesEveryField(t *testing.T) {
 	}
 	if want := `{"Cookie":"session=cookie","challenge-specific-name":"generated"}`; string(encoded) != want {
 		t.Fatalf("headers encode as %s, want the emission-ordered object %s", encoded, want)
+	}
+}
+
+// TestWaitForSendHoldsUntilSendAfter: an early response holds the caller
+// until its send_after_unix_ms, a response without one does not hold, and a
+// done context ends the hold with its error.
+func TestWaitForSendHoldsUntilSendAfter(t *testing.T) {
+	after := time.Now().Add(120 * time.Millisecond).UnixMilli()
+	if err := (shape.Response{SendAfterUnixMS: after}).WaitForSend(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if now := time.Now().UnixMilli(); now < after {
+		t.Fatalf("returned at %d, before send_after_unix_ms %d", now, after)
+	}
+	started := time.Now()
+	if err := (shape.Response{}).WaitForSend(context.Background()); err != nil || time.Since(started) > 20*time.Millisecond {
+		t.Fatalf("no send_after_unix_ms held %v (%v)", time.Since(started), err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+	far := shape.Response{SendAfterUnixMS: time.Now().Add(time.Hour).UnixMilli()}
+	if err := far.WaitForSend(ctx); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("canceled hold returned %v, want the context's deadline", err)
 	}
 }
 
@@ -194,6 +222,75 @@ func TestSolveSendsTaskAndToleratesUnknownResponseKeys(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, wantResponse()) {
 		t.Fatalf("response = %+v", got)
+	}
+}
+
+// TestSolveSendsPageHTMLByteForByte: an interstitial document (markup,
+// script operators, entities, a raw U+2028) reaches the solver as
+// page_html with no HTML escaping and decodes to the same bytes.
+func TestSolveSendsPageHTMLByteForByte(t *testing.T) {
+	page := "<!doctype html>\n<html><head><title></title></head><body>\r\n<script>if (a < b && c > d) { s = '&amp;' + \"\u2028\"; }</script>\n" +
+		"<script>var originalHeaders = [\"Accept\", \"text/html\"];</script></body></html>\n"
+	var sent []byte
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sent, _ = io.ReadAll(r.Body)
+		_, _ = w.Write([]byte(responseGolden))
+	}))
+	defer server.Close()
+	client, err := evade.NewClient(evade.Config{BaseURL: server.URL, APIKey: "k"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := shape.Request{TargetURL: "https://p-bandai.jp/item/item-1/", TargetAPI: "https://p-bandai.jp/item/item-1/",
+		TargetAPIMethod: http.MethodGet, PageHTML: page}
+	if _, err := shape.Solve(context.Background(), client, request); err != nil {
+		t.Fatalf("Solve: %v", err)
+	}
+	for _, escaped := range []string{`\u003c`, `\u003e`, `\u0026`} {
+		if bytes.Contains(sent, []byte(escaped)) {
+			t.Errorf("wire body HTML-escapes the page (%s): %s", escaped, sent)
+		}
+	}
+	var got struct {
+		PageHTML string `json:"page_html"`
+	}
+	if err := json.Unmarshal(sent, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.PageHTML != page {
+		t.Fatalf("page_html decodes to %q, want %q", got.PageHTML, page)
+	}
+}
+
+// TestSolveRefusesSourcesJSONCannotCarry: a source body with a byte that
+// is not UTF-8 (a Shift_JIS page's own bytes) would reach the solver
+// replaced; Solve refuses it, naming the field and byte, and sends nothing.
+func TestSolveRefusesSourcesJSONCannotCarry(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		t.Error("a request with a non-UTF-8 source reached the server")
+	}))
+	defer server.Close()
+	client, err := evade.NewClient(evade.Config{BaseURL: server.URL, APIKey: "k"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	const shiftJIS = "<title>\x82\xa0</title>"
+	for _, test := range []struct {
+		field   string
+		request shape.Request
+	}{
+		{"page_html", shape.Request{PageHTML: shiftJIS}},
+		{"loader_source", shape.Request{LoaderSource: shiftJIS}},
+		{"challenge_source", shape.Request{ChallengeSource: shiftJIS}},
+	} {
+		got, err := shape.Solve(context.Background(), client, test.request)
+		var refused *shape.NotUTF8Error
+		if !errors.As(err, &refused) || refused.Field != test.field || refused.Offset != len("<title>") {
+			t.Errorf("%s: error %v, want NotUTF8Error at byte %d", test.field, err, len("<title>"))
+		}
+		if !reflect.DeepEqual(got, shape.Response{}) {
+			t.Errorf("%s: refused Solve returned %+v", test.field, got)
+		}
 	}
 }
 
