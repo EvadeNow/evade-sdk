@@ -108,7 +108,7 @@ func wantResponse() shape.Response {
 			OtherNetworkMS: 2, GenerationMS: 60, PayloadVerifyMS: 5, NetworkMS: 40, OtherMS: 8,
 			Stages: &shape.Stages{
 				ChallengeFetchMS: 0.68, FetchWallMS: 1494.32, FetchNetMS: 1493.64, BuildMS: 0.39,
-				SessionOpenMS: 0.28, GenerateMS: 2.59, TailMS: 0.01, ZeronaughtWaitMS: 1210.5,
+				SessionOpenMS: 0.28, GenerateMS: 2.59, TailMS: 0.01, ZeronaughtWaitMS: 1210.5, ZeronaughtLateMS: 1.25,
 			},
 		},
 		Warnings:        []string{shape.WarningSendTooEarly},
@@ -129,14 +129,13 @@ func wantResponse() shape.Response {
 			SessionStep: 2,
 			DocumentAnchor: &shape.DocumentAnchor{Path: "token_issue_early_finalize", IssuedUnixMS: 1700000000000, NavigationIssueDelayMS: 1031.25,
 				NavigationIssueDelayLaw: "HYPOTHESIS(navigation-issue-delay-band) morerewards.ca webkit/ios", CollectorStartLagMS: 1955.5, OriginAfterIssueMS: 924},
-			ZeronaughtSendLateMS: new(1.25),
 		},
 	}
 }
 
 // responseGolden carries every member a /solve 200 body can hold; its
 // headers object is in emission order, which Headers keeps.
-const responseGolden = `{"success":true,"headers":{"Cookie":"session=cookie","challenge-specific-name":"generated"},"user_agent":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1","timings":{"request_total_ms":112,"loader_queue_hit":true,"loader_queue_wait_ms":9,"loader_queue_capacity":4,"loader_queue_ready":3,"loader_queue_inflight":1,"loader_proxy_fallback":true,"loader_age_ms":1500,"loader_ms":20,"challenge_ms":5,"other_network_ms":2,"generation_ms":60,"payload_verification_ms":5,"network_ms":40,"other_ms":8,"stages":{"challenge_fetch_ms":0.68,"fetch_wall_ms":1494.32,"fetch_net_ms":1493.64,"build_ms":0.39,"session_open_ms":0.28,"generate_ms":2.59,"tail_ms":0.01,"zeronaught_wait_ms":1210.5}},"warnings":["send_too_early"],"send_after_unix_ms":1700000003410,"session_id":"0123456789abcdef0123456789abcdef","session_reused":true,"session_step":2,"one_time":true,"fingerprint_hash":"profile123456789","solve_id":"0199e2a4-5b1c-7d3e-8f40-1a2b3c4d5e6f","debug":{"device_record":"rec-0123","challenge_id":"challenge-7f3a","build":{"vm_program_sha256":"vm-program-digest","vm_sha256":"vm-digest","loader_sha256":"loader-digest","runtime":"wasm-dispatch"},"tls_profile":"safari_ios_18_5","slots":[{"index":3,"label":"canvas"}],"gen_ms":41.5,"set_cookies":[{"url":"https://www.southwest.com/assets/app/scripts/swa-common.js","set_cookie":"bm=1; Path=/; Secure"}],"session_step":2,"document_anchor":{"path":"token_issue_early_finalize","issued_unix_ms":1700000000000,"navigation_issue_delay_ms":1031.25,"navigation_issue_delay_law":"HYPOTHESIS(navigation-issue-delay-band) morerewards.ca webkit/ios","collector_start_lag_ms":1955.5,"origin_after_issue_ms":924},"zeronaught_send_late_ms":1.25}}`
+const responseGolden = `{"success":true,"headers":{"Cookie":"session=cookie","challenge-specific-name":"generated"},"user_agent":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1","timings":{"request_total_ms":112,"loader_queue_hit":true,"loader_queue_wait_ms":9,"loader_queue_capacity":4,"loader_queue_ready":3,"loader_queue_inflight":1,"loader_proxy_fallback":true,"loader_age_ms":1500,"loader_ms":20,"challenge_ms":5,"other_network_ms":2,"generation_ms":60,"payload_verification_ms":5,"network_ms":40,"other_ms":8,"stages":{"challenge_fetch_ms":0.68,"fetch_wall_ms":1494.32,"fetch_net_ms":1493.64,"build_ms":0.39,"session_open_ms":0.28,"generate_ms":2.59,"tail_ms":0.01,"zeronaught_wait_ms":1210.5,"zeronaught_late_ms":1.25}},"warnings":["send_too_early"],"send_after_unix_ms":1700000003410,"session_id":"0123456789abcdef0123456789abcdef","session_reused":true,"session_step":2,"one_time":true,"fingerprint_hash":"profile123456789","solve_id":"0199e2a4-5b1c-7d3e-8f40-1a2b3c4d5e6f","debug":{"device_record":"rec-0123","challenge_id":"challenge-7f3a","build":{"vm_program_sha256":"vm-program-digest","vm_sha256":"vm-digest","loader_sha256":"loader-digest","runtime":"wasm-dispatch"},"tls_profile":"safari_ios_18_5","slots":[{"index":3,"label":"canvas"}],"gen_ms":41.5,"set_cookies":[{"url":"https://www.southwest.com/assets/app/scripts/swa-common.js","set_cookie":"bm=1; Path=/; Secure"}],"session_step":2,"document_anchor":{"path":"token_issue_early_finalize","issued_unix_ms":1700000000000,"navigation_issue_delay_ms":1031.25,"navigation_issue_delay_law":"HYPOTHESIS(navigation-issue-delay-band) morerewards.ca webkit/ios","collector_start_lag_ms":1955.5,"origin_after_issue_ms":924}}}`
 
 // TestResponseGoldenDecodesEveryField decodes strictly: a member the golden
 // carries without a Response field fails here, so the types cover the wire.

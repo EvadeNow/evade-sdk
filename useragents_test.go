@@ -55,6 +55,13 @@ func TestUserAgentsFilters(t *testing.T) {
 		{[]UserAgentFilter{"chrome"}, []string{windowsChrome151, macChrome155, iosChrome266, iosChrome2661, iosChrome27}},
 		{[]UserAgentFilter{"safari"}, []string{macSafari, iosSafari18, iosSafari26, iosSafari27}},
 		{[]UserAgentFilter{"android"}, []string{}},
+		// Named filters: a platform's own name is its default browser.
+		{[]UserAgentFilter{Ios}, []string{iosSafari18, iosSafari26, iosSafari27}},
+		{[]UserAgentFilter{IosChrome}, []string{iosChrome266, iosChrome2661, iosChrome27}},
+		{[]UserAgentFilter{Mac}, []string{macSafari}},
+		{[]UserAgentFilter{MacChrome}, []string{macChrome155}},
+		{[]UserAgentFilter{Windows}, []string{windowsChrome151}},
+		{[]UserAgentFilter{Android}, []string{}},
 		// A union keeps the server's order, and a value two filters match once.
 		{[]UserAgentFilter{"ios_chrome", "windows", "chrome"}, []string{windowsChrome151, macChrome155, iosChrome266, iosChrome2661, iosChrome27}},
 	} {

@@ -11,12 +11,13 @@ import (
 	maxminddb "github.com/oschwald/maxminddb-golang/v2"
 )
 
+// Location's JSON is the hosted lookup's answer (GET /geo/lookup).
 type Location struct {
-	IP          netip.Addr
-	CountryCode string // upper-case ISO 3166-1 alpha-2
-	Subdivision string // English name of the first subdivision; may be empty
-	City        string // English name; may be empty
-	TimeZone    string // IANA name, loadable by time.LoadLocation
+	IP          netip.Addr `json:"ip"`
+	CountryCode string     `json:"country_code"` // upper-case ISO 3166-1 alpha-2
+	Subdivision string     `json:"subdivision"`  // English name of the first subdivision; may be empty
+	City        string     `json:"city"`         // English name; may be empty
+	TimeZone    string     `json:"time_zone"`    // IANA name, loadable by time.LoadLocation
 }
 
 type LookupError struct {

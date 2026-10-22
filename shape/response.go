@@ -25,14 +25,14 @@ type Response struct {
 	// SendAfterUnixMS is the Unix ms instant an early request's headers
 	// were generated for (WarningSendTooEarly): send the protected request
 	// no earlier. 0 when the request was not early.
-	SendAfterUnixMS int64    `json:"send_after_unix_ms,omitempty"`
-	SessionID       string   `json:"session_id,omitempty"`
-	SessionReused   bool     `json:"session_reused,omitempty"`
-	SessionStep     uint64   `json:"session_step,omitempty"`
-	OneTime         bool     `json:"one_time,omitempty"` // interstitial challenge; the session cannot be continued
-	FingerprintHash string   `json:"fingerprint_hash,omitempty"`
-	SolveID         string   `json:"solve_id,omitempty"` // identifies this solve to ReportOutcome
-	Debug           *Debug   `json:"debug,omitempty"`    // Request.Debug only
+	SendAfterUnixMS int64  `json:"send_after_unix_ms,omitempty"`
+	SessionID       string `json:"session_id,omitempty"`
+	SessionReused   bool   `json:"session_reused,omitempty"`
+	SessionStep     uint64 `json:"session_step,omitempty"`
+	OneTime         bool   `json:"one_time,omitempty"` // interstitial challenge; the session cannot be continued
+	FingerprintHash string `json:"fingerprint_hash,omitempty"`
+	SolveID         string `json:"solve_id,omitempty"` // identifies this solve to ReportOutcome
+	Debug           *Debug `json:"debug,omitempty"`    // Request.Debug only
 }
 
 // WaitForSend blocks until SendAfterUnixMS (at once when it is 0 or past)
@@ -152,8 +152,9 @@ type Timings struct {
 
 // Stages is the solve's own work split at its seams, in milliseconds
 // (0.01 ms resolution), plus ZeronaughtWaitMS, the solver's hold until the
-// document's ZeroNaught request's planned send instant. Seams that stay
-// under 2 ms are not reported.
+// document's ZeroNaught request's planned send instant, and
+// ZeronaughtLateMS, how far past that instant the request left (0 when the
+// solve sent none). Seams that stay under 2 ms are not reported.
 type Stages struct {
 	ChallengeFetchMS float64 `json:"challenge_fetch_ms"`
 	FetchWallMS      float64 `json:"fetch_wall_ms"`
@@ -163,6 +164,7 @@ type Stages struct {
 	GenerateMS       float64 `json:"generate_ms"`
 	TailMS           float64 `json:"tail_ms"`
 	ZeronaughtWaitMS float64 `json:"zeronaught_wait_ms"`
+	ZeronaughtLateMS float64 `json:"zeronaught_late_ms"`
 }
 
 // Debug is a debug request's diagnostics of the generated request.
@@ -180,9 +182,6 @@ type Debug struct {
 	// DocumentAnchor is how the solver placed the request's document
 	// against its challenge token's issue.
 	DocumentAnchor *DocumentAnchor `json:"document_anchor,omitempty"`
-	// ZeronaughtSendLateMS is how far past its planned send instant the
-	// solver's ZeroNaught request left; absent when it sent none.
-	ZeronaughtSendLateMS *float64 `json:"zeronaught_send_late_ms,omitempty"`
 }
 
 // DocumentAnchor is a document's start against its challenge token's

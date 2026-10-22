@@ -105,9 +105,14 @@ Each solver lists the exact User-Agents its `/solve` runs on
 
 ```go
 all, err := client.UserAgents(ctx, shape.Task)
-iphones, err := client.UserAgents(ctx, shape.Task, "ios_safari", "ios_chrome")
+iphones, err := client.UserAgents(ctx, shape.Task, evade.IosSafari, evade.IosChrome)
 desktop, err := client.UserAgents(ctx, datadome.Task, "windows", "macos")
 ```
+
+Named filters cover the common platforms: `Ios`, `IosSafari`, `IosChrome`,
+`Mac`, `MacSafari`, `MacChrome`, `Windows`, `WindowsChrome`, `Android`,
+`AndroidChrome`. A platform's own name is its default browser: `Ios` is
+`IosSafari`, `Mac` is `MacSafari`, `Windows` and `Android` are their Chrome.
 
 A filter is an OS (`windows`, `macos`, `linux`, `chromeos`, `android`, `ios`),
 a browser (`chrome`, `safari`, `firefox`, `edge`, `opera`, `webview`), or

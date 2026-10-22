@@ -23,6 +23,21 @@ import (
 // User-Agent names (useragent.Classify): ios_chrome is Chrome for iOS.
 type UserAgentFilter string
 
+// Named filters. A platform's own name selects its default browser: Ios is
+// IosSafari, Mac is MacSafari, Windows and Android are their Chrome.
+const (
+	Ios           UserAgentFilter = IosSafari
+	IosSafari     UserAgentFilter = "ios_safari"
+	IosChrome     UserAgentFilter = "ios_chrome" // Chrome for iOS (CriOS)
+	Mac           UserAgentFilter = MacSafari
+	MacSafari     UserAgentFilter = "macos_safari"
+	MacChrome     UserAgentFilter = "macos_chrome"
+	Windows       UserAgentFilter = WindowsChrome
+	WindowsChrome UserAgentFilter = "windows_chrome"
+	Android       UserAgentFilter = AndroidChrome
+	AndroidChrome UserAgentFilter = "android_chrome"
+)
+
 var (
 	filterOS = []useragent.OS{useragent.OSWindows, useragent.OSMacOS, useragent.OSLinux,
 		useragent.OSChromeOS, useragent.OSAndroid, useragent.OSIOS}
