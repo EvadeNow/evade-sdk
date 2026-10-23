@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"testing"
 	"time"
+
+	fhttp "github.com/bogdanfinn/fhttp"
 )
 
 func TestAPIErrorFromEachTargetEnvelope(t *testing.T) {
@@ -147,7 +149,7 @@ func TestParseRateLimit(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := parseRateLimit(test.header, now)
+			got, err := parseRateLimit(fhttp.Header(test.header), now)
 			if test.badHeader != "" {
 				var headerErr *HeaderError
 				if !errors.As(err, &headerErr) || headerErr.Header != test.badHeader {

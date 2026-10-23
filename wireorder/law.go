@@ -26,13 +26,13 @@ var law = &lawFile{
 			Prefix: []string{"content-length", "cache-control"},
 			Majors: []chromiumFormMajors{
 				{From: 141, To: 141, BrowserSet: []string{"origin", "content-type", "upgrade-insecure-requests", "user-agent", "accept"},
-					Witnesses: []string{"comcast-l#372"}},
+					Witnesses: []string{"xfinity_login_android-chrome141_1_0907#372"}},
 				// Chrome 155 forms are witnessed only with an automation Accept-Language override (bandai-jp-login-evidence-20261020c#275), whose accept-language precedes accept.
 				{From: 150, To: 155, BrowserSet: []string{"upgrade-insecure-requests", "content-type", "user-agent", "origin", "accept"},
-					Witnesses: []string{"bandai-login-android#217", "bandai-product#54", "bandai-login13#182", "vint#188", "chess-login#174", "prizepicks#186"}},
+					Witnesses: []string{"bandai-us_login_android-chrome150_1_0828#217", "bandai-jp_product_windows-chrome151_1_0809#54", "bandai-login13#182", "vint#188", "chess-login#174", "prizepicks#186"}},
 			},
 		},
-		// Every captured Chrome 141-155 preflight (348: t_register#265, sky_login#60 on HTTP/1.1, bandai-login12#8 without referer).
+		// Every captured Chrome 141-155 preflight (348: target_register_android-chrome151_1_0831#265, sky_login_android-chrome151_1_0901#60 on HTTP/1.1, bandai-login12#8 without referer).
 		Preflight: []string{"accept", "access-control-request-method", "access-control-request-headers", "origin", "user-agent", "sec-fetch-mode", "sec-fetch-site", "sec-fetch-dest", "referer", "accept-encoding", "accept-language"},
 	},
 	WebKit: webkitLaw{
@@ -45,7 +45,7 @@ var law = &lawFile{
 		HTTP1Suffix:   []string{"connection"},
 		Counterwitness: []Counterwitness{
 			{
-				HAR:        "target-ios12",
+				HAR:        "target_login_iphone12-safari18.7_1_0910",
 				Entry:      404,
 				Dictionary: []string{"accept", "sec-fetch-site", "sec-fetch-mode", "user-agent", "accept-language", "sec-fetch-dest"},
 				Reason:     "no CF insertion history reproduces this top-level navigation's dictionary",
@@ -53,29 +53,29 @@ var law = &lawFile{
 		},
 		UnwitnessedClasses: map[string]string{
 			"navigation": "Safari orders one top-level navigation dictionary more than one way within one version (18.7.5, 26.2, 26.5 captures: sec-fetch-dest,user-agent,... and accept,sec-fetch-site,... on the same names); no capture decides which",
-			"script":     "a parser-requested classic script (HTML parser or preload scanner) is ordered sec-fetch-dest,user-agent on 18.7.5/26.2/26.5 and user-agent,sec-fetch-dest during the early page load on 26.6.1 (iphone17_ios26_safari_2/3); only the JS-inserted script law (inserted_script) is certified",
+			"script":     "a parser-requested classic script (HTML parser or preload scanner) is ordered sec-fetch-dest,user-agent on 18.7.5/26.2/26.5 and user-agent,sec-fetch-dest during the early page load on 26.6.1 (target_cart_iphone17-safari26.6_1_1006/3); only the JS-inserted script law (inserted_script) is certified",
 		},
 		InsertedScript: webkitInsertedScript{
 			Insertion: []string{"accept", "referer", "sec-fetch-dest", "sec-fetch-mode", "sec-fetch-site", "user-agent"},
 			Counterwitness: []Counterwitness{
 				{
-					HAR:        "iphone17_ios26_safari_2",
+					HAR:        "target_cart_iphone17-safari26.6_1_1006",
 					Entry:      130,
 					Dictionary: []string{"user-agent", "sec-fetch-dest", "accept", "referer", "sec-fetch-site", "sec-fetch-mode"},
-					Reason:     "Safari 26.6.1 Shape VM fetched 63 ms after the document, inside the early-load burst whose every request puts user-agent before sec-fetch-dest; the session's later VM fetch (entry 192) and iphone17_ios26_safari_3#184 reproduce the law",
+					Reason:     "Safari 26.6.1 Shape VM fetched 63 ms after the document, inside the early-load burst whose every request puts user-agent before sec-fetch-dest; the session's later VM fetch (entry 192) and target_cart_iphone17-safari26.6_2_1006#184 reproduce the law",
 				},
 			},
 		},
-		// Reproduces all 157 captured late navigations of these names, 31 of them redirect hops (target-ios12#39, #320,
+		// Reproduces all 157 captured late navigations of these names, 31 of them redirect hops (target_login_iphone12-safari18.7_1_0910#39, #320,
 		// #404), and 1946 of 2052 parser scripts and no-cors element loads; the rest are 62 redirected loads, which
 		// OrderUniversal does not frame, and the 26.6.1 early-load burst's 44 (InsertedScript.Counterwitness's
-		// user-agent first, iphone17_ios26_safari_2#7).
+		// user-agent first, target_cart_iphone17-safari26.6_1_1006#7).
 		BrowserLoad: webkitBrowserLoad{
 			Insertion:       []string{"accept", "upgrade-insecure-requests", "referer", "sec-fetch-dest", "sec-fetch-mode", "sec-fetch-site", "user-agent"},
 			RedirectCarried: []string{"accept-language", "priority"},
 			Reinserted:      []string{"sec-fetch-mode"},
 		},
-		// Reproduces all 413 captured late Safari preflights (target-iphone15#394, morerewards_ios_safari_oct20#127).
+		// Reproduces all 413 captured late Safari preflights (target_login_iphone15-safari26.5_1_0909#394, morerewards_login_iphone-safari18.7_2_1020#127).
 		Preflight: webkitPreflight{
 			Insertion: []string{"access-control-request-method", "access-control-request-headers", "origin", "user-agent", "referer", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest", "content-length"},
 			Tail:      []string{"accept"},
@@ -205,19 +205,19 @@ var law = &lawFile{
 				},
 				Witnesses: []GenerationWitness{
 					{
-						HAR:       "iphone12_ios18_safari_1",
+						HAR:       "target_cart_iphone12-safari18.7_1_1006",
 						UserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.7.5 Mobile/15E148 Safari/604.1",
 					},
 					{
-						HAR:       "target-iphone13",
+						HAR:       "target_login_iphone13-safari26.2_1_0912",
 						UserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Mobile/15E148 Safari/604.1",
 					},
 					{
-						HAR:       "target-iphone15",
+						HAR:       "target_login_iphone15-safari26.5_1_0909",
 						UserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Mobile/15E148 Safari/604.1",
 					},
 					{
-						HAR:       "iphone17_ios26_safari_2",
+						HAR:       "target_cart_iphone17-safari26.6_1_1006",
 						UserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15E148 Safari/604.1",
 					},
 					{

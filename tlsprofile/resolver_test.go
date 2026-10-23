@@ -260,6 +260,26 @@ func TestResolveVersion(t *testing.T) {
 	}
 }
 
+func TestSafariHeaderPriorityMatchesVersion(t *testing.T) {
+	r := newResolver(t)
+	p26, err := r.ResolveVersion(useragent.FamilySafariIOS, 26, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if priority := p26.Client.GetHeaderPriority(); priority == nil || !priority.IsZero() {
+		t.Fatalf("Safari 26 header priority = %+v, want explicit zero", priority)
+	}
+
+	p18, err := r.ResolveVersion(useragent.FamilySafariIOS, 18, 7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	priority := p18.Client.GetHeaderPriority()
+	if priority == nil || priority.IsZero() || priority.Exclusive || priority.StreamDep != 0 || priority.Weight != 255 {
+		t.Fatalf("Safari 18 header priority = %+v, want stream 0, non-exclusive, wire weight 255", priority)
+	}
+}
+
 func TestResolveVersionNeverPSK(t *testing.T) {
 	r := newResolver(t)
 	families := []useragent.Family{

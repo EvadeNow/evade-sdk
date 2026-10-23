@@ -25,14 +25,17 @@ type Response struct {
 	// SendAfterUnixMS is the Unix ms instant an early request's headers
 	// were generated for (WarningSendTooEarly): send the protected request
 	// no earlier. 0 when the request was not early.
-	SendAfterUnixMS int64  `json:"send_after_unix_ms,omitempty"`
-	SessionID       string `json:"session_id,omitempty"`
-	SessionReused   bool   `json:"session_reused,omitempty"`
-	SessionStep     uint64 `json:"session_step,omitempty"`
-	OneTime         bool   `json:"one_time,omitempty"` // interstitial challenge; the session cannot be continued
-	FingerprintHash string `json:"fingerprint_hash,omitempty"`
-	SolveID         string `json:"solve_id,omitempty"` // identifies this solve to ReportOutcome
-	Debug           *Debug `json:"debug,omitempty"`    // Request.Debug only
+	SendAfterUnixMS int64 `json:"send_after_unix_ms,omitempty"`
+	// SetCookies are the Set-Cookie lines the solver's challenge fetch
+	// received. Install each under its URL before sending the protected request.
+	SetCookies      []SetCookie `json:"set_cookies,omitempty"`
+	SessionID       string      `json:"session_id,omitempty"`
+	SessionReused   bool        `json:"session_reused,omitempty"`
+	SessionStep     uint64      `json:"session_step,omitempty"`
+	OneTime         bool        `json:"one_time,omitempty"` // interstitial challenge; the session cannot be continued
+	FingerprintHash string      `json:"fingerprint_hash,omitempty"`
+	SolveID         string      `json:"solve_id,omitempty"` // identifies this solve to ReportOutcome
+	Debug           *Debug      `json:"debug,omitempty"`    // Request.Debug only
 }
 
 // WaitForSend blocks until SendAfterUnixMS (at once when it is 0 or past)
@@ -175,10 +178,7 @@ type Debug struct {
 	TLSProfile   string   `json:"tls_profile,omitempty"`
 	Slots        []Slot   `json:"slots,omitempty"`
 	GenMS        *float64 `json:"gen_ms,omitempty"`
-	// SetCookies are the Set-Cookie lines the solver's challenge fetch
-	// received, in order, for the caller's browser jar.
-	SetCookies  []SetCookie `json:"set_cookies,omitempty"`
-	SessionStep int         `json:"session_step,omitempty"` // 1-based ordinal on the session's document
+	SessionStep  int      `json:"session_step,omitempty"` // 1-based ordinal on the session's document
 	// DocumentAnchor is how the solver placed the request's document
 	// against its challenge token's issue.
 	DocumentAnchor *DocumentAnchor `json:"document_anchor,omitempty"`

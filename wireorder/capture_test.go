@@ -28,8 +28,8 @@ func testLaw(t *testing.T) *lawFile {
 }
 
 var chromiumExcluded = map[string]string{
-	"westjet-macos-chrome":  "powhttp export: sanitized casing, sec-ch-*/accept/sec-fetch-* stripped",
-	"bandai-product":        "a document request carrying edge-proxy headers",
+	"westjet_login_mac-chrome151_1_0908_sanitized":  "powhttp export: sanitized casing, sec-ch-*/accept/sec-fetch-* stripped",
+	"bandai-jp_product_windows-chrome151_1_0809":        "a document request carrying edge-proxy headers",
 	"bandai-item-domfree":   "a document request carrying edge-proxy headers (#9: akamai-origin-hop, x-envoy-*, x-forwarded-*)",
 	"bandai-cart-haronly#8": "a document request carrying edge-proxy headers (the interstitial replay: akamai-origin-hop, x-envoy-*, x-forwarded-*)",
 }

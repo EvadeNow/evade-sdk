@@ -8,10 +8,12 @@ import (
 	"fmt"
 	"io"
 	"math/rand/v2"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	http "github.com/bogdanfinn/fhttp"
+	tlsclient "github.com/bogdanfinn/tls-client"
 )
 
 const (
@@ -26,8 +28,11 @@ const (
 type Config struct {
 	BaseURL string // trailing slashes are dropped
 	APIKey  string // sent as a Bearer token; empty sends no Authorization header
-	HTTP    *http.Client
-	// Timeout applies only when HTTP is nil; zero means 60s.
+	// HTTP is the tls-client the calls go through; nil builds one on
+	// tls-client's default profile.
+	HTTP tlsclient.HttpClient
+	// Timeout applies only when HTTP is nil; zero means 60s. tls-client
+	// counts it in whole milliseconds, so a shorter one is refused.
 	Timeout          time.Duration
 	MaxResponseBytes int64 // zero means 32 MiB
 	// MaxRetries is how many times a 429 or 503 answer is retried; nil
@@ -63,7 +68,7 @@ func (e *ResponseTooLargeError) Error() string {
 type Client struct {
 	baseURL    string
 	apiKey     string
-	http       *http.Client
+	http       tlsclient.HttpClient
 	maxBytes   int64
 	maxRetries int
 	maxBackoff time.Duration
@@ -114,7 +119,16 @@ func NewClient(c Config) (*Client, error) {
 		if timeout == 0 {
 			timeout = defaultTimeout
 		}
-		client.http = &http.Client{Timeout: timeout}
+		// Truncated to 0ms it would mean no timeout at all.
+		if timeout < time.Millisecond {
+			return nil, &ConfigError{Field: "Timeout", Reason: "must be at least 1ms"}
+		}
+		built, err := tlsclient.NewHttpClient(tlsclient.NewNoopLogger(),
+			tlsclient.WithTimeoutMilliseconds(int(timeout.Milliseconds())))
+		if err != nil {
+			return nil, fmt.Errorf("evade: build tls-client: %w", err)
+		}
+		client.http = built
 	}
 	return client, nil
 }

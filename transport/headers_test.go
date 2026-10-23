@@ -126,7 +126,7 @@ func TestNamesPreservesDuplicates(t *testing.T) {
 }
 
 func TestApplyWireOrderInstallsBothOrders(t *testing.T) {
-	// t_register#120's Chrome 151 image load.
+	// target_register_android-chrome151_1_0831#120's Chrome 151 image load.
 	wire, err := OrderUniversal(OrderRequest{UserAgent: chrome151, Class: ClassImage, Method: "GET", HTTP2: true,
 		Added: wireorder.Added{ClientHints: lowEntropyHints, Referer: true, Cookie: true, Priority: true}})
 	if err != nil {
@@ -279,7 +279,7 @@ func TestApplyWireOrderMatchesSentContentLength(t *testing.T) {
 	}
 }
 
-// morerewards_ios_safari_oct20#127's Safari 18.7 preflight sends content-length: 0, which fhttp never writes for an
+// morerewards_login_iphone-safari18.7_2_1020#127's Safari 18.7 preflight sends content-length: 0, which fhttp never writes for an
 // empty OPTIONS: the caller sets it explicitly, and without it the wire's content-length is missing.
 func TestApplyWireOrderAppliesWebKitPreflight(t *testing.T) {
 	wire, err := OrderUniversal(OrderRequest{UserAgent: safariUA, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,

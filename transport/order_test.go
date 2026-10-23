@@ -250,21 +250,21 @@ func TestOrderUniversalReproducesCaptures(t *testing.T) {
 		wire   string
 		pseudo []string
 	}{
-		{"bandai-product#54 p-bandai.jp/login_chk/ (Chrome 151 login form)",
+		{"bandai-jp_product_windows-chrome151_1_0809#54 p-bandai.jp/login_chk/ (Chrome 151 login form)",
 			OrderRequest{UserAgent: chrome151, Class: ClassForm, Method: "POST", HTTP2: true, Added: chromeForm},
 			"content-length cache-control sec-ch-ua sec-ch-ua-mobile sec-ch-ua-platform upgrade-insecure-requests content-type user-agent origin accept sec-fetch-site sec-fetch-mode sec-fetch-user sec-fetch-dest referer accept-encoding accept-language cookie priority",
 			chromiumPseudo},
-		{"bandai_login_ios_safari#543 p-bandai.jp/login_chk/ (Safari 18.7.5 login form)",
+		{"bandai-jp_login_iphone-safari18.7_1_1020#543 p-bandai.jp/login_chk/ (Safari 18.7.5 login form)",
 			OrderRequest{UserAgent: safariUA, Class: ClassForm, Method: "POST", HTTP2: true,
 				Added: wireorder.Added{Origin: true, Body: true, Referer: true, Cookie: true, Priority: true}},
 			"accept content-type origin sec-fetch-site sec-fetch-mode user-agent referer sec-fetch-dest content-length accept-language priority accept-encoding cookie",
 			webkitPseudo},
-		{"t_register#265 gsp.target.com passwordless_preauthentications (Chrome 151 preflight)",
+		{"target_register_android-chrome151_1_0831#265 gsp.target.com passwordless_preauthentications (Chrome 151 preflight)",
 			OrderRequest{UserAgent: chrome151, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
 				Added: wireorder.Added{Origin: true, Referer: true, Priority: true, RequestHeaders: true}},
 			"accept access-control-request-method access-control-request-headers origin user-agent sec-fetch-mode sec-fetch-site sec-fetch-dest referer accept-encoding accept-language priority",
 			chromiumPseudo},
-		{"morerewards_ios_safari_oct20#127 login.morerewards.ca authenticate (Safari 18.7 preflight without a referrer)",
+		{"morerewards_login_iphone-safari18.7_2_1020#127 login.morerewards.ca authenticate (Safari 18.7 preflight without a referrer)",
 			OrderRequest{UserAgent: safariUA, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
 				Added: wireorder.Added{Origin: true, Priority: true, RequestHeaders: true}},
 			"sec-fetch-site origin access-control-request-method access-control-request-headers sec-fetch-mode user-agent content-length sec-fetch-dest accept accept-language priority accept-encoding",
@@ -274,17 +274,17 @@ func TestOrderUniversalReproducesCaptures(t *testing.T) {
 				Added: wireorder.Added{ClientHints: lowEntropyHints, Referer: true, Priority: true, StorageAccess: true}},
 			"sec-ch-ua-platform user-agent sec-ch-ua sec-ch-ua-mobile accept sec-fetch-site sec-fetch-mode sec-fetch-dest sec-fetch-storage-access referer accept-encoding accept-language priority",
 			chromiumPseudo},
-		{"t_register#120 www.target.com bullseye image (Chrome 151 image)",
+		{"target_register_android-chrome151_1_0831#120 www.target.com bullseye image (Chrome 151 image)",
 			OrderRequest{UserAgent: chrome151, Class: ClassImage, Method: "GET", HTTP2: true,
 				Added: wireorder.Added{ClientHints: lowEntropyHints, Referer: true, Cookie: true, Priority: true}},
 			"sec-ch-ua-platform user-agent sec-ch-ua sec-ch-ua-mobile accept sec-fetch-site sec-fetch-mode sec-fetch-dest referer accept-encoding accept-language cookie priority",
 			chromiumPseudo},
-		{"morerewards_ios26#29 www.morerewards.ca arrow image (Safari 26.6 no-cors)",
+		{"morerewards_login_iphone-safari26.6_1_1019#29 www.morerewards.ca arrow image (Safari 26.6 no-cors)",
 			OrderRequest{UserAgent: safari266, Class: ClassNoCORS, Method: "GET", HTTP2: true,
 				Added: wireorder.Added{Referer: true, Cookie: true, Priority: true}},
 			"sec-fetch-dest user-agent accept referer sec-fetch-site sec-fetch-mode accept-language priority accept-encoding cookie",
 			webkitPseudo},
-		{"morerewards_ios26#29 www.morerewards.ca arrow image (Safari 26.6 image)",
+		{"morerewards_login_iphone-safari26.6_1_1019#29 www.morerewards.ca arrow image (Safari 26.6 image)",
 			OrderRequest{UserAgent: safari266, Class: ClassImage, Method: "GET", HTTP2: true,
 				Added: wireorder.Added{Referer: true, Cookie: true, Priority: true}},
 			"sec-fetch-dest user-agent accept referer sec-fetch-site sec-fetch-mode accept-language priority accept-encoding cookie",
@@ -439,10 +439,10 @@ func TestOrderUniversalFailsClosed(t *testing.T) {
 	}
 }
 
-// targetShapePrefix is Target username validation's Shape prefix (target-ios12#398).
+// targetShapePrefix is Target username validation's Shape prefix (target_login_iphone12-safari18.7_1_0910#398).
 const targetShapePrefix = "x-gyjwza5z-"
 
-// targetShapeXHR is target-ios12#398's request: content-type, then the Shape block without -a0.
+// targetShapeXHR is target_login_iphone12-safari18.7_1_0910#398's request: content-type, then the Shape block without -a0.
 func targetShapeXHR(ua string, hints []string, pins ...*wireorder.Pin) OrderRequest {
 	calls := []string{"content-type"}
 	for _, s := range "fbcdza" {
@@ -452,7 +452,7 @@ func targetShapeXHR(ua string, hints []string, pins ...*wireorder.Pin) OrderRequ
 		Pins: pins, Added: wireorder.Added{ClientHints: hints, Origin: true, Referer: true, Cookie: true, Body: true, Priority: true}}
 }
 
-// A captured WebKit case on target-ios12#398's dictionary: its reverse of the law's first outcome (a captured case
+// A captured WebKit case on target_login_iphone12-safari18.7_1_0910#398's dictionary: its reverse of the law's first outcome (a captured case
 // is its own order) followed by the generation's tail.
 func targetCapturedPin(t *testing.T) (*wireorder.Pin, []string) {
 	t.Helper()

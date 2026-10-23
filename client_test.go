@@ -10,6 +10,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	tlsclient "github.com/bogdanfinn/tls-client"
 )
 
 type captured struct {
@@ -242,6 +244,7 @@ func TestNewClientRejectsInvalidConfig(t *testing.T) {
 		{Config{BaseURL: "ftp://shape.example.com"}, "BaseURL"},
 		{Config{BaseURL: "https://shape.example.com?x=1"}, "BaseURL"},
 		{Config{BaseURL: "https://shape.example.com", Timeout: -1}, "Timeout"},
+		{Config{BaseURL: "https://shape.example.com", Timeout: time.Microsecond}, "Timeout"},
 		{Config{BaseURL: "https://shape.example.com", MaxResponseBytes: -1}, "MaxResponseBytes"},
 		{Config{BaseURL: "https://shape.example.com", MaxRetries: new(-1)}, "MaxRetries"},
 		{Config{BaseURL: "https://shape.example.com", MaxBackoff: -1}, "MaxBackoff"},
@@ -260,20 +263,42 @@ func TestNewClientDefaults(t *testing.T) {
 	if client.baseURL != "https://shape.example.com" {
 		t.Fatalf("baseURL = %q", client.baseURL)
 	}
-	if client.http.Timeout != defaultTimeout || client.maxBytes != defaultMaxResponseBytes {
-		t.Fatalf("timeout = %v, max bytes = %d", client.http.Timeout, client.maxBytes)
+	if client.http == nil || client.maxBytes != defaultMaxResponseBytes {
+		t.Fatalf("http = %v, max bytes = %d", client.http, client.maxBytes)
 	}
 	if client.maxRetries != 3 || client.maxBackoff != 30*time.Second {
 		t.Fatalf("max retries = %d, max backoff = %v, want 3 and 30s", client.maxRetries, client.maxBackoff)
 	}
-	custom := &http.Client{}
+	custom, err := tlsclient.NewHttpClient(tlsclient.NewNoopLogger())
+	if err != nil {
+		t.Fatalf("NewHttpClient: %v", err)
+	}
 	client = newTestClient(t, Config{BaseURL: "https://shape.example.com", HTTP: custom, Timeout: 5})
-	if client.http != custom || custom.Timeout != 0 {
-		t.Fatal("a caller-supplied HTTP client was replaced or modified")
+	if client.http != custom {
+		t.Fatal("a caller-supplied HTTP client was replaced")
 	}
 	client = newTestClient(t, Config{BaseURL: "https://shape.example.com", MaxRetries: new(0)})
 	if client.maxRetries != 0 {
 		t.Fatalf("MaxRetries new(0) gave max retries = %d, want 0", client.maxRetries)
+	}
+}
+
+func TestDefaultClientEnforcesTimeout(t *testing.T) {
+	release := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-release
+	}))
+	t.Cleanup(server.Close)
+	t.Cleanup(func() { close(release) })
+	client := newTestClient(t, Config{BaseURL: server.URL, Timeout: 100 * time.Millisecond, MaxRetries: new(0)})
+	start := time.Now()
+	_, err := client.Call(context.Background(), http.MethodGet, "/status", nil, nil)
+	var apiErr *APIError
+	if err == nil || errors.As(err, &apiErr) {
+		t.Fatalf("error = %v, want a transport timeout", err)
+	}
+	if elapsed := time.Since(start); elapsed > 5*time.Second {
+		t.Fatalf("returned after %v, want soon after the 100ms timeout", elapsed)
 	}
 }
 

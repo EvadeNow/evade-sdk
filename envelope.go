@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
 	"time"
+
+	http "github.com/bogdanfinn/fhttp"
 )
 
 // ErrorEnvelope is the body every solve server writes on a non-2xx response.

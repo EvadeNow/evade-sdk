@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/EvadeNow/evade-sdk/useragent"
+	"github.com/bogdanfinn/fhttp/http2"
 	"github.com/bogdanfinn/tls-client/profiles"
 )
 
@@ -125,6 +126,17 @@ func New() (*Resolver, error) {
 			return nil, &RegistryKeyError{Key: key, Reason: "matches no known key form"}
 		}
 		p := Profile{Name: key, Client: client, Behavior: s.behavior()}
+		// HYPOTHESIS(safari26_no_stream_priority): iOS Safari 26 and later
+		// send no HTTP/2 stream priority (curl-impersonate curl_safari260_ios:
+		// "HTTP/2: removed priority", --http2-no-priority; Safari 18 keeps a
+		// weight-256, non-exclusive priority). The tls-client profile states
+		// none, so fhttp falls back to its exclusive weight-255 default; a
+		// zero priority param makes the HEADERS frame skip the block
+		// (fhttp http2 frame.go IsZero). Falsified by a real Safari 26
+		// frame capture showing a priority block.
+		if s == stackSafari && index == &r.safariIOS && len(m) > 1 && majorAtLeast(m[1], 26) {
+			p.Client = noHeaderPriority(client)
+		}
 		r.named[key] = p
 		if index == nil {
 			continue
@@ -143,6 +155,21 @@ func New() (*Resolver, error) {
 		slices.SortFunc(*index, newestFirst)
 	}
 	return r, nil
+}
+
+// majorAtLeast reports whether the decimal in s is at least bound.
+func majorAtLeast(s string, bound int) bool {
+	major, err := strconv.Atoi(s)
+	return err == nil && major >= bound
+}
+
+// noHeaderPriority rebuilds the profile with a zero header priority, which
+// makes fhttp's HEADERS frame skip the priority block (frame.go IsZero).
+func noHeaderPriority(c profiles.ClientProfile) profiles.ClientProfile {
+	return profiles.NewClientProfile(c.GetClientHelloId(), c.GetSettings(), c.GetSettingsOrder(),
+		c.GetPseudoHeaderOrder(), c.GetConnectionFlow(), c.GetPriorities(), &http2.PriorityParam{},
+		c.GetStreamID(), c.GetAllowHTTP(), c.GetHttp3Settings(), c.GetHttp3SettingsOrder(),
+		c.GetHttp3PriorityParam(), c.GetHttp3PseudoHeaderOrder(), c.GetHttp3SendGreaseFrames())
 }
 
 func keyVersion(key string, parts []string) (versioned, error) {
