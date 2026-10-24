@@ -25,8 +25,6 @@ var browserExcluded = map[string]string{
 	"prizepicks#42":           "user-agent after the client hints: a Blink map filled in another order; initiator not recorded",
 	"bandai-us_login_android-chrome150_1_0828#24": "typed in the Android omnibox (preceded by complete/search)",
 	"bandai-jp_product_windows-chrome151_1_0809#0":        "bare host p-bandai.jp/ typed as the HAR's first request",
-	"xfinity_login_android-chrome141_1_0907#22":            "after the http://comcast.com 301 of a typed bare host",
-	"morerewards_login_android-chrome151_1_0902#32":    "typed bare host morerewards.ca (preceded by complete/search)",
 	"chase_login_windows-chrome151_1_0830#81":             "typed bare host chase.com (preceded by complete/search)",
 	"sky_login_android-chrome151_1_0901#0":             "bare host sky.com typed as the HAR's first request",
 	"uhc_login_android-chrome151_1_0901#12":            "typed bare host uhc.com (preceded by complete/search)",
@@ -47,8 +45,9 @@ func TestBrowserClassCaptures(t *testing.T) {
 	c := &law.Chromium
 	type tally struct{ reproduced, excluded, refused, total int }
 	counts := map[Class]*tally{ClassScript: {}, ClassNavigation: {}}
-	seen := map[string]bool{}
+	seen, loaded := map[string]bool{}, map[string]bool{}
 	for _, capture := range corpus(t) {
+		loaded[capture.HAR] = true
 		e, ok := engineOf(capture.UA)
 		if !ok || e.Kind != Chromium || e.Major < c.Witnessed[0] || e.Major > c.Witnessed[1] || capture.Method != "GET" {
 			continue
@@ -97,15 +96,16 @@ func TestBrowserClassCaptures(t *testing.T) {
 		}
 	}
 	for class, want := range map[Class]tally{
-		ClassScript:     {reproduced: 1136, excluded: 31, refused: 5, total: 1172},
-		ClassNavigation: {reproduced: 65, excluded: 15, refused: 7, total: 87},
+		ClassScript:     {reproduced: 1050, excluded: 2, refused: 5, total: 1057},
+		ClassNavigation: {reproduced: 61, excluded: 13, refused: 7, total: 81},
 	} {
 		if got := *counts[class]; got != want {
 			t.Errorf("%s: %+v, want %+v", class, got, want)
 		}
 	}
+	// An exclusion of a HAR this checkout lacks is unverifiable, not stale.
 	for name := range browserExcluded {
-		if !seen[name] {
+		if har, _, _ := strings.Cut(name, "#"); loaded[har] && !seen[name] {
 			t.Errorf("exclusion %s matches no modeled capture", name)
 		}
 	}

@@ -51,6 +51,12 @@ type Request struct {
 	IncludeInteractionTiming bool            `json:"include_interaction_timing,omitempty"` // with Debug only
 	// PageProfile: empty infers it from TargetURL, "none" disables it; session-opening request only.
 	PageProfile string `json:"page_profile,omitempty"`
+	// TargetDeviceInfo asks a fresh solve for the Target device_info its
+	// device record pairs with (Response.TargetDeviceInfo), so a caller
+	// sends Target's own fingerprint object from the same device the Shape
+	// payload states; a continuation refuses it. Send it only to a solver
+	// whose GET /solve/fields lists target_device_info.
+	TargetDeviceInfo bool `json:"target_device_info,omitempty"`
 }
 
 // Cookie is one cookie the caller's browser sends with the challenge script GET.

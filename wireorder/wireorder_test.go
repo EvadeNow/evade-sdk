@@ -958,6 +958,9 @@ func TestLawDataIsWellFormed(t *testing.T) {
 			t.Errorf("loader-added %s is not a WebKit common header", n)
 		}
 	}
+	if !sameSet(law.WebKit.FormLoaderAdded, law.WebKit.LoaderAdded) {
+		t.Errorf("form loader names %v are not the loader names %v", law.WebKit.FormLoaderAdded, law.WebKit.LoaderAdded)
+	}
 	tail := law.WebKit.CFNetworkTail
 	for _, g := range law.WebKit.Generations {
 		var split []string
@@ -1196,6 +1199,27 @@ func TestEngineFromUserAgent(t *testing.T) {
 	} {
 		if got := e.String(); got != want {
 			t.Errorf("%#v: %s, want %s", e, got, want)
+		}
+	}
+}
+
+func TestOrderUniversalFollowsTheLoaderInsertionOrder(t *testing.T) {
+	for name, c := range map[string]struct {
+		r    Request
+		want []string
+	}{
+		"sign-in POST": {Request{Class: ClassFetch, Method: "POST", HTTP2: true, Calls: []string{"content-type"},
+			Added: Added{Origin: true, Referer: true, Body: true}},
+			strings.Fields("accept content-type sec-fetch-site origin sec-fetch-mode user-agent referer sec-fetch-dest content-length")},
+		"account-message GET": {Request{Class: ClassFetch, Method: "GET", HTTP2: true, Added: Added{Origin: true}},
+			strings.Fields("sec-fetch-dest user-agent accept sec-fetch-site origin sec-fetch-mode")},
+	} {
+		for _, e := range []Engine{safari187, {Kind: WebKit, Major: 26, Minor: 6}} {
+			c.r.Engine = e
+			got, err := OrderUniversal(c.r)
+			if err != nil || len(got.Header) < len(c.want) || !slices.Equal(got.Header[:len(c.want)], c.want) {
+				t.Errorf("%s on %s = %v (%v), want the dictionary %v", name, e, got.Header, err, c.want)
+			}
 		}
 	}
 }

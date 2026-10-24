@@ -64,7 +64,9 @@ func (c *capture) String() string { return fmt.Sprintf("%s#%d", c.HAR, c.Entry) 
 
 func (c *capture) has(name string) bool { return slices.Contains(c.Names, name) }
 
-// loadCorpus returns nil when any corpus directory is missing.
+// loadCorpus returns nil when no corpus directory holds a HAR (a checkout
+// without the corpus). A directory without HARs is skipped, not the corpus:
+// one emptied directory once silently skipped every capture test.
 func loadCorpus() ([]*capture, error) {
 	root := filepath.Join("..", "..")
 	var paths []string
@@ -73,10 +75,10 @@ func loadCorpus() ([]*capture, error) {
 		if err != nil {
 			return nil, err
 		}
-		if len(m) == 0 {
-			return nil, nil
-		}
 		paths = append(paths, m...)
+	}
+	if len(paths) == 0 {
+		return nil, nil
 	}
 	var out []*capture
 	seen := map[string]bool{}
@@ -138,7 +140,14 @@ func loadCorpus() ([]*capture, error) {
 	return out, nil
 }
 
+// exportCreators are HAR creators whose header arrays are their own export
+// order, not the wire's (Safari's Web Inspector also leaves httpVersion
+// empty), so their captures witness no wire order.
+var exportCreators = []string{"WebKit Web Inspector"}
+
 // forEachHAREntry streams log.entries so a HAR is never held in memory whole.
+// A HAR whose log.creator is an export creator visits no entry; one whose
+// export creator follows its entries is an error, never half-read.
 func forEachHAREntry(path string, fn func(int, *harEntry)) error {
 	f, err := os.Open(path)
 	if err != nil {
@@ -163,10 +172,24 @@ func forEachHAREntry(path string, fn func(int, *harEntry)) error {
 		if err := expectDelim(dec, '{'); err != nil {
 			return err
 		}
+		visited := false
 		for dec.More() {
 			key, err := dec.Token()
 			if err != nil {
 				return err
+			}
+			if key == "creator" {
+				var creator struct{ Name string }
+				if err := dec.Decode(&creator); err != nil {
+					return err
+				}
+				if slices.Contains(exportCreators, creator.Name) {
+					if visited {
+						return fmt.Errorf("export creator %q follows the entries", creator.Name)
+					}
+					return nil
+				}
+				continue
 			}
 			if key != "entries" {
 				if err := skipValue(dec); err != nil {
@@ -174,6 +197,7 @@ func forEachHAREntry(path string, fn func(int, *harEntry)) error {
 				}
 				continue
 			}
+			visited = true
 			if err := expectDelim(dec, '['); err != nil {
 				return err
 			}

@@ -36,6 +36,23 @@ type Response struct {
 	FingerprintHash string      `json:"fingerprint_hash,omitempty"`
 	SolveID         string      `json:"solve_id,omitempty"` // identifies this solve to ReportOutcome
 	Debug           *Debug      `json:"debug,omitempty"`    // Request.Debug only
+	// TargetDeviceInfo is the session record's Target device_info, on a
+	// fresh solve that asked for it (Request.TargetDeviceInfo) only.
+	TargetDeviceInfo *TargetDeviceInfo `json:"target_device_info,omitempty"`
+}
+
+// TargetDeviceInfo is the stored Target device_info capture a solve's device
+// record pairs with: Match "exact" (the capture of the record's User-Agent,
+// screen and platform) or "closest" (another capture of its class with the
+// record's own fields restated, MatchReason saying why). DeviceInfo is the
+// capture's first k() call, its keys in the stored order; LaterCanvas is
+// the canvas its later calls returned.
+type TargetDeviceInfo struct {
+	Match       string          `json:"match"`
+	CaptureID   string          `json:"capture_id"`
+	DeviceInfo  json.RawMessage `json:"device_info"`
+	LaterCanvas string          `json:"later_canvas"`
+	MatchReason string          `json:"match_reason,omitempty"`
 }
 
 // WaitForSend blocks until SendAfterUnixMS (at once when it is 0 or past)

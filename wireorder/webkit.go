@@ -192,7 +192,11 @@ func newWebkitDictionary(law *webkitLaw, r *Request, calls []string, shape map[s
 	if !slices.Contains(calls, "accept") {
 		d.names = append(d.names, "accept")
 	}
-	for _, name := range law.LoaderAdded {
+	loader := law.LoaderAdded
+	if r.Class == ClassForm {
+		loader = law.FormLoaderAdded
+	}
+	for _, name := range loader {
 		if r.Added.present(name) {
 			d.names = append(d.names, name)
 		}

@@ -247,8 +247,12 @@ type chromiumFormMajors struct {
 }
 
 type webkitLaw struct {
-	CommonHeaders      []string
+	CommonHeaders []string
+	// LoaderAdded are the names WebKit's loader adds to a fetch or XHR, in
+	// the order it inserts them (HYPOTHESIS(webkit_loader_insertion_order),
+	// law.go); FormLoaderAdded are the same names in a form's tie-break.
 	LoaderAdded        []string
+	FormLoaderAdded    []string
 	CFNetworkTail      []string
 	Unresolved         []string
 	Pseudo             []string

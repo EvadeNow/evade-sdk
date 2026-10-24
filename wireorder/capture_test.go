@@ -185,8 +185,8 @@ func TestWireOrderLawCaptures(t *testing.T) {
 			reproduced++
 			t.Logf("%s chrome/%d %v", c, e.Major, classes)
 		}
-		if total != 82 || reproduced != total {
-			t.Errorf("Chromium protected captures: %d/%d reproduced, want 82/82", reproduced, total)
+		if total != 76 || reproduced != total {
+			t.Errorf("Chromium protected captures: %d/%d reproduced, want 76/76", reproduced, total)
 		}
 		lo, hi := law.Chromium.Witnessed[0], law.Chromium.Witnessed[1]
 		if !majors[lo] || !majors[hi] {

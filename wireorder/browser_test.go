@@ -392,8 +392,11 @@ func TestOrderUniversalWebKitFormIsItsXHRDictionary(t *testing.T) {
 	if err != nil || !slices.Equal(got.Header, bandai) {
 		t.Fatalf("universal form %v (%v), want the canonical outcome %v", got.Header, err, bandai)
 	}
-	if asXHR, err := OrderUniversal(xhr); err != nil || !slices.Equal(asXHR.Header, got.Header) {
-		t.Errorf("universal XHR of the form's names %v (%v), form %v", asXHR.Header, err, got.Header)
+	// The form keeps its own tie-break (FormLoaderAdded); an XHR of the same
+	// names follows the loader's insertion order, sec-fetch-site before
+	// origin (HYPOTHESIS(webkit_loader_insertion_order)).
+	if asXHR, err := OrderUniversal(xhr); err != nil || !slices.Equal(asXHR.Header, starbucks) {
+		t.Errorf("universal XHR of the form's names %v (%v), want the loader order's outcome %v", asXHR.Header, err, starbucks)
 	}
 }
 

@@ -37,12 +37,35 @@ var law = &lawFile{
 	},
 	WebKit: webkitLaw{
 		CommonHeaders: []string{"accept", "accept-charset", "accept-language", "accept-encoding", "accept-ranges", "access-control-allow-credentials", "access-control-allow-headers", "access-control-allow-methods", "access-control-allow-origin", "access-control-expose-headers", "access-control-max-age", "access-control-request-headers", "access-control-request-method", "age", "authorization", "cache-control", "clear-site-data", "connection", "content-disposition", "content-encoding", "content-language", "content-length", "content-location", "content-security-policy", "content-security-policy-report-only", "content-type", "content-range", "cookie", "cookie2", "cross-origin-embedder-policy", "cross-origin-embedder-policy-report-only", "cross-origin-opener-policy", "cross-origin-opener-policy-report-only", "cross-origin-resource-policy", "date", "dnt", "default-style", "document-isolation-policy", "etag", "expect", "expires", "host", "if-match", "if-modified-since", "if-none-match", "if-range", "if-unmodified-since", "integrity-policy", "integrity-policy-report-only", "keep-alive", "last-event-id", "last-modified", "link", "location", "origin", "origin-agent-cluster", "ping-from", "ping-to", "pragma", "proxy-authorization", "range", "referer", "referrer-policy", "refresh", "report-to", "reporting-endpoints", "sec-fetch-dest", "sec-fetch-mode", "sec-fetch-site", "sec-gpc", "sec-purpose", "sec-speculation-tags", "speculation-rules", "sec-websocket-accept", "sec-websocket-extensions", "sec-websocket-key", "sec-websocket-protocol", "sec-websocket-version", "server-timing", "service-worker", "service-worker-allowed", "service-worker-navigation-preload", "set-cookie", "set-cookie2", "sourcemap", "te", "timing-allow-origin", "trailer", "transfer-encoding", "upgrade", "upgrade-insecure-requests", "use-as-dictionary", "user-agent", "vary", "via", "x-content-type-options", "x-frame-options", "x-sourcemap", "x-xss-protection", "x-temp-tablet", "icy-metaint", "icy-metadata"},
-		LoaderAdded:   []string{"origin", "user-agent", "referer", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest"},
-		CFNetworkTail: []string{"accept-language", "priority", "accept-encoding", "cookie"},
-		Unresolved:    []string{"authorization"},
-		Pseudo:        []string{":method", ":scheme", ":authority", ":path"},
-		HTTP1Prefix:   []string{"host"},
-		HTTP1Suffix:   []string{"connection"},
+		// HYPOTHESIS(webkit_loader_insertion_order): WebKit's loader inserts its
+		// names into the CF dictionary in this order, which the canonical
+		// history follows where the insertion law leaves two open
+		// (cfCanonical); it only breaks ties, so no admitted outcome is lost.
+		// Of the corpus's 58 late/law fetch/XHR dictionaries without a Shape
+		// block (2026-10-24), it reproduces 44 exactly, the unique best of all
+		// 720 orders (the order it replaced: 20). Of the 14 it misses, 11
+		// carry headers it does not place (fetch cache-mode pragma and
+		// cache-control: 8; Next.js RSC page headers: 3), 2 put page headers
+		// before accept, and 1 is a counterwitness below.
+		// Forced as precedences, 56 of the 58 stay reachable; the two that do
+		// not are its counterwitnesses: bandai-jp_login_iphone-safari18.7_1_1020#340
+		// (origin before sec-fetch-site, a cache-control request) and
+		// vinted_safari_register#247 (sec-fetch-site before accept).
+		// Falsified by a capture whose dictionary these six names alone decide
+		// against this order.
+		LoaderAdded: []string{"sec-fetch-site", "origin", "referer", "sec-fetch-mode", "sec-fetch-dest", "user-agent"},
+		// FormLoaderAdded is LoaderAdded's names in the tie-break a form
+		// submission keeps: its captures disagree on one identical
+		// dictionary (bandai-jp_login_iphone-safari18.7_1_1020#543 sends
+		// origin before sec-fetch-site, starbucks_login_iphone-safari18.7_1_0910#161 and
+		// starbucks_login_iphone-safari18.7_2_0919#136 the reverse), so no
+		// form order is claimed and the earlier one stays.
+		FormLoaderAdded: []string{"origin", "user-agent", "referer", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest"},
+		CFNetworkTail:   []string{"accept-language", "priority", "accept-encoding", "cookie"},
+		Unresolved:      []string{"authorization"},
+		Pseudo:          []string{":method", ":scheme", ":authority", ":path"},
+		HTTP1Prefix:     []string{"host"},
+		HTTP1Suffix:     []string{"connection"},
 		Counterwitness: []Counterwitness{
 			{
 				HAR:        "target_login_iphone12-safari18.7_1_0910",
@@ -75,7 +98,6 @@ var law = &lawFile{
 			RedirectCarried: []string{"accept-language", "priority"},
 			Reinserted:      []string{"sec-fetch-mode"},
 		},
-		// Reproduces all 413 captured late Safari preflights (target_login_iphone15-safari26.5_1_0909#394, morerewards_login_iphone-safari18.7_2_1020#127).
 		Preflight: webkitPreflight{
 			Insertion: []string{"access-control-request-method", "access-control-request-headers", "origin", "user-agent", "referer", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest", "content-length"},
 			Tail:      []string{"accept"},

@@ -70,8 +70,8 @@ func testWebkitHTTP1(t *testing.T, law *lawFile, all []*capture) {
 	}
 	t.Logf("%d WebKit HTTP/1.1 captures (%d with a cookie) in %d dictionary sequences framed by %v ... %v; %d WebSocket handshakes",
 		framed, cookies, len(dicts), w.HTTP1Prefix, w.HTTP1Suffix, sockets)
-	if framed != 149 || cookies != 1 || len(dicts) != 10 {
-		t.Errorf("want 149 framed captures, 1 with a cookie, in 10 dictionary sequences")
+	if framed != 319 || cookies != 1 || len(dicts) != 14 {
+		t.Errorf("want 319 framed captures, 1 with a cookie, in 14 dictionary sequences")
 	}
 }
 
@@ -223,8 +223,8 @@ func testWebkitCorpus(t *testing.T, law *lawFile, all []*capture) {
 		requests += len(s.all)
 	}
 	t.Logf("%d WebKit page requests in %d dictionary sequences; %d with another pseudo order (Safari services)", requests, len(seqs), services)
-	if len(seqs) != 48 {
-		t.Errorf("distinct WebKit dictionary sequences: %d, want 48", len(seqs))
+	if len(seqs) != 92 {
+		t.Errorf("distinct WebKit dictionary sequences: %d, want 92", len(seqs))
 	}
 	for _, n := range w.CFNetworkTail {
 		if !tails[n] {
@@ -281,7 +281,81 @@ func testWebkitCorpus(t *testing.T, law *lawFile, all []*capture) {
 		}
 	}
 	t.Logf("CF-feasible and reproduced by the insertion model: %d/%d (non-Shape %d, Shape %d with the Shape order free)", feasible, len(seqs), nonShape, shapeSeqs)
-	if feasible != 45 || shapeSeqs != 6 || nonShape != 39 {
-		t.Errorf("want 45/48 feasible, 39 non-Shape, 6 Shape sequences")
+	if feasible != 88 || shapeSeqs != 9 || nonShape != 79 {
+		t.Errorf("want 88/92 feasible, 79 non-Shape, 9 Shape sequences")
+	}
+}
+
+// TestWebKitLoaderInsertionOrderCaptures is
+// HYPOTHESIS(webkit_loader_insertion_order)'s corpus test (law.go): every
+// distinct late/law WebKit fetch/XHR dictionary without a Shape block, sent
+// through OrderUniversal with the capture's page calls and added names, is
+// counted when it comes out exactly as captured; and with the loader names
+// forced into LoaderAdded's order, exactly its two counterwitnesses become
+// unreachable.
+func TestWebKitLoaderInsertionOrderCaptures(t *testing.T) {
+	w := &testLaw(t).WebKit
+	all := corpus(t)
+	browserNames := append([]string{"accept", "content-length"}, w.LoaderAdded...)
+	seen := map[string]bool{}
+	var total, exact int
+	var contradicted []string
+	for _, c := range all {
+		e, ok := engineOf(c.UA)
+		if !ok || e.Kind != WebKit || c.Dest != "empty" || !c.HTTP2 || c.Method == "OPTIONS" || !slices.Equal(c.Pseudo, w.Pseudo) {
+			continue
+		}
+		if g := w.generation(e); g == nil || !g.InsertionLaw {
+			continue
+		}
+		d, _ := webkitSplit(w, c.Names)
+		key := strings.Join(d, ",")
+		if seen[key] || shapePrefix(d) != "" {
+			continue
+		}
+		seen[key] = true
+		total++
+		var calls []string
+		for _, n := range d {
+			if !slices.Contains(browserNames, n) {
+				calls = append(calls, n)
+			}
+		}
+		// Fetch and XHR share the insertion law, so each goes as a fetch.
+		r := Request{Engine: e, Class: ClassFetch, Method: c.Method, HTTP2: true, Calls: calls,
+			Added: Added{Origin: c.has("origin"), Referer: c.has("referer"), Cookie: c.has("cookie"),
+				Body: c.has("content-length"), Priority: c.has("priority")}}
+		if got, err := OrderUniversal(r); err == nil {
+			if dict, _ := webkitSplit(w, got.Header); slices.Equal(dict, d) {
+				exact++
+			}
+		}
+		var present []string
+		for _, n := range w.LoaderAdded {
+			if slices.Contains(d, n) {
+				present = append(present, n)
+			}
+		}
+		var chain [][2]string
+		for i := 1; i < len(present); i++ {
+			chain = append(chain, [2]string{present[i-1], present[i]})
+		}
+		free, err := cfReaches(d, insertionModel(w, d, nil), d)
+		if err != nil {
+			t.Fatal(err)
+		}
+		chained, err := cfReaches(d, insertionModel(w, d, chain), d)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if free && !chained {
+			contradicted = append(contradicted, c.String())
+		}
+	}
+	slices.Sort(contradicted)
+	t.Logf("%d late/law fetch/XHR dictionaries: %d come out exactly as captured; %v contradict the loader order", total, exact, contradicted)
+	want := []string{"bandai-jp_login_iphone-safari18.7_1_1020#340", "vinted_safari_register#247"}
+	if total != 58 || exact != 44 || !slices.Equal(contradicted, want) {
+		t.Errorf("want 44/58 exact and counterwitnesses %v", want)
 	}
 }
