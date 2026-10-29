@@ -17,6 +17,7 @@ const (
 	iPhoneCriOS2661 = "Mozilla/5.0 (iPhone; CPU iPhone OS 26_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/149.0.7827.137 Mobile/15E148 Safari/604.1"
 	windowsChrome   = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36"
 	macChrome       = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36"
+	androidChrome   = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36"
 	macSafari       = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.2 Safari/605.1.15"
 )
 
@@ -35,14 +36,16 @@ func TestNewBrowserBindsTheModeledBrowsers(t *testing.T) {
 		tls            string
 		acceptEncoding string
 		desktopChrome  bool
+		needsHints     bool
 	}{
-		iosSafari1875: {useragent.FamilySafariIOS, "safari_ios_", "gzip, deflate, br", false},
-		iosSafari2661: {useragent.FamilySafariIOS, "safari_ios_", "gzip, deflate, br, zstd", false},
+		iosSafari1875: {useragent.FamilySafariIOS, "safari_ios_", "gzip, deflate, br", false, false},
+		iosSafari2661: {useragent.FamilySafariIOS, "safari_ios_", "gzip, deflate, br, zstd", false, false},
 		// HYPOTHESIS(webkit_macos_is_ios_late): its own TLS profile, its
 		// release's Safari Accept-Encoding.
-		macSafari:     {useragent.FamilySafariMacOS, "safari_", "gzip, deflate, br, zstd", false},
-		windowsChrome: {useragent.FamilyChrome, "chrome_", ChromeAcceptEncoding, true},
-		macChrome:     {useragent.FamilyChrome, "chrome_", ChromeAcceptEncoding, true},
+		macSafari:     {useragent.FamilySafariMacOS, "safari_", "gzip, deflate, br, zstd", false, false},
+		windowsChrome: {useragent.FamilyChrome, "chrome_", ChromeAcceptEncoding, true, true},
+		macChrome:     {useragent.FamilyChrome, "chrome_", ChromeAcceptEncoding, true, true},
+		androidChrome: {useragent.FamilyChrome, "chrome_152", ChromeAcceptEncoding, false, true},
 	} {
 		browser := mustBrowser(t, ua)
 		if browser.Agent.Family != want.family || !strings.HasPrefix(browser.TLS.Name, want.tls) ||
@@ -54,9 +57,9 @@ func TestNewBrowserBindsTheModeledBrowsers(t *testing.T) {
 		if browser.TLS.Behavior.RandomizeExtensionOrder && want.family == useragent.FamilySafariIOS {
 			t.Errorf("%q: iOS Safari's TLS profile randomizes its extension order", ua)
 		}
-		// Desktop Chrome sends sec-ch-ua* on every request: without its
-		// fingerprint's hints it is not complete.
-		if (browser.Complete() == nil) == want.desktopChrome {
+		// Chrome sends sec-ch-ua* on every request: without its fingerprint's
+		// hints it is not complete.
+		if (browser.Complete() == nil) == want.needsHints {
 			t.Errorf("%q Complete() = %v", ua, browser.Complete())
 		}
 	}
@@ -95,7 +98,6 @@ func TestNewBrowserFailsClosed(t *testing.T) {
 	}
 	for name, ua := range map[string]string{
 		"CriOS on iPad":   "Mozilla/5.0 (iPad; CPU OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/149.0.7827.137 Mobile/15E148 Safari/604.1",
-		"android chrome":  "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Mobile Safari/537.36",
 		"linux chrome":    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
 		"windows edge":    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
 		"windows firefox": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0",

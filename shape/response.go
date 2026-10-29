@@ -30,18 +30,17 @@ type Response struct {
 	// received. Install each under its URL before sending the protected request.
 	SetCookies      []SetCookie `json:"set_cookies,omitempty"`
 	SessionID       string      `json:"session_id,omitempty"`
-	SessionReused   bool        `json:"session_reused,omitempty"`
 	SessionStep     uint64      `json:"session_step,omitempty"`
 	OneTime         bool        `json:"one_time,omitempty"` // interstitial challenge; the session cannot be continued
 	FingerprintHash string      `json:"fingerprint_hash,omitempty"`
 	SolveID         string      `json:"solve_id,omitempty"` // identifies this solve to ReportOutcome
-	Debug           *Debug      `json:"debug,omitempty"`    // Request.Debug only
-	// TargetDeviceInfo is the session record's Target device_info, on a
-	// fresh solve that asked for it (Request.TargetDeviceInfo) only.
+	// TargetDeviceInfo is the target's device_info capture the session
+	// record pairs with, on a fresh solve that asked for it
+	// (Request.TargetDeviceInfo) only.
 	TargetDeviceInfo *TargetDeviceInfo `json:"target_device_info,omitempty"`
 }
 
-// TargetDeviceInfo is the stored Target device_info capture a solve's device
+// TargetDeviceInfo is the stored target device_info capture a solve's device
 // record pairs with: Match "exact" (the capture of the record's User-Agent,
 // screen and platform) or "closest" (another capture of its class with the
 // record's own fields restated, MatchReason saying why). DeviceInfo is the
@@ -185,49 +184,6 @@ type Stages struct {
 	TailMS           float64 `json:"tail_ms"`
 	ZeronaughtWaitMS float64 `json:"zeronaught_wait_ms"`
 	ZeronaughtLateMS float64 `json:"zeronaught_late_ms"`
-}
-
-// Debug is a debug request's diagnostics of the generated request.
-type Debug struct {
-	DeviceRecord string   `json:"device_record"` // the stored device record the solve used
-	ChallengeID  string   `json:"challenge_id,omitempty"`
-	Build        *Build   `json:"build,omitempty"`
-	TLSProfile   string   `json:"tls_profile,omitempty"`
-	Slots        []Slot   `json:"slots,omitempty"`
-	GenMS        *float64 `json:"gen_ms,omitempty"`
-	SessionStep  int      `json:"session_step,omitempty"` // 1-based ordinal on the session's document
-	// DocumentAnchor is how the solver placed the request's document
-	// against its challenge token's issue.
-	DocumentAnchor *DocumentAnchor `json:"document_anchor,omitempty"`
-}
-
-// DocumentAnchor is a document's start against its challenge token's
-// issue: the path that placed it (token_issue: the laws' own draw admitted
-// the send; token_issue_send_window: drawn on the part of the bands the
-// send admits; token_issue_early_finalize: the page's early first send
-// fixed the collector origin), the navigation-to-issue delay and the law
-// it was drawn on, and the collector start lag and origin after the issue.
-type DocumentAnchor struct {
-	Path                    string  `json:"path"`
-	IssuedUnixMS            float64 `json:"issued_unix_ms"`
-	NavigationIssueDelayMS  float64 `json:"navigation_issue_delay_ms"`
-	NavigationIssueDelayLaw string  `json:"navigation_issue_delay_law"`
-	CollectorStartLagMS     float64 `json:"collector_start_lag_ms"`
-	OriginAfterIssueMS      float64 `json:"origin_after_issue_ms"`
-}
-
-// Build identifies the challenge scripts a solve generated from.
-type Build struct {
-	VMProgramSHA256 string `json:"vm_program_sha256"`
-	VMSHA256        string `json:"vm_sha256"`
-	LoaderSHA256    string `json:"loader_sha256"`
-	Runtime         string `json:"runtime"`
-}
-
-// Slot is one populated container slot of the generated headers.
-type Slot struct {
-	Index int    `json:"index"`
-	Label string `json:"label"`
 }
 
 // SetCookie is one raw Set-Cookie line and the URL whose response carried it.

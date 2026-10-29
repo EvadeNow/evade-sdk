@@ -5,7 +5,10 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
+	"io"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -112,6 +115,42 @@ func TestNewBuildsConfiguredClient(t *testing.T) {
 	}
 	if !client.GetFollowRedirect() || client.GetCookieJar() != nil {
 		t.Fatalf("follow = %v, jar = %v; want following redirects with no jar", client.GetFollowRedirect(), client.GetCookieJar())
+	}
+}
+
+func TestSafari26ProfileHandshakes(t *testing.T) {
+	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	server.EnableHTTP2 = true
+	server.StartTLS()
+	defer server.Close()
+
+	pool := x509.NewCertPool()
+	pool.AddCert(server.Certificate())
+	resolver, err := tlsprofile.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	profile, err := resolver.Named("safari_ios_26_0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, _, err := New(Config{Profile: profile, Timeout: 5 * time.Second, CaptureCA: pool})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(client.CloseIdleConnections)
+	response, err := client.Get(server.URL)
+	if err != nil {
+		t.Fatalf("Safari 26 local TLS handshake: %v", err)
+	}
+	defer response.Body.Close()
+	if _, err := io.Copy(io.Discard, response.Body); err != nil {
+		t.Fatal(err)
+	}
+	if response.StatusCode != http.StatusNoContent {
+		t.Fatalf("status = %d, want %d", response.StatusCode, http.StatusNoContent)
 	}
 }
 

@@ -27,8 +27,8 @@ func TestAPIErrorFromEachTargetEnvelope(t *testing.T) {
 				ChallengeVariantID: "variant-7f3a"},
 		},
 		{
-			target: "shape-debug-without-stage", status: http.StatusBadRequest,
-			body: `{"success":false,"error":{"code":"invalid_request","message":"bad"},"debug":{}}`,
+			target: "shape-extra-member", status: http.StatusBadRequest,
+			body: `{"success":false,"error":{"code":"invalid_request","message":"bad"},"debug":{"stage":"request","reason":"invalid"}}`,
 			want: APIError{Status: 400, Code: CodeInvalidRequest, Message: "bad"},
 		},
 		{

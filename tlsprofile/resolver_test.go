@@ -3,11 +3,13 @@ package tlsprofile
 import (
 	"errors"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/EvadeNow/evade-sdk/useragent"
 	"github.com/bogdanfinn/tls-client/profiles"
+	tls "github.com/bogdanfinn/utls"
 )
 
 var (
@@ -82,6 +84,11 @@ func TestResolve(t *testing.T) {
 			name: "android chrome uses chrome keys",
 			ua:   "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Mobile Safari/537.36",
 			want: "chrome_150", behavior: blinkBehavior,
+		},
+		{
+			name: "android chrome 156 takes newest compatible non-PSK key",
+			ua:   "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
+			want: "chrome_152", behavior: blinkBehavior,
 		},
 		{
 			name: "android webview 151 takes chrome_150",
@@ -270,13 +277,58 @@ func TestSafariHeaderPriorityMatchesVersion(t *testing.T) {
 		t.Fatalf("Safari 26 header priority = %+v, want explicit zero", priority)
 	}
 
-	p18, err := r.ResolveVersion(useragent.FamilySafariIOS, 18, 7)
+	p18, err := r.Named("safari_ios_18_0")
 	if err != nil {
 		t.Fatal(err)
 	}
 	priority := p18.Client.GetHeaderPriority()
 	if priority == nil || priority.IsZero() || priority.Exclusive || priority.StreamDep != 0 || priority.Weight != 255 {
-		t.Fatalf("Safari 18 header priority = %+v, want stream 0, non-exclusive, wire weight 255", priority)
+		t.Fatalf("Safari 18.0 header priority = %+v, want stream 0, non-exclusive, wire weight 256", priority)
+	}
+}
+
+func TestSafariSessionTicketMatchesVersion(t *testing.T) {
+	r := newResolver(t)
+	for _, version := range []int{26, 27} {
+		t.Run(strconv.Itoa(version), func(t *testing.T) {
+			p, err := r.ResolveVersion(useragent.FamilySafariIOS, version, 0)
+			if err != nil {
+				t.Fatal(err)
+			}
+			spec, err := p.Client.GetClientHelloSpec()
+			if err != nil {
+				t.Fatal(err)
+			}
+			points, ticket, alpn, tickets := -1, -1, -1, 0
+			for i, extension := range spec.Extensions {
+				switch extension.(type) {
+				case *tls.SupportedPointsExtension:
+					points = i
+				case *tls.SessionTicketExtension:
+					ticket, tickets = i, tickets+1
+				case *tls.ALPNExtension:
+					alpn = i
+				}
+			}
+			if tickets != 1 || ticket != points+1 || alpn != ticket+1 {
+				t.Fatalf("Safari %d extension indexes: ec_point_formats=%d session_ticket=%d ALPN=%d tickets=%d",
+					version, points, ticket, alpn, tickets)
+			}
+		})
+	}
+
+	p18, err := r.Named("safari_ios_18_5")
+	if err != nil {
+		t.Fatal(err)
+	}
+	spec, err := p18.Client.GetClientHelloSpec()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, extension := range spec.Extensions {
+		if _, ok := extension.(*tls.SessionTicketExtension); ok {
+			t.Fatal("Safari 18.5 unexpectedly has session_ticket")
+		}
 	}
 }
 

@@ -15,31 +15,31 @@ var browserWitnesses = []struct {
 	r      Request
 	wire   string
 }{
-	{"compat-http tls-layer2 www.wikipedia.org/ (Chrome 154, first hop)",
+	{"chrome154 navigation (Chrome 154, first hop)",
 		Request{Engine: Engine{Kind: Chromium, Major: 154}, Class: ClassNavigation, Method: "GET", HTTP2: true,
 			Added: Added{ClientHints: lowEntropyHints, FetchUser: true, Priority: true}},
 		"sec-ch-ua sec-ch-ua-mobile sec-ch-ua-platform upgrade-insecure-requests user-agent accept sec-fetch-site sec-fetch-mode sec-fetch-user sec-fetch-dest accept-encoding accept-language priority"},
-	{"compat-http tls-layer2 www.mozilla.org/en-US/ (Chrome 154, hop after mozilla.org's 302)",
+	{"chrome154 navigation (Chrome 154, hop after a same-site 302)",
 		Request{Engine: Engine{Kind: Chromium, Major: 154}, Class: ClassNavigation, Method: "GET", HTTP2: true, Redirected: true,
 			Added: Added{ClientHints: lowEntropyHints, FetchUser: true, Priority: true}},
 		"upgrade-insecure-requests user-agent accept sec-fetch-site sec-fetch-mode sec-fetch-user sec-fetch-dest sec-ch-ua sec-ch-ua-mobile sec-ch-ua-platform accept-encoding accept-language priority"},
-	{"target_register_android-chrome151_1_0831#217 www.target.com/login (Chrome 151, hop after gsp.target.com's 302)",
+	{"chrome151-a#217 login page (Chrome 151, hop after a cross-site 302)",
 		Request{Engine: Engine{Kind: Chromium, Major: 151}, Class: ClassNavigation, Method: "GET", HTTP2: true, Redirected: true,
 			Added: Added{ClientHints: lowEntropyHints, FetchUser: true, Referer: true, Cookie: true, Priority: true}},
 		"upgrade-insecure-requests user-agent accept sec-fetch-site sec-fetch-mode sec-fetch-user sec-fetch-dest sec-ch-ua sec-ch-ua-mobile sec-ch-ua-platform referer accept-encoding accept-language cookie priority"},
-	{"pkc#28 www.pokemoncenter.com/ (Chrome 153, HTTP/1.1 first hop)",
+	{"chrome153-b#28 home page (Chrome 153, HTTP/1.1 first hop)",
 		Request{Engine: Engine{Kind: Chromium, Major: 153}, Class: ClassNavigation, Method: "GET",
 			Added: Added{ClientHints: lowEntropyHints, FetchUser: true}},
 		"host connection sec-ch-ua sec-ch-ua-mobile sec-ch-ua-platform upgrade-insecure-requests user-agent accept sec-fetch-site sec-fetch-mode sec-fetch-user sec-fetch-dest accept-encoding accept-language"},
-	{"bandai-login15#55 p-bandai.com seeded VM (Chrome 151 script)",
+	{"chrome151-g#55 seeded VM (Chrome 151 script)",
 		Request{Engine: Engine{Kind: Chromium, Major: 151}, Class: ClassScript, Method: "GET", HTTP2: true,
 			Added: Added{ClientHints: lowEntropyHints, Referer: true, Cookie: true}},
 		"sec-ch-ua-platform user-agent sec-ch-ua sec-ch-ua-mobile accept sec-fetch-site sec-fetch-mode sec-fetch-dest referer accept-encoding accept-language cookie"},
-	{"target_register_android-chrome151_1_0831#227 assets.targetimg1.com/ssx/ssx.mod.js?async (Chrome 151 loader)",
+	{"chrome151-a#227 Shape loader (Chrome 151 loader)",
 		Request{Engine: Engine{Kind: Chromium, Major: 151}, Class: ClassScript, Method: "GET", HTTP2: true,
 			Added: Added{ClientHints: lowEntropyHints, Referer: true, StorageAccess: true, Priority: true}},
 		"sec-ch-ua-platform user-agent sec-ch-ua sec-ch-ua-mobile accept sec-fetch-site sec-fetch-mode sec-fetch-dest sec-fetch-storage-access referer accept-encoding accept-language priority"},
-	{"chase_login_windows-chrome151_1_0830#133 www.chase.com channela.js?async&seed= (Chrome 151, Accept-CH hints)",
+	{"chrome151-c#133 seeded loader (Chrome 151, Accept-CH hints)",
 		Request{Engine: Engine{Kind: Chromium, Major: 151}, Class: ClassScript, Method: "GET", HTTP2: true,
 			Added: Added{ClientHints: []string{"sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-arch", "sec-ch-ua-platform",
 				"sec-ch-ua-platform-version", "sec-ch-ua-model", "sec-ch-ua-full-version-list", "sec-ch-ua-bitness", "sec-ch-ua-wow64"},
@@ -114,7 +114,7 @@ func TestBrowserClassesFailClosed(t *testing.T) {
 			r.Engine = EngineFromUserAgent("Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0")
 		}),
 		"chromium 140":         nav(func(r *Request) { r.Engine.Major = 140 }),
-		"chromium 156":         script(func(r *Request) { r.Engine.Major = 156 }),
+		"chromium 157":         script(func(r *Request) { r.Engine.Major = 157 }),
 		"POST navigation":      nav(func(r *Request) { r.Method = "POST" }),
 		"Accept-CH navigation": nav(func(r *Request) { r.Added.ClientHints = append(r.Added.ClientHints, "sec-ch-ua-model") }),
 		"storage-access nav":   nav(func(r *Request) { r.Added.StorageAccess = true }),
@@ -181,9 +181,9 @@ func TestWebKitInsertedScriptWitnesses(t *testing.T) {
 		added  Added
 		wire   string
 	}{
-		{"target_cart_iphone-safari18.7_1_0930#129", Added{Referer: true, Priority: true},
+		{"safari18.7-b#129", Added{Referer: true, Priority: true},
 			"sec-fetch-dest user-agent accept referer sec-fetch-site sec-fetch-mode accept-language priority accept-encoding"},
-		{"starbucks_login_iphone-safari18.7_1_0910#143", Added{Priority: true},
+		{"safari18.7-e#143", Added{Priority: true},
 			"sec-fetch-dest user-agent accept sec-fetch-site sec-fetch-mode accept-language priority accept-encoding"},
 	} {
 		got, err := Order(Request{Engine: Engine{Kind: WebKit, Major: 18, Minor: 7}, Class: ClassScript, Method: "GET", HTTP2: true, Inserted: true, Added: w.added})
@@ -224,106 +224,106 @@ var universalWitnesses = []struct {
 	wire   string
 }{
 	// Chromium forms: the browser process's navigation list with the form's body, cache-control, content-type and Origin.
-	{"bandai-jp_product_windows-chrome151_1_0809#54 p-bandai.jp/login_chk/ (Chrome 151 login form)", strictRefuses,
+	{"chrome151-b#54 (Chrome 151 login form)", strictRefuses,
 		Request{Engine: chrome151, Class: ClassForm, Method: "POST", HTTP2: true,
 			Added: Added{ClientHints: lowEntropyHints, Origin: true, Body: true, Referer: true, Cookie: true, Priority: true, FetchUser: true}},
 		"content-length cache-control sec-ch-ua sec-ch-ua-mobile sec-ch-ua-platform upgrade-insecure-requests content-type user-agent origin accept sec-fetch-site sec-fetch-mode sec-fetch-user sec-fetch-dest referer accept-encoding accept-language cookie priority"},
-	{"bandai-login13#182 www.facebook.com/tr/ (Chrome 151 cross-site form)", strictRefuses,
+	{"chrome151-f#182 analytics endpoint (Chrome 151 cross-site form)", strictRefuses,
 		Request{Engine: chrome151, Class: ClassForm, Method: "POST", HTTP2: true,
 			Added: Added{ClientHints: lowEntropyHints, Origin: true, Body: true, Referer: true, Priority: true, FetchUser: true, StorageAccess: true}},
 		"content-length cache-control sec-ch-ua sec-ch-ua-mobile sec-ch-ua-platform upgrade-insecure-requests content-type user-agent origin accept sec-fetch-site sec-fetch-mode sec-fetch-user sec-fetch-dest sec-fetch-storage-access referer accept-encoding accept-language priority"},
-	{"chess-login#174 www.chess.com/login_check (Chrome 154 login form)", strictRefuses,
+	{"chrome154-a#174 (Chrome 154 login form)", strictRefuses,
 		Request{Engine: Engine{Kind: Chromium, Major: 154}, Class: ClassForm, Method: "POST", HTTP2: true,
 			Added: Added{ClientHints: lowEntropyHints, Origin: true, Body: true, Referer: true, Cookie: true, Priority: true, FetchUser: true}},
 		"content-length cache-control sec-ch-ua sec-ch-ua-mobile sec-ch-ua-platform upgrade-insecure-requests content-type user-agent origin accept sec-fetch-site sec-fetch-mode sec-fetch-user sec-fetch-dest referer accept-encoding accept-language cookie priority"},
-	{"xfinity_login_android-chrome141_1_0907#372 login.xfinity.com/login (Chrome 141 login form, origin first)", strictRefuses,
+	{"chrome141-a#372 (Chrome 141 login form, origin first)", strictRefuses,
 		Request{Engine: Engine{Kind: Chromium, Major: 141}, Class: ClassForm, Method: "POST", HTTP2: true,
 			Added: Added{ClientHints: lowEntropyHints, Origin: true, Body: true, Referer: true, Cookie: true, Priority: true, FetchUser: true}},
 		"content-length cache-control sec-ch-ua sec-ch-ua-mobile sec-ch-ua-platform origin content-type upgrade-insecure-requests user-agent accept sec-fetch-site sec-fetch-mode sec-fetch-user sec-fetch-dest referer accept-encoding accept-language cookie priority"},
 	// Chromium preflights: the network service's fixed sequence.
-	{"target_register_android-chrome151_1_0831#265 gsp.target.com passwordless_preauthentications (Chrome 151 preflight)", strictRefuses,
+	{"chrome151-a#265 (Chrome 151 preflight)", strictRefuses,
 		Request{Engine: chrome151, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
 			Added: Added{Origin: true, Referer: true, Priority: true, RequestHeaders: true}},
 		"accept access-control-request-method access-control-request-headers origin user-agent sec-fetch-mode sec-fetch-site sec-fetch-dest referer accept-encoding accept-language priority"},
-	{"bandai-login12#8 ogads-pa.clients6.google.com (Chrome 151 preflight without a referrer)", strictRefuses,
+	{"chrome151-e#8 (Chrome 151 preflight without a referrer)", strictRefuses,
 		Request{Engine: chrome151, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
 			Added: Added{Origin: true, Priority: true, RequestHeaders: true}},
 		"accept access-control-request-method access-control-request-headers origin user-agent sec-fetch-mode sec-fetch-site sec-fetch-dest accept-encoding accept-language priority"},
-	{"sky_login_android-chrome151_1_0901#60 skyport.sky.com (Chrome 151 HTTP/1.1 preflight)", strictRefuses,
+	{"chrome151-d#60 (Chrome 151 HTTP/1.1 preflight)", strictRefuses,
 		Request{Engine: chrome151, Class: ClassPreflight, Method: "OPTIONS",
 			Added: Added{Origin: true, Referer: true, RequestHeaders: true}},
 		"host connection accept access-control-request-method access-control-request-headers origin user-agent sec-fetch-mode sec-fetch-site sec-fetch-dest referer accept-encoding accept-language"},
 	// Chromium no-cors element loads: a call-less Blink map.
-	{"target_register_android-chrome151_1_0831#120 www.target.com bullseye image (Chrome 151 no-cors)", strictRefuses,
+	{"chrome151-a#120 image (Chrome 151 no-cors)", strictRefuses,
 		Request{Engine: chrome151, Class: ClassNoCORS, Method: "GET", HTTP2: true,
 			Added: Added{ClientHints: lowEntropyHints, Referer: true, Cookie: true, Priority: true}},
 		"sec-ch-ua-platform user-agent sec-ch-ua sec-ch-ua-mobile accept sec-fetch-site sec-fetch-mode sec-fetch-dest referer accept-encoding accept-language cookie priority"},
-	{"bandai-login15#7 gem-bandai.global-e.com stylesheet (Chrome 151 no-cors)", strictRefuses,
+	{"chrome151-g#7 cross-site stylesheet (Chrome 151 no-cors)", strictRefuses,
 		Request{Engine: chrome151, Class: ClassNoCORS, Method: "GET", HTTP2: true,
 			Added: Added{ClientHints: lowEntropyHints, Referer: true, Priority: true, StorageAccess: true}},
 		"sec-ch-ua-platform user-agent sec-ch-ua sec-ch-ua-mobile accept sec-fetch-site sec-fetch-mode sec-fetch-dest sec-fetch-storage-access referer accept-encoding accept-language priority"},
 	// WebKit late and law generations.
-	{"bandai-jp_login_iphone-safari18.7_1_1020#543 p-bandai.jp/login_chk/ (Safari 18.7.5 login form)", strictRefuses,
+	{"safari18.7-d#543 (Safari 18.7.5 login form)", strictRefuses,
 		Request{Engine: safari187, Class: ClassForm, Method: "POST", HTTP2: true,
 			Added: Added{Origin: true, Body: true, Referer: true, Cookie: true, Priority: true}},
 		"accept content-type origin sec-fetch-site sec-fetch-mode user-agent referer sec-fetch-dest content-length accept-language priority accept-encoding cookie"},
-	{"target_login_iphone15-safari26.5_1_0909#394 gsp.target.com passwordless_preauthentications (Safari 26.5 preflight)", strictRefuses,
+	{"safari26.5-a#394 (Safari 26.5 preflight)", strictRefuses,
 		Request{Engine: Engine{Kind: WebKit, Major: 26, Minor: 5}, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
 			Added: Added{Origin: true, Referer: true, Priority: true, RequestHeaders: true}},
 		"origin sec-fetch-site access-control-request-method access-control-request-headers sec-fetch-mode user-agent referer sec-fetch-dest content-length accept accept-language priority accept-encoding"},
-	{"morerewards_login_iphone-safari18.7_2_1020#127 login.morerewards.ca authenticate (Safari 18.7 preflight without a referrer)", strictRefuses,
+	{"safari18.7-g#127 (Safari 18.7 preflight without a referrer)", strictRefuses,
 		Request{Engine: safari187, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
 			Added: Added{Origin: true, Priority: true, RequestHeaders: true}},
 		"sec-fetch-site origin access-control-request-method access-control-request-headers sec-fetch-mode user-agent content-length sec-fetch-dest accept accept-language priority accept-encoding"},
-	{"starbucks_login_iphone-safari18.7_1_0910#139 auth.starbucks.com vendor2.js (Safari 18.7.5 parser script)", strictRefuses,
+	{"safari18.7-e#139 (Safari 18.7.5 parser script)", strictRefuses,
 		Request{Engine: safari187, Class: ClassScript, Method: "GET", HTTP2: true, Added: Added{Referer: true, Cookie: true, Priority: true}},
 		"sec-fetch-dest user-agent accept referer sec-fetch-site sec-fetch-mode accept-language priority accept-encoding cookie"},
-	{"morerewards_login_iphone-safari26.6_1_1019#29 www.morerewards.ca arrow image (Safari 26.6 no-cors)", strictRefuses,
+	{"safari26.6-c#29 image (Safari 26.6 no-cors)", strictRefuses,
 		Request{Engine: Engine{Kind: WebKit, Major: 26, Minor: 6}, Class: ClassNoCORS, Method: "GET", HTTP2: true,
 			Added: Added{Referer: true, Cookie: true, Priority: true}},
 		"sec-fetch-dest user-agent accept referer sec-fetch-site sec-fetch-mode accept-language priority accept-encoding cookie"},
-	{"target_login_iphone12-safari18.7_1_0910#38 target.com typed (Safari 18.7.5 navigation)", strictRefuses,
+	{"safari18.7-a#38 bare host typed (Safari 18.7.5 navigation)", strictRefuses,
 		Request{Engine: safari187, Class: ClassNavigation, Method: "GET", HTTP2: true, Added: Added{UpgradeInsecureRequests: true, Priority: true}},
 		"sec-fetch-dest user-agent upgrade-insecure-requests accept sec-fetch-site sec-fetch-mode accept-language priority accept-encoding"},
-	{"target_login_iphone12-safari18.7_1_0910#39 www.target.com, #38's redirect hop", strictRefuses,
+	{"safari18.7-a#39 #38's redirect hop", strictRefuses,
 		Request{Engine: safari187, Class: ClassNavigation, Method: "GET", HTTP2: true, Redirected: true,
 			Added: Added{UpgradeInsecureRequests: true, Priority: true}},
 		"accept sec-fetch-site upgrade-insecure-requests sec-fetch-mode user-agent accept-language sec-fetch-dest priority accept-encoding"},
-	{"target_login_iphone12-safari18.7_1_0910#403 target.com typed without upgrade-insecure-requests", strictRefuses,
+	{"safari18.7-a#403 bare host typed without upgrade-insecure-requests", strictRefuses,
 		Request{Engine: safari187, Class: ClassNavigation, Method: "GET", HTTP2: true, Added: Added{Priority: true}},
 		"sec-fetch-dest user-agent accept sec-fetch-site sec-fetch-mode accept-language priority accept-encoding"},
-	{"target_login_iphone12-safari18.7_1_0910#404 www.target.com, #403's redirect hop (the capture law.WebKit.Counterwitness reads as a dictionary without priority)", strictRefuses,
+	{"safari18.7-a#404 #403's redirect hop (the capture law.WebKit.Counterwitness reads as a dictionary without priority)", strictRefuses,
 		Request{Engine: safari187, Class: ClassNavigation, Method: "GET", HTTP2: true, Redirected: true, Added: Added{Priority: true}},
 		"accept sec-fetch-site sec-fetch-mode user-agent accept-language sec-fetch-dest priority accept-encoding"},
-	{"target_login_iphone12-safari18.7_1_0910#317 gsp.target.com auth_codes (Safari 18.7.5 link navigation)", strictRefuses,
+	{"safari18.7-a#317 (Safari 18.7.5 link navigation)", strictRefuses,
 		Request{Engine: safari187, Class: ClassNavigation, Method: "GET", HTTP2: true, Added: Added{Referer: true, Cookie: true, Priority: true}},
 		"sec-fetch-dest user-agent accept referer sec-fetch-site sec-fetch-mode accept-language priority accept-encoding cookie"},
-	{"target_login_iphone12-safari18.7_1_0910#320 www.target.com/login, a redirect hop with a referrer", strictRefuses,
+	{"safari18.7-a#320 a redirect hop with a referrer", strictRefuses,
 		Request{Engine: safari187, Class: ClassNavigation, Method: "GET", HTTP2: true, Redirected: true,
 			Added: Added{Referer: true, Cookie: true, Priority: true}},
 		"accept sec-fetch-site priority sec-fetch-mode user-agent accept-language sec-fetch-dest referer accept-encoding cookie"},
-	{"rg-ios-safari#2 (Safari 18.7.5 HTTP/1.1 navigation)", strictRefuses,
+	{"safari18.7-h#2 (Safari 18.7.5 HTTP/1.1 navigation)", strictRefuses,
 		Request{Engine: safari187, Class: ClassNavigation, Method: "GET", Added: Added{Referer: true, Priority: true}},
 		"host sec-fetch-dest user-agent accept referer sec-fetch-site sec-fetch-mode accept-language priority accept-encoding connection"},
-	{"probe-safari-16e#4 appium.io typed (Safari 18.3, law generation)", strictRefuses,
+	{"probe-safari-16e#4 bare host typed (Safari 18.3, law generation)", strictRefuses,
 		Request{Engine: Engine{Kind: WebKit, Major: 18, Minor: 3}, Class: ClassNavigation, Method: "GET", HTTP2: true,
 			Added: Added{UpgradeInsecureRequests: true, Priority: true}},
 		"sec-fetch-dest user-agent upgrade-insecure-requests accept sec-fetch-site sec-fetch-mode accept-language priority accept-encoding"},
-	{"probe-safari-16e#6 appium.io/docs/en/latest/ redirect hop (Safari 18.3)", strictRefuses,
+	{"probe-safari-16e#6 redirect hop (Safari 18.3)", strictRefuses,
 		Request{Engine: Engine{Kind: WebKit, Major: 18, Minor: 3}, Class: ClassNavigation, Method: "GET", HTTP2: true, Redirected: true,
 			Added: Added{Referer: true, Priority: true}},
 		"accept sec-fetch-site priority sec-fetch-mode user-agent accept-language sec-fetch-dest referer accept-encoding"},
 	// Early generations keep their captured browser-owned GET order and send no priority (s-live testdata/webkit_generation_witness.json).
-	{"ios18-safari-14#30 example.com (Safari 18.0 navigation)", strictRefuses,
+	{"ios18-safari-14#30 (Safari 18.0 navigation)", strictRefuses,
 		Request{Engine: Engine{Kind: WebKit, Major: 18}, Class: ClassNavigation, Method: "GET", HTTP2: true, Added: Added{Referer: true, Cookie: true}},
 		"accept sec-fetch-site sec-fetch-dest accept-language sec-fetch-mode user-agent referer accept-encoding cookie"},
-	{"probe-safari-13#26 example.com/s.js (Safari 18.0 parser script)", strictRefuses,
+	{"probe-safari-13#26 (Safari 18.0 parser script)", strictRefuses,
 		Request{Engine: Engine{Kind: WebKit, Major: 18}, Class: ClassScript, Method: "GET", HTTP2: true, Added: Added{Referer: true}},
 		"accept sec-fetch-site sec-fetch-dest accept-language sec-fetch-mode user-agent referer accept-encoding"},
-	{"ios18-safari-14#27 lodash (Safari 18.0 inserted script)", strictLate,
+	{"ios18-safari-14#27 (Safari 18.0 inserted script)", strictLate,
 		Request{Engine: Engine{Kind: WebKit, Major: 18}, Class: ClassScript, Method: "GET", HTTP2: true, Inserted: true, Added: Added{Referer: true}},
 		"accept sec-fetch-site sec-fetch-dest accept-language sec-fetch-mode user-agent referer accept-encoding"},
-	{"ios18-crios-16#21 lodash (Chrome for iOS 18.6, early-webview inserted script)", strictLate,
+	{"ios18-crios-16#21 (Chrome for iOS 18.6, early-webview inserted script)", strictLate,
 		Request{Engine: Engine{Kind: WebKit, Major: 18, Minor: 6, WebView: true}, Class: ClassScript, Method: "GET", HTTP2: true, Inserted: true,
 			Added: Added{Referer: true}},
 		"accept sec-fetch-site sec-fetch-dest accept-language sec-fetch-mode user-agent referer accept-encoding"},
@@ -365,12 +365,12 @@ func TestOrderUniversalReproducesBrowserClassWitnesses(t *testing.T) {
 	}
 }
 
-// The Bandai and Starbucks Safari 18.7.5 login forms send one name set in two orders. Both are outcomes of the
-// fetch/XHR law over the form's content-type and the loader's names, so strict XHR Order is ambiguous on it;
-// OrderUniversal frames the form with the law's one canonical outcome, Bandai's.
+// Two sites' Safari 18.7.5 login forms send one name set in two orders. Both are outcomes of the fetch/XHR law
+// over the form's content-type and the loader's names, so strict XHR Order is ambiguous on it; OrderUniversal
+// frames the form with the law's one canonical outcome, the first site's.
 func TestOrderUniversalWebKitFormIsItsXHRDictionary(t *testing.T) {
-	bandai := strings.Fields("accept content-type origin sec-fetch-site sec-fetch-mode user-agent referer sec-fetch-dest content-length accept-language priority accept-encoding cookie")
-	starbucks := strings.Fields("accept content-type sec-fetch-site origin sec-fetch-mode user-agent referer sec-fetch-dest content-length accept-language priority accept-encoding cookie")
+	originFirst := strings.Fields("accept content-type origin sec-fetch-site sec-fetch-mode user-agent referer sec-fetch-dest content-length accept-language priority accept-encoding cookie")
+	siteFirst := strings.Fields("accept content-type sec-fetch-site origin sec-fetch-mode user-agent referer sec-fetch-dest content-length accept-language priority accept-encoding cookie")
 	form := Request{Engine: safari187, Class: ClassForm, Method: "POST", HTTP2: true,
 		Added: Added{Origin: true, Body: true, Referer: true, Cookie: true, Priority: true}}
 	xhr := form
@@ -381,7 +381,7 @@ func TestOrderUniversalWebKitFormIsItsXHRDictionary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for name, o := range map[string][]string{"bandai-jp_login_iphone-safari18.7_1_1020#543": bandai, "starbucks_login_iphone-safari18.7_1_0910#161 and starbucks_login_iphone-safari18.7_2_0919#136": starbucks} {
+	for name, o := range map[string][]string{"safari18.7-d#543": originFirst, "safari18.7-e#161 and safari18.7-f#136": siteFirst} {
 		if !containsOrder(outcomes, o) {
 			t.Errorf("%s %v is no outcome of the XHR law %v", name, o, outcomes)
 		}
@@ -389,22 +389,22 @@ func TestOrderUniversalWebKitFormIsItsXHRDictionary(t *testing.T) {
 	_, err = Order(form)
 	wantErr[*UnwitnessedError](t, err)
 	got, err := OrderUniversal(form)
-	if err != nil || !slices.Equal(got.Header, bandai) {
-		t.Fatalf("universal form %v (%v), want the canonical outcome %v", got.Header, err, bandai)
+	if err != nil || !slices.Equal(got.Header, originFirst) {
+		t.Fatalf("universal form %v (%v), want the canonical outcome %v", got.Header, err, originFirst)
 	}
 	// The form keeps its own tie-break (FormLoaderAdded); an XHR of the same
 	// names follows the loader's insertion order, sec-fetch-site before
 	// origin (HYPOTHESIS(webkit_loader_insertion_order)).
-	if asXHR, err := OrderUniversal(xhr); err != nil || !slices.Equal(asXHR.Header, starbucks) {
-		t.Errorf("universal XHR of the form's names %v (%v), want the loader order's outcome %v", asXHR.Header, err, starbucks)
+	if asXHR, err := OrderUniversal(xhr); err != nil || !slices.Equal(asXHR.Header, siteFirst) {
+		t.Errorf("universal XHR of the form's names %v (%v), want the loader order's outcome %v", asXHR.Header, err, siteFirst)
 	}
 }
 
 // Known counterexamples: captures no mechanism input expresses are not reproduced; those an input does express
 // stay typed failures.
 func TestOrderUniversalBrowserClassCounterexamples(t *testing.T) {
-	// bandai-jp-login-evidence-20261020c#275 (Chrome 155) and the 39 Starbucks Chrome submits behind s-live's
-	// flow_starbucks.go: an automation Accept-Language override sets accept-language before accept.
+	// chrome155-a#275 (Chrome 155) and 39 captured Chrome form submits of one site: an automation
+	// Accept-Language override sets accept-language before accept.
 	override := strings.Fields("content-length cache-control sec-ch-ua sec-ch-ua-mobile sec-ch-ua-platform upgrade-insecure-requests content-type user-agent origin accept-language accept sec-fetch-site sec-fetch-mode sec-fetch-user sec-fetch-dest referer accept-encoding cookie priority")
 	form, err := OrderUniversal(Request{Engine: Engine{Kind: Chromium, Major: 155}, Class: ClassForm, Method: "POST", HTTP2: true,
 		Added: Added{ClientHints: lowEntropyHints, Origin: true, Body: true, Referer: true, Cookie: true, Priority: true, FetchUser: true}})
@@ -416,7 +416,7 @@ func TestOrderUniversalBrowserClassCounterexamples(t *testing.T) {
 	if slices.Equal(form.Header, override) || !slices.Equal(form.Header, moved) {
 		t.Errorf("Chrome 155 form %v: want the network stack's accept-language slot %v, not the override's %v", form.Header, moved, override)
 	}
-	// target_cart_iphone17-safari26.6_1_1006#7 (Safari 26.6.1): the early-load burst puts user-agent first.
+	// safari26.6-a#7 (Safari 26.6.1): the early-load burst puts user-agent first.
 	burst := strings.Fields("user-agent sec-fetch-dest accept referer sec-fetch-site sec-fetch-mode accept-language priority accept-encoding")
 	script, err := OrderUniversal(Request{Engine: Engine{Kind: WebKit, Major: 26, Minor: 6}, Class: ClassScript, Method: "GET", HTTP2: true,
 		Added: Added{Referer: true, Priority: true}})
@@ -428,11 +428,11 @@ func TestOrderUniversalBrowserClassCounterexamples(t *testing.T) {
 		t.Errorf("Safari 26.6 parser script %v, want %v (the burst capture is %v)", script.Header, swapped, burst)
 	}
 	unwitnessed := map[string]Request{
-		// axs-3#19: Accept-CH hints on a Cloudflare challenge form.
-		"axs-3#19 Accept-CH form": {Engine: Engine{Kind: Chromium, Major: 153}, Class: ClassForm, Method: "POST", HTTP2: true,
+		// chrome153-a#19: Accept-CH hints on a Cloudflare challenge form.
+		"chrome153-a#19 Accept-CH form": {Engine: Engine{Kind: Chromium, Major: 153}, Class: ClassForm, Method: "POST", HTTP2: true,
 			Added: Added{ClientHints: []string{"sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-arch", "sec-ch-ua-platform", "sec-ch-ua-platform-version",
 				"sec-ch-ua-model", "sec-ch-ua-bitness", "sec-ch-ua-full-version-list"}, Origin: true, Body: true, Referer: true, Cookie: true, Priority: true}},
-		// HintCounterwitness axs-2#14 holds on a call-less Blink map.
+		// HintCounterwitness chrome-c#14 holds on a call-less Blink map.
 		"full-version no-cors": {Engine: Engine{Kind: Chromium, Major: 154}, Class: ClassNoCORS, Method: "GET", HTTP2: true,
 			Added: Added{ClientHints: append(slices.Clone(lowEntropyHints), "sec-ch-ua-full-version"), Referer: true}},
 	}
@@ -493,7 +493,7 @@ func TestOrderUniversalBrowserClassesFailClosed(t *testing.T) {
 		"early navigation priority":     get(early, ClassNavigation, func(*Request) {}),
 		"navigation request headers":    get(safari187, ClassNavigation, func(r *Request) { r.Added.RequestHeaders = true }),
 		"xhr request headers":           func() Request { r := chromeXHR(151, "content-type"); r.Added.RequestHeaders = true; return r }(),
-		"xhr upgrade-insecure":          func() Request { r := targetSafari(); r.Added.UpgradeInsecureRequests = true; return r }(),
+		"xhr upgrade-insecure":          func() Request { r := safariShapeXHR(); r.Added.UpgradeInsecureRequests = true; return r }(),
 	}
 	for name, r := range input {
 		if _, err := OrderUniversal(r); !errors.As(err, new(*InputError)) {

@@ -1,7 +1,6 @@
 package evade
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -14,44 +13,12 @@ import (
 type ErrorEnvelope struct {
 	Success bool      `json:"success"`
 	Error   ErrorBody `json:"error"`
-	Debug   *Stop     `json:"debug,omitempty"` // shape, debug requests only
 }
 
 type ErrorBody struct {
 	Code               string `json:"code"`
 	Message            string `json:"message"`
 	ChallengeVariantID string `json:"challenge_variant_id,omitempty"` // shape only
-}
-
-// Stop is the typed stop a Shape debug request's error body carries: where
-// the solve stopped and why. Stage and Reason are stable, machine-readable
-// names; Label and Field name the law or parameter a generation stopped on.
-type Stop struct {
-	Stage              string              `json:"stage"`
-	Reason             string              `json:"reason"`
-	Label              string              `json:"label,omitempty"`
-	Field              string              `json:"field,omitempty"`
-	Detail             string              `json:"detail"`
-	ExtractionFailures []ExtractionFailure `json:"extraction_failures,omitempty"`
-	// Partial is the solve's result as far as it got, undecoded: its
-	// members are the target's own diagnostics.
-	Partial json.RawMessage `json:"partial,omitempty"`
-	// Internal marks the server's own bug (500), Upstream a failing proxy
-	// or target (503); neither is a deterministic refusal.
-	Internal bool `json:"internal,omitempty"`
-	Upstream bool `json:"upstream,omitempty"`
-	NotFound bool `json:"not_found,omitempty"` // stored evidence is absent
-	// NotBeforeUnixMS is the earliest instant a session continuation sent
-	// too early (Reason send_too_early) may be sent again.
-	NotBeforeUnixMS float64 `json:"not_before_unix_ms,omitempty"`
-}
-
-// ExtractionFailure is one fail-closed extractor class of the challenge build.
-type ExtractionFailure struct {
-	Class  string `json:"class"`
-	Param  string `json:"param"`
-	Reason string `json:"reason"`
-	Detail string `json:"detail,omitempty"`
 }
 
 // Code is ErrorBody.Code; each constant's comment names the targets that emit it.
@@ -90,8 +57,7 @@ const (
 )
 
 // APIError is a non-2xx response. When the body is not an ErrorEnvelope,
-// Code is empty and Message holds the raw body. Stop is the envelope's typed
-// debug stop, nil when the body carries none. Attempts counts the requests
+// Code is empty and Message holds the raw body. Attempts counts the requests
 // Call sent, so above 1 the 429/503 answers were already retried and
 // retrying again at once only adds load.
 type APIError struct {
@@ -99,7 +65,6 @@ type APIError struct {
 	Code               Code
 	Message            string
 	ChallengeVariantID string
-	Stop               *Stop
 	RateLimit          RateLimit
 	Attempts           int
 }
@@ -107,15 +72,6 @@ type APIError struct {
 func (e *APIError) Error() string {
 	var text string
 	switch {
-	case e.Stop != nil:
-		where := e.Stop.Stage + "/" + e.Stop.Reason
-		if e.Stop.Label != "" {
-			where += " label=" + e.Stop.Label
-		}
-		if e.Stop.Field != "" {
-			where += " field=" + e.Stop.Field
-		}
-		text = fmt.Sprintf("evade: %d %s: %s: %s", e.Status, e.Code, where, e.Stop.Detail)
 	case e.Code == "":
 		text = fmt.Sprintf("evade: %d: %s", e.Status, e.Message)
 	default:

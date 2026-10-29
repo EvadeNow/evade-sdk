@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-const targetPrefix = "x-gyjwza5z-"
+const testShapePrefix = "x-gyjwza5z-"
 
 func chromeXHR(major int, calls ...string) Request {
 	return Request{
@@ -18,15 +18,15 @@ func chromeXHR(major int, calls ...string) Request {
 	}
 }
 
-// Target username validation without -a0 (target-ios12#398).
-func targetSafari(pins ...*Pin) Request {
+// A captured Safari 18.7 username-validation XHR whose Shape block has no -a0.
+func safariShapeXHR(pins ...*Pin) Request {
 	calls := []string{"content-type"}
 	for _, s := range "fbcdza" {
-		calls = append(calls, targetPrefix+string(s))
+		calls = append(calls, testShapePrefix+string(s))
 	}
 	return Request{
 		Engine: Engine{Kind: WebKit, Major: 18, Minor: 7}, Class: ClassXHR, Method: "POST", HTTP2: true,
-		Calls: calls, ShapePrefix: targetPrefix, Pins: pins,
+		Calls: calls, ShapePrefix: testShapePrefix, Pins: pins,
 		Added: Added{Origin: true, Referer: true, Cookie: true, Body: true, Priority: true},
 	}
 }
@@ -43,6 +43,30 @@ func wantErr[E error](t *testing.T, err error) E {
 		t.Fatalf("want %T, got %v", typed, err)
 	}
 	return typed
+}
+
+func testLaw(t *testing.T) *lawFile {
+	t.Helper()
+	return law
+}
+
+func permute(xs []string, fn func([]string) bool) bool {
+	var rec func(int) bool
+	rec = func(k int) bool {
+		if k == len(xs) {
+			return fn(xs)
+		}
+		for i := k; i < len(xs); i++ {
+			xs[k], xs[i] = xs[i], xs[k]
+			if rec(k + 1) {
+				xs[k], xs[i] = xs[i], xs[k]
+				return true
+			}
+			xs[k], xs[i] = xs[i], xs[k]
+		}
+		return false
+	}
+	return rec(0)
 }
 
 // dictionaryOf strips r's HTTP/1.1 framing and its generation's tail from
@@ -96,7 +120,7 @@ func wantLateOrder(t *testing.T, name string, r Request) {
 // HYPOTHESIS(webkit_early_falls_back_to_late) and HYPOTHESIS(webkit_macos_is_ios_late): an early build's
 // XHR with the browser's priority, under late-scoped pins, and macOS Safari 26.6.2's are ordered as late.
 func TestWebKitFallsBackToLate(t *testing.T) {
-	r := targetSafari(testInstall)
+	r := safariShapeXHR(testInstall)
 	outcomes, err := Outcomes(r)
 	if err != nil {
 		t.Fatal(err)
@@ -122,14 +146,14 @@ func TestOrderRefusesClassesOutsideTheCertificate(t *testing.T) {
 func TestOrderRefusesUnwitnessedEngines(t *testing.T) {
 	for _, r := range []Request{
 		chromeXHR(140, "content-type"),
-		chromeXHR(156, "content-type"),
+		chromeXHR(157, "content-type"),
 		{Engine: Engine{Kind: EngineUnknown, Major: 148}, Class: ClassFetch, Method: "GET"},
-		func() Request { r := targetSafari(testInstall); r.Engine.Major = 17; return r }(),
-		func() Request { r := targetSafari(testInstall); r.Engine.Major = 19; return r }(),
-		func() Request { r := targetSafari(testInstall); r.Engine.Minor = 1; return r }(),
-		func() Request { r := targetSafari(testInstall); r.Engine.Minor, r.Engine.WebView = 2, true; return r }(),
+		func() Request { r := safariShapeXHR(testInstall); r.Engine.Major = 17; return r }(),
+		func() Request { r := safariShapeXHR(testInstall); r.Engine.Major = 19; return r }(),
+		func() Request { r := safariShapeXHR(testInstall); r.Engine.Minor = 1; return r }(),
+		func() Request { r := safariShapeXHR(testInstall); r.Engine.Minor, r.Engine.WebView = 2, true; return r }(),
 		func() Request {
-			r := targetSafari(testInstall)
+			r := safariShapeXHR(testInstall)
 			r.Engine.Major, r.Engine.Minor = 26, 5
 			r.Engine.WebView = true
 			return r
@@ -138,8 +162,10 @@ func TestOrderRefusesUnwitnessedEngines(t *testing.T) {
 		_, err := Order(r)
 		wantErr[*UnwitnessedError](t, err)
 	}
-	if _, err := Order(chromeXHR(141, "content-type")); err != nil {
-		t.Fatalf("Chrome 141 is witnessed: %v", err)
+	for _, major := range []int{141, 156} {
+		if _, err := Order(chromeXHR(major, "content-type")); err != nil {
+			t.Fatalf("Chrome %d is witnessed: %v", major, err)
+		}
 	}
 }
 
@@ -173,7 +199,7 @@ func TestWebKitHTTP1PinCase(t *testing.T) {
 }
 
 func TestOrderRefusesWebKitInputsTheLawDoesNotCover(t *testing.T) {
-	base := targetSafari(testInstall)
+	base := safariShapeXHR(testInstall)
 	outcomes, err := Outcomes(base)
 	if err != nil {
 		t.Fatal(err)
@@ -215,10 +241,10 @@ func TestOrderRejectsImpossibleInputs(t *testing.T) {
 		"space":            chromeXHR(151, "x a"),
 		"colon":            chromeXHR(151, ":path"),
 		"non-ascii":        chromeXHR(151, "x-é"),
-		"prefix unused":    func() Request { r := chromeXHR(151, "x-a"); r.ShapePrefix = targetPrefix; return r }(),
-		"nil pin":          targetSafari(testInstall, nil),
+		"prefix unused":    func() Request { r := chromeXHR(151, "x-a"); r.ShapePrefix = testShapePrefix; return r }(),
+		"nil pin":          safariShapeXHR(testInstall, nil),
 		"webkit pin":       func() Request { r := chromeXHR(151, "x-a"); r.Pins = []*Pin{testInstall}; return r }(),
-		"redirected xhr":   func() Request { r := targetSafari(testInstall); r.Redirected = true; return r }(),
+		"redirected xhr":   func() Request { r := safariShapeXHR(testInstall); r.Redirected = true; return r }(),
 	}
 	for name, r := range cases {
 		_, err := Order(r)
@@ -297,7 +323,7 @@ func TestChromiumFramingByProtocol(t *testing.T) {
 // TestWebKitAmbiguityFailsClosedUntilAPinCaseDecides: a case decides only
 // on its own dictionary and generations.
 func TestWebKitAmbiguityFailsClosedUntilAPinCaseDecides(t *testing.T) {
-	r := targetSafari(testInstall)
+	r := safariShapeXHR(testInstall)
 	_, err := Order(r)
 	amb := wantErr[*AmbiguousError](t, err)
 	outcomes, err := Outcomes(r)
@@ -329,7 +355,7 @@ func TestWebKitAmbiguityFailsClosedUntilAPinCaseDecides(t *testing.T) {
 }
 
 func TestOrderUniversalSelectsAnAdmissibleWebKitHistory(t *testing.T) {
-	r := targetSafari()
+	r := safariShapeXHR()
 	if _, err := Order(r); !errors.As(err, new(*UnwitnessedError)) {
 		t.Fatalf("strict order without an install pin = %v, want unwitnessed", err)
 	}
@@ -396,10 +422,10 @@ func TestOrderUniversalKeepsPageSetWebKitTailNamesInTheDictionary(t *testing.T) 
 	}
 }
 
-// targetSafari calls shape:b before shape:a; testInstall's shape:a < shape:b
+// safariShapeXHR calls shape:b before shape:a; testInstall's shape:a < shape:b
 // outranks that supplied order instead of cycling with it.
 func TestOrderUniversalHonorsInstallPins(t *testing.T) {
-	r := targetSafari(testInstall)
+	r := safariShapeXHR(testInstall)
 	_, err := Order(r)
 	wantErr[*AmbiguousError](t, err)
 	pinned, err := Outcomes(r)
@@ -413,7 +439,7 @@ func TestOrderUniversalHonorsInstallPins(t *testing.T) {
 	if !slices.ContainsFunc(pinned, func(o []string) bool { return slices.Equal(o, got.Header) }) {
 		t.Fatalf("universal order %v is none of the %d outcomes under the install pin", got.Header, len(pinned))
 	}
-	if !precedes(got.Header, targetPrefix+"a", targetPrefix+"b") {
+	if !precedes(got.Header, testShapePrefix+"a", testShapePrefix+"b") {
 		t.Fatalf("universal order %v breaks the install precedence shape:a < shape:b", got.Header)
 	}
 	reversed := &Pin{ID: "test-install-reversed", Engine: "webkit", Install: [][2]string{{"shape:b", "shape:a"}}}
@@ -425,7 +451,7 @@ func TestOrderUniversalHonorsInstallPins(t *testing.T) {
 // A matching case's wire precedences constrain the emitted order, not the
 // insertion history; no admitted outcome obeying them fails closed.
 func TestOrderUniversalObeysMatchingWireCases(t *testing.T) {
-	r := targetSafari(testInstall)
+	r := safariShapeXHR(testInstall)
 	outcomes, err := Outcomes(r)
 	if err != nil {
 		t.Fatal(err)
@@ -436,7 +462,7 @@ func TestOrderUniversalObeysMatchingWireCases(t *testing.T) {
 	for _, o := range [][]string{outcomes[0], outcomes[len(outcomes)-1]} {
 		// Without an install pin strict Order refuses the Shape block before
 		// reading cases, so only the universal path applies this one.
-		cased := targetSafari(decidingPin(t, r, o))
+		cased := safariShapeXHR(decidingPin(t, r, o))
 		if _, err := Order(cased); !errors.As(err, new(*UnwitnessedError)) {
 			t.Fatalf("strict order without an install pin = %v, want unwitnessed", err)
 		}
@@ -446,10 +472,10 @@ func TestOrderUniversalObeysMatchingWireCases(t *testing.T) {
 		}
 	}
 	dict := dictionaryOf(t, r, outcomes[0])
-	a, b := slices.Index(dict, targetPrefix+"a"), slices.Index(dict, targetPrefix+"b")
+	a, b := slices.Index(dict, testShapePrefix+"a"), slices.Index(dict, testShapePrefix+"b")
 	dict[a], dict[b] = dict[b], dict[a]
 	contrary := &Pin{ID: "test-contrary", Engine: "webkit", Cases: []PinCase{{Dictionary: dict,
-		Wire: [][2]string{{targetPrefix + "b", targetPrefix + "a"}}, Generations: []string{"late"}, Witnesses: []Witness{{HAR: "test"}}}}}
+		Wire: [][2]string{{testShapePrefix + "b", testShapePrefix + "a"}}, Generations: []string{"late"}, Witnesses: []Witness{{HAR: "test"}}}}}
 	r.Pins = []*Pin{testInstall, contrary}
 	_, err = OrderUniversal(r)
 	wantErr[*UnwitnessedError](t, err)
@@ -460,7 +486,7 @@ func TestOrderUniversalObeysMatchingWireCases(t *testing.T) {
 // the early generation's facts: accept-language and accept-encoding inside the
 // CF dictionary, cookie the whole tail, and no priority header.
 func TestOrderUniversalKeepsEarlyGenerationFacts(t *testing.T) {
-	r := targetSafari()
+	r := safariShapeXHR()
 	r.Engine.Minor, r.Added.Priority = 0, false
 	if _, err := Order(r); !errors.As(err, new(*UnwitnessedError)) {
 		t.Fatalf("strict early order without an install pin = %v, want unwitnessed", err)
@@ -518,7 +544,7 @@ func TestOrderUniversalIgnoresStrictLateFallback(t *testing.T) {
 	if !slices.Equal(got.Header, want) {
 		t.Fatalf("universal early order %v, want the canonical early order %v", got.Header, want)
 	}
-	open := targetSafari()
+	open := safariShapeXHR()
 	open.Engine.Minor, open.Added.Priority = 0, false
 	if o, err := OrderUniversal(open); err != nil || o.Header[len(o.Header)-1] != "cookie" ||
 		o.Header[len(o.Header)-2] == "accept-encoding" && o.Header[len(o.Header)-3] == "accept-language" {
@@ -609,8 +635,8 @@ func TestOrderUniversalHonorsLateCapturedCaseOnUncoveredBuilds(t *testing.T) {
 
 func TestWebKitPinCasesBindThePhysicalNames(t *testing.T) {
 	// Another Shape prefix moves every CF home: a case witnessed on
-	// targetPrefix must not decide it.
-	r := targetSafari(testInstall)
+	// testShapePrefix must not decide it.
+	r := safariShapeXHR(testInstall)
 	outcomes, err := Outcomes(r)
 	if err != nil {
 		t.Fatal(err)
@@ -618,7 +644,7 @@ func TestWebKitPinCasesBindThePhysicalNames(t *testing.T) {
 	decide := decidingPin(t, r, outcomes[0])
 	const other = "x-q7m2k9vb-"
 	for i, name := range r.Calls {
-		r.Calls[i] = strings.Replace(name, targetPrefix, other, 1)
+		r.Calls[i] = strings.Replace(name, testShapePrefix, other, 1)
 	}
 	r.ShapePrefix = other
 	pinned := r
@@ -692,7 +718,7 @@ func TestWebKitCapturedCaseIsItsOrder(t *testing.T) {
 // precedences, needs no install pin for a Shape block, and refuses what
 // the insertion law does not order.
 func TestOutcomesUnderInstallPrecedences(t *testing.T) {
-	r := targetSafari(testInstall)
+	r := safariShapeXHR(testInstall)
 	pinned, err := Outcomes(r)
 	if err != nil {
 		t.Fatal(err)
@@ -706,7 +732,7 @@ func TestOutcomesUnderInstallPrecedences(t *testing.T) {
 		t.Fatalf("%d outcomes under the install pin, %d free", len(pinned), len(free))
 	}
 	for _, o := range pinned {
-		if !precedes(o, targetPrefix+"a", targetPrefix+"b") {
+		if !precedes(o, testShapePrefix+"a", testShapePrefix+"b") {
 			t.Errorf("outcome %v breaks the install precedence shape:a < shape:b", o)
 		}
 		if !slices.ContainsFunc(free, func(f []string) bool { return slices.Equal(f, o) }) {
@@ -716,14 +742,14 @@ func TestOutcomesUnderInstallPrecedences(t *testing.T) {
 	refused := map[string]Request{
 		"chromium":   chromeXHR(151, "content-type"),
 		"navigation": {Engine: Engine{Kind: WebKit, Major: 18, Minor: 7}, Class: ClassNavigation, Method: "GET", HTTP2: true},
-		"safari 17":  func() Request { r := targetSafari(); r.Engine.Major = 17; return r }(),
+		"safari 17":  func() Request { r := safariShapeXHR(); r.Engine.Major = 17; return r }(),
 		"no insertion law": func() Request {
-			r := targetSafari()
+			r := safariShapeXHR()
 			r.Engine.Minor, r.Added.Priority = 0, false
 			return r
 		}(),
 		"page-set accept-language": func() Request {
-			r := targetSafari()
+			r := safariShapeXHR()
 			r.Calls = append(r.Calls, "accept-language")
 			return r
 		}(),
@@ -733,7 +759,7 @@ func TestOutcomesUnderInstallPrecedences(t *testing.T) {
 			t.Errorf("%s: %v, want unwitnessed", name, err)
 		}
 	}
-	r = targetSafari()
+	r = safariShapeXHR()
 	r.Redirected = true
 	_, err = Outcomes(r)
 	wantErr[*InputError](t, err)
@@ -1053,8 +1079,8 @@ func TestUniversalLawDataIsWellFormed(t *testing.T) {
 	}
 	c := &law.Chromium
 	runs := c.Form.Majors
-	if len(runs) == 0 || runs[0].From != c.Witnessed[0] || runs[len(runs)-1].To != c.Witnessed[1] {
-		t.Fatalf("form runs %v do not span the witnessed majors %v", runs, c.Witnessed)
+	if len(runs) == 0 || runs[0].From != c.Witnessed[0] || runs[len(runs)-1].To > c.Witnessed[1] {
+		t.Fatalf("form runs %v fall outside the witnessed Chromium majors %v", runs, c.Witnessed)
 	}
 	for i, m := range runs {
 		if m.From > m.To || i > 0 && m.From <= runs[i-1].To || len(m.Witnesses) == 0 || !slices.Contains(m.BrowserSet, "origin") {
@@ -1077,9 +1103,9 @@ func TestStrictOrderKeepsItsRefusals(t *testing.T) {
 			Added: Added{Referer: true, Priority: true, UpgradeInsecureRequests: class == ClassNavigation}})
 		wantErr[*UnwitnessedError](t, err)
 	}
-	_, err := Order(targetSafari())
+	_, err := Order(safariShapeXHR())
 	wantErr[*UnwitnessedError](t, err)
-	_, err = Order(targetSafari(testInstall))
+	_, err = Order(safariShapeXHR(testInstall))
 	wantErr[*AmbiguousError](t, err)
 	nav := Request{Engine: Engine{Kind: Chromium, Major: 154}, Class: ClassNavigation, Method: "GET", HTTP2: true,
 		Added: Added{ClientHints: []string{"sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform"}, FetchUser: true, Priority: true}}
@@ -1098,14 +1124,14 @@ func TestStrictOrderKeepsItsRefusals(t *testing.T) {
 func TestXHRProgramOrdersMatchesBruteForce(t *testing.T) {
 	page := []string{"content-type", "x-api-key", "accept", "x-application-name", "x-requested-with"}
 	shapes := [][]string{
-		{targetPrefix + "f", targetPrefix + "b", targetPrefix + "c", targetPrefix + "d", targetPrefix + "z", targetPrefix + "a"},
-		{targetPrefix + "f", targetPrefix + "b", targetPrefix + "c", targetPrefix + "d", targetPrefix + "z", targetPrefix + "a", targetPrefix + "a0"},
+		{testShapePrefix + "f", testShapePrefix + "b", testShapePrefix + "c", testShapePrefix + "d", testShapePrefix + "z", testShapePrefix + "a"},
+		{testShapePrefix + "f", testShapePrefix + "b", testShapePrefix + "c", testShapePrefix + "d", testShapePrefix + "z", testShapePrefix + "a", testShapePrefix + "a0"},
 	}
 	var variants []Request
 	var units [][][]string
 	for _, shape := range shapes {
 		r := chromeXHR(151)
-		r.ShapePrefix = targetPrefix
+		r.ShapePrefix = testShapePrefix
 		variants = append(variants, r)
 		var u [][]string
 		for _, p := range page {

@@ -12,6 +12,7 @@ import (
 	"github.com/EvadeNow/evade-sdk/useragent"
 	"github.com/bogdanfinn/fhttp/http2"
 	"github.com/bogdanfinn/tls-client/profiles"
+	tls "github.com/bogdanfinn/utls"
 )
 
 // Behavior is connection behavior that belongs to a browser family rather than to one ClientHello.
@@ -126,16 +127,21 @@ func New() (*Resolver, error) {
 			return nil, &RegistryKeyError{Key: key, Reason: "matches no known key form"}
 		}
 		p := Profile{Name: key, Client: client, Behavior: s.behavior()}
-		// HYPOTHESIS(safari26_no_stream_priority): iOS Safari 26 and later
-		// send no HTTP/2 stream priority (curl-impersonate curl_safari260_ios:
-		// "HTTP/2: removed priority", --http2-no-priority; Safari 18 keeps a
-		// weight-256, non-exclusive priority). The tls-client profile states
-		// none, so fhttp falls back to its exclusive weight-255 default; a
-		// zero priority param makes the HEADERS frame skip the block
-		// (fhttp http2 frame.go IsZero). Falsified by a real Safari 26
-		// frame capture showing a priority block.
-		if s == stackSafari && index == &r.safariIOS && len(m) > 1 && majorAtLeast(m[1], 26) {
-			p.Client = noHeaderPriority(client)
+		if s == stackSafari && index == &r.safariIOS && len(m) > 2 {
+			switch {
+			case m[1] == "18" && m[2] == "0":
+				// tls-client omits Safari 18.0's HEADERS priority, triggering
+				// fhttp's exclusive fallback. The wire weight is encoded minus one.
+				p.Client = withHeaderPriority(client, &http2.PriorityParam{Weight: 255})
+			case majorAtLeast(m[1], 26):
+				// HYPOTHESIS(safari26_no_stream_priority): iOS Safari 26 and later
+				// send no HTTP/2 stream priority (curl-impersonate curl_safari260_ios:
+				// "HTTP/2: removed priority", --http2-no-priority). A zero priority
+				// param makes the HEADERS frame skip the block (fhttp http2 frame.go
+				// IsZero). Falsified by a real Safari 26 frame capture showing a
+				// priority block.
+				p.Client = withHeaderPriority(withSessionTicket(client), &http2.PriorityParam{})
+			}
 		}
 		r.named[key] = p
 		if index == nil {
@@ -163,13 +169,46 @@ func majorAtLeast(s string, bound int) bool {
 	return err == nil && major >= bound
 }
 
-// noHeaderPriority rebuilds the profile with a zero header priority, which
-// makes fhttp's HEADERS frame skip the priority block (frame.go IsZero).
-func noHeaderPriority(c profiles.ClientProfile) profiles.ClientProfile {
+// withHeaderPriority rebuilds a profile with explicit HTTP/2 HEADERS priority parameters.
+func withHeaderPriority(c profiles.ClientProfile, priority *http2.PriorityParam) profiles.ClientProfile {
 	return profiles.NewClientProfile(c.GetClientHelloId(), c.GetSettings(), c.GetSettingsOrder(),
-		c.GetPseudoHeaderOrder(), c.GetConnectionFlow(), c.GetPriorities(), &http2.PriorityParam{},
+		c.GetPseudoHeaderOrder(), c.GetConnectionFlow(), c.GetPriorities(), priority,
 		c.GetStreamID(), c.GetAllowHTTP(), c.GetHttp3Settings(), c.GetHttp3SettingsOrder(),
 		c.GetHttp3PriorityParam(), c.GetHttp3PseudoHeaderOrder(), c.GetHttp3SendGreaseFrames())
+}
+
+// withSessionTicket inserts Safari 26's empty session_ticket extension between
+// ec_point_formats and ALPN, preserving the captured fixed extension order.
+func withSessionTicket(c profiles.ClientProfile) profiles.ClientProfile {
+	id := c.GetClientHelloId()
+	id.SpecFactory = func() (tls.ClientHelloSpec, error) {
+		spec, err := c.GetClientHelloSpec()
+		if err != nil {
+			return tls.ClientHelloSpec{}, err
+		}
+		insertAt := -1
+		for i, extension := range spec.Extensions {
+			switch extension.(type) {
+			case *tls.SessionTicketExtension:
+				return spec, nil
+			case *tls.ALPNExtension:
+				insertAt = i
+			}
+		}
+		if insertAt < 0 {
+			return tls.ClientHelloSpec{}, fmt.Errorf("tlsprofile: Safari 26 ClientHello has no ALPN extension")
+		}
+		extensions := make([]tls.TLSExtension, len(spec.Extensions)+1)
+		copy(extensions, spec.Extensions[:insertAt])
+		extensions[insertAt] = &tls.SessionTicketExtension{}
+		copy(extensions[insertAt+1:], spec.Extensions[insertAt:])
+		spec.Extensions = extensions
+		return spec, nil
+	}
+	return profiles.NewClientProfile(id, c.GetSettings(), c.GetSettingsOrder(), c.GetPseudoHeaderOrder(),
+		c.GetConnectionFlow(), c.GetPriorities(), c.GetHeaderPriority(), c.GetStreamID(), c.GetAllowHTTP(),
+		c.GetHttp3Settings(), c.GetHttp3SettingsOrder(), c.GetHttp3PriorityParam(),
+		c.GetHttp3PseudoHeaderOrder(), c.GetHttp3SendGreaseFrames())
 }
 
 func keyVersion(key string, parts []string) (versioned, error) {

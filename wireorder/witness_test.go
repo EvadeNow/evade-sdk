@@ -17,13 +17,6 @@ const (
 	verdictLate
 )
 
-// Generations witnessed only by the iOS probe sessions in witnesses, not by the HAR corpus.
-var webkitWitnessedOutsideCorpus = map[string]string{
-	"early":         "witness_test.go",
-	"early-webview": "witness_test.go",
-	"law":           "witness_test.go",
-}
-
 // witness is a real browser request, header names in received order; id is capture#entry.
 type witness struct {
 	id      string
@@ -86,7 +79,7 @@ var witnesses = []witness{
 		want: []string{"sec-fetch-dest", "user-agent", "accept", "referer", "sec-fetch-site", "sec-fetch-mode", "accept-language", "priority", "accept-encoding"},
 	},
 	{
-		id: "target-ios27#30", verdict: verdictOrder,
+		id: "safari27.0-a#30", verdict: verdictOrder,
 		ua:   "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
 		r:    Request{Engine: Engine{Kind: WebKit, Major: 27}, Class: ClassScript, Method: "GET", HTTP2: true, Inserted: true, Added: Added{Referer: true, Priority: true}},
 		want: []string{"sec-fetch-dest", "user-agent", "accept", "referer", "sec-fetch-site", "sec-fetch-mode", "accept-language", "priority", "accept-encoding"},
@@ -104,7 +97,7 @@ var witnesses = []witness{
 		want: []string{"accept", "content-type", "sec-fetch-site", "origin", "x-probe-b", "sec-fetch-mode", "x-probe-a", "user-agent", "referer", "sec-fetch-dest", "content-length", "accept-language", "priority", "accept-encoding"},
 	},
 	{
-		id: "target-ios27-b#35", verdict: verdictOrder,
+		id: "safari27.0-b#35", verdict: verdictOrder,
 		ua:   "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
 		r:    Request{Engine: Engine{Kind: WebKit, Major: 27}, Class: ClassFetch, Method: "POST", HTTP2: true, Calls: []string{"content-type", "accept", "x-requested-with", "x-probe-a", "x-probe-b", "accept-api-version"}, Added: Added{Origin: true, Referer: true, Body: true, Priority: true}},
 		want: []string{"content-type", "accept", "x-requested-with", "sec-fetch-site", "x-probe-a", "sec-fetch-mode", "origin", "x-probe-b", "user-agent", "referer", "content-length", "sec-fetch-dest", "accept-api-version", "accept-language", "priority", "accept-encoding"},
@@ -234,6 +227,112 @@ func TestWebKitCounterwitnesses(t *testing.T) {
 			}
 		}
 	}
+}
+
+func webkitSplit(w *webkitLaw, names []string) (dict, tail []string) {
+	end := len(names)
+	for end > 0 && slices.Contains(w.Unresolved, names[end-1]) {
+		end--
+	}
+	ti := len(w.CFNetworkTail)
+	for end > 0 {
+		j := slices.Index(w.CFNetworkTail[:ti], names[end-1])
+		if j < 0 {
+			break
+		}
+		ti = j
+		end--
+	}
+	return names[:end], names[end:]
+}
+
+// cfReaches reports whether some insertion history obeying pred iterates in want order.
+func cfReaches(names []string, pred []uint64, want []string) (bool, error) {
+	n := len(names)
+	caps := cfCaps()
+	final := slices.IndexFunc(caps[:], func(c int) bool { return n <= c })
+	if final < 0 {
+		return false, fmt.Errorf("%d keys exceed the modelled CF table sizes", n)
+	}
+	finalSize := cfSizes()[final]
+	rank := make([]int, n)
+	for i, name := range names {
+		rank[i] = slices.Index(want, name)
+		if rank[i] < 0 {
+			return false, nil
+		}
+	}
+	hashes := make([]uint64, n)
+	for i, name := range names {
+		hashes[i] = cfStrHash(name)
+	}
+	type state struct {
+		done  uint64
+		slots []uint8
+	}
+	consistent := func(slots []uint8) bool {
+		last := -1
+		for _, k := range slots {
+			if k != 0 {
+				if rank[k-1] < last {
+					return false
+				}
+				last = rank[k-1]
+			}
+		}
+		return true
+	}
+	states := []state{{}}
+	for used := range n {
+		seen := map[string]struct{}{}
+		var next []state
+		for _, s := range states {
+			for i := range n {
+				bit := uint64(1) << i
+				if s.done&bit != 0 || pred[i]&^s.done != 0 {
+					continue
+				}
+				slots, err := cfAdd(s.slots, used, i, hashes)
+				if err != nil {
+					return false, err
+				}
+				if len(slots) == finalSize && !consistent(slots) {
+					continue
+				}
+				key := fmt.Sprintf("%x:%s", s.done|bit, slots)
+				if _, dup := seen[key]; dup {
+					continue
+				}
+				seen[key] = struct{}{}
+				next = append(next, state{s.done | bit, slots})
+			}
+		}
+		if len(next) == 0 {
+			return false, nil
+		}
+		if len(next) > 1<<22 {
+			return false, fmt.Errorf("%d states", len(next))
+		}
+		states = next
+	}
+	return true, nil
+}
+
+// Commons before uncommons, content-length last, plus extra precedences.
+func insertionModel(w *webkitLaw, names []string, extra [][2]string) []uint64 {
+	d := &webkitDictionary{names: names, pred: make([]uint64, len(names))}
+	common := func(n string) bool { return slices.Contains(w.CommonHeaders, n) }
+	for _, a := range names {
+		for _, b := range names {
+			if a != b && ((common(a) && a != "content-length" && !common(b)) || b == "content-length") {
+				d.before(a, b)
+			}
+		}
+	}
+	for _, e := range extra {
+		d.before(e[0], e[1])
+	}
+	return d.pred
 }
 
 func containsOrder(outcomes [][]string, o []string) bool {

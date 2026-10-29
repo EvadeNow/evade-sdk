@@ -12,8 +12,8 @@ import (
 	fhttp "github.com/bogdanfinn/fhttp"
 )
 
-// ChromeAcceptEncoding is desktop Chrome's Accept-Encoding on every request
-// class (the Windows and macOS Chrome 151-155 captures).
+// ChromeAcceptEncoding is Chrome's Accept-Encoding on every request class
+// (the Windows/macOS Chrome 151-155 and Android Chrome 156 captures).
 const ChromeAcceptEncoding = "gzip, deflate, br, zstd"
 
 // defaultAcceptLanguage is the Accept-Language a session starts with; the
@@ -32,7 +32,7 @@ type Browser struct {
 	// (SafariAcceptEncoding, ChromeAcceptEncoding).
 	AcceptEncoding string
 	// ClientHints is the fingerprint's navigator.userAgentData; nil on
-	// engines without UA-CH (Safari). Desktop Chrome needs it (Complete).
+	// engines without UA-CH (Safari). Chrome needs it (Complete).
 	ClientHints *ClientHints
 }
 
@@ -49,8 +49,8 @@ func (e *UnmodeledBrowserError) Error() string {
 
 // NewBrowser parses ua and binds the TLS profile tlsprofile selects for it.
 // Modeled browsers are the captured ones: iOS Safari, macOS Safari, Chrome
-// for iPhone, and desktop Chrome on Windows and macOS; desktop Chrome
-// further needs its fingerprint's ClientHints before use (Complete).
+// for iPhone, desktop Chrome on Windows/macOS, and mobile Chrome on Android.
+// Chrome further needs its fingerprint's ClientHints before use (Complete).
 //
 // Chrome for iOS on an iPhone runs as the iOS Safari of its iOS release:
 // every iOS browser fetches through the system WebKit, so its TLS profile
@@ -72,10 +72,11 @@ func NewBrowser(ua string) (Browser, error) {
 	}
 	desktopChrome := agent.Family == useragent.FamilyChrome &&
 		(agent.OS == useragent.OSWindows || agent.OS == useragent.OSMacOS)
+	androidChrome := agent.Family == useragent.FamilyChrome && agent.OS == useragent.OSAndroid && agent.Mobile
 	safari := agent.Family == useragent.FamilySafariIOS || agent.Family == useragent.FamilySafariMacOS
-	if !safari && !desktopChrome {
+	if !safari && !desktopChrome && !androidChrome {
 		return Browser{}, &UnmodeledBrowserError{UserAgent: raw, Reason: fmt.Sprintf(
-			"%s on %s: only iOS Safari, macOS Safari, Chrome for iPhone and desktop Chrome on Windows or macOS are modeled",
+			"%s on %s: only iOS Safari, macOS Safari, Chrome for iPhone, desktop Chrome on Windows or macOS, and mobile Chrome on Android are modeled",
 			agent.Family, agent.OS)}
 	}
 	resolver, err := tlsprofile.New()
@@ -138,19 +139,21 @@ func SafariAcceptEncoding(major, minor int) (string, error) {
 // UserAgent is the User-Agent the browser sends.
 func (b Browser) UserAgent() string { return b.Agent.Raw }
 
-// DesktopChrome reports the desktop Chrome model; NewBrowser admits Chrome
-// on Windows and macOS only.
-func (b Browser) DesktopChrome() bool { return b.Agent.Family == useragent.FamilyChrome }
+// DesktopChrome reports the desktop Chrome model.
+func (b Browser) DesktopChrome() bool {
+	return b.Agent.Family == useragent.FamilyChrome &&
+		(b.Agent.OS == useragent.OSWindows || b.Agent.OS == useragent.OSMacOS)
+}
 
 // Complete fails closed on a browser no request may leave with: no
-// User-Agent or Accept-Language, or a desktop Chrome without client hints
-// (Chrome sends sec-ch-ua* on every request; only its fingerprint states them).
+// User-Agent or Accept-Language, or Chrome without client hints (Chrome sends
+// sec-ch-ua* on every request; only its fingerprint states them).
 func (b Browser) Complete() error {
 	if b.UserAgent() == "" || b.AcceptLanguage == "" {
 		return errors.New("transport: no browser is bound: it has no User-Agent or Accept-Language")
 	}
-	if b.DesktopChrome() && b.ClientHints == nil {
-		return fmt.Errorf("transport: desktop Chrome %q has no client hints: take them from its fingerprint", b.UserAgent())
+	if b.Agent.Family == useragent.FamilyChrome && b.ClientHints == nil {
+		return fmt.Errorf("transport: Chrome %q has no client hints: take them from its fingerprint", b.UserAgent())
 	}
 	return nil
 }

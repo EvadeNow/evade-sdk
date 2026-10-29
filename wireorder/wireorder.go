@@ -988,7 +988,7 @@ func (g *webkitGeneration) priority(r *Request) error {
 // late orders the fetch, XHR and inserted script of a generation without an insertion or script law
 // (early, early-webview) that no captured pin case of its own generation holds, pins scoped to late applying.
 // HYPOTHESIS(webkit_early_falls_back_to_late): those builds' captures (ios18-safari-14#27, ios18-crios-16#21,
-// probe-crios-13#25, probe-crios-14#18) are not this order; a user decision lets live Target results judge it.
+// probe-crios-13#25, probe-crios-14#18) are not this order; a user decision lets live results judge it.
 // Falsified by a live BLOCK/refusal on an iOS 18.0-18.1 Safari or iOS 18.0-18.1/18.4-18.7 Chrome for iOS device.
 func (w *webkitLaw) late() *webkitGeneration {
 	return &w.Generations[slices.IndexFunc(w.Generations, func(g webkitGeneration) bool { return g.Name == "late" })]

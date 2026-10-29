@@ -22,7 +22,7 @@ type Request struct {
 	ReferrerPolicy       string               `json:"referrer_policy,omitempty"`
 	// PageHTML is the exact body the caller's browser received for TargetURL
 	// when that navigation was answered with a Shape interstitial (an inline
-	// VM and a replay script, e.g. p-bandai.jp item pages). The protected
+	// VM and a replay script). The protected
 	// request is then TargetURL's own GET replay (TargetAPI = TargetURL),
 	// ShapeJSURL and LoaderSource stay empty, and Cookies are the browser's
 	// for TargetURL. The solver reads the challenge from it and fetches
@@ -35,6 +35,7 @@ type Request struct {
 	// parse as a loader is fetched as without it); valid UTF-8 only.
 	LoaderSource    string `json:"loader_source,omitempty"`
 	ChallengeSource string `json:"challenge_source,omitempty"`
+	DocumentRequestUnixMS float64 `json:"document_request_unix_ms,omitempty"`
 	// UA is an exact User-Agent or an OS selector (OSIOS, ...); empty selects the iOS pool.
 	UA string `json:"ua,omitempty"`
 	// FingerprintRecordID pins the solve to one stored device record; UA, when set, must name its User-Agent or OS.
@@ -51,10 +52,10 @@ type Request struct {
 	IncludeInteractionTiming bool            `json:"include_interaction_timing,omitempty"` // with Debug only
 	// PageProfile: empty infers it from TargetURL, "none" disables it; session-opening request only.
 	PageProfile string `json:"page_profile,omitempty"`
-	// TargetDeviceInfo asks a fresh solve for the Target device_info its
-	// device record pairs with (Response.TargetDeviceInfo), so a caller
-	// sends Target's own fingerprint object from the same device the Shape
-	// payload states; a continuation refuses it. Send it only to a solver
+	// TargetDeviceInfo asks a fresh solve for the target's device_info
+	// capture its device record pairs with (Response.TargetDeviceInfo), so a
+	// caller sends the target's own fingerprint object from the same device
+	// the Shape payload states; a continuation refuses it. Send it only to a solver
 	// whose GET /solve/fields lists target_device_info.
 	TargetDeviceInfo bool `json:"target_device_info,omitempty"`
 }

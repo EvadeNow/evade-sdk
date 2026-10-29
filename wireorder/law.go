@@ -4,7 +4,7 @@ package wireorder
 var law = &lawFile{
 	Forbidden: []string{"accept-charset", "accept-encoding", "access-control-request-headers", "access-control-request-method", "connection", "content-length", "cookie", "cookie2", "date", "dnt", "expect", "host", "keep-alive", "origin", "referer", "set-cookie", "te", "trailer", "transfer-encoding", "upgrade", "via"},
 	Chromium: chromiumLaw{
-		Witnessed:     [2]int{141, 155},
+		Witnessed:     [2]int{141, 156},
 		BlinkSetOrder: []string{"user-agent", "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-arch", "sec-ch-ua-platform", "sec-ch-ua-platform-version", "sec-ch-ua-model", "sec-ch-ua-full-version", "sec-ch-ua-full-version-list", "sec-ch-ua-bitness", "sec-ch-ua-wow64", "sec-ch-ua-form-factors"},
 		HTTP1Prefix:   []string{"host", "connection"},
 		NetworkAfter:  []string{"origin", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-user", "sec-fetch-dest", "sec-fetch-storage-access", "referer"},
@@ -13,9 +13,9 @@ var law = &lawFile{
 		HintCounterwitnesses: []HintCounterwitness{
 			{
 				Name:   "sec-ch-ua-full-version",
-				HAR:    "axs-2",
+				HAR:    "chrome-c",
 				Entry:  14,
-				Reason: "Accept-CH-requested classic script whose Blink map has sec-ch-ua-full-version before user-agent (also axs-3#5, axs-latest#11); every other hint set reproduces",
+				Reason: "Accept-CH-requested classic script whose Blink map has sec-ch-ua-full-version before user-agent (also chrome153-a#5, chrome-d#11); every other hint set reproduces",
 			},
 		},
 		Navigation: chromiumNavigation{
@@ -26,13 +26,13 @@ var law = &lawFile{
 			Prefix: []string{"content-length", "cache-control"},
 			Majors: []chromiumFormMajors{
 				{From: 141, To: 141, BrowserSet: []string{"origin", "content-type", "upgrade-insecure-requests", "user-agent", "accept"},
-					Witnesses: []string{"xfinity_login_android-chrome141_1_0907#372"}},
-				// Chrome 155 forms are witnessed only with an automation Accept-Language override (bandai-jp-login-evidence-20261020c#275), whose accept-language precedes accept.
+					Witnesses: []string{"chrome141-a#372"}},
+				// Chrome 155 forms are witnessed only with an automation Accept-Language override (chrome155-a#275), whose accept-language precedes accept.
 				{From: 150, To: 155, BrowserSet: []string{"upgrade-insecure-requests", "content-type", "user-agent", "origin", "accept"},
-					Witnesses: []string{"bandai-us_login_android-chrome150_1_0828#217", "bandai-jp_product_windows-chrome151_1_0809#54", "bandai-login13#182", "vint#188", "chess-login#174", "prizepicks#186"}},
+					Witnesses: []string{"chrome150-a#217", "chrome151-b#54", "chrome151-f#182", "chrome-a#188", "chrome154-a#174", "chrome-b#186"}},
 			},
 		},
-		// Every captured Chrome 141-155 preflight (348: target_register_android-chrome151_1_0831#265, sky_login_android-chrome151_1_0901#60 on HTTP/1.1, bandai-login12#8 without referer).
+		// Every captured Chrome 141-156 preflight (including morerewards_android.har e123/e129/e156/e159).
 		Preflight: []string{"accept", "access-control-request-method", "access-control-request-headers", "origin", "user-agent", "sec-fetch-mode", "sec-fetch-site", "sec-fetch-dest", "referer", "accept-encoding", "accept-language"},
 	},
 	WebKit: webkitLaw{
@@ -48,18 +48,17 @@ var law = &lawFile{
 		// cache-control: 8; Next.js RSC page headers: 3), 2 put page headers
 		// before accept, and 1 is a counterwitness below.
 		// Forced as precedences, 56 of the 58 stay reachable; the two that do
-		// not are its counterwitnesses: bandai-jp_login_iphone-safari18.7_1_1020#340
-		// (origin before sec-fetch-site, a cache-control request) and
-		// vinted_safari_register#247 (sec-fetch-site before accept).
+		// not are its counterwitnesses: safari18.7-d#340 (origin before
+		// sec-fetch-site, a cache-control request) and safari-a#247
+		// (sec-fetch-site before accept).
 		// Falsified by a capture whose dictionary these six names alone decide
 		// against this order.
 		LoaderAdded: []string{"sec-fetch-site", "origin", "referer", "sec-fetch-mode", "sec-fetch-dest", "user-agent"},
 		// FormLoaderAdded is LoaderAdded's names in the tie-break a form
 		// submission keeps: its captures disagree on one identical
-		// dictionary (bandai-jp_login_iphone-safari18.7_1_1020#543 sends
-		// origin before sec-fetch-site, starbucks_login_iphone-safari18.7_1_0910#161 and
-		// starbucks_login_iphone-safari18.7_2_0919#136 the reverse), so no
-		// form order is claimed and the earlier one stays.
+		// dictionary (safari18.7-d#543 sends origin before sec-fetch-site,
+		// safari18.7-e#161 and safari18.7-f#136 the reverse), so no form
+		// order is claimed and the earlier one stays.
 		FormLoaderAdded: []string{"origin", "user-agent", "referer", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest"},
 		CFNetworkTail:   []string{"accept-language", "priority", "accept-encoding", "cookie"},
 		Unresolved:      []string{"authorization"},
@@ -68,7 +67,7 @@ var law = &lawFile{
 		HTTP1Suffix:     []string{"connection"},
 		Counterwitness: []Counterwitness{
 			{
-				HAR:        "target_login_iphone12-safari18.7_1_0910",
+				HAR:        "safari18.7-a",
 				Entry:      404,
 				Dictionary: []string{"accept", "sec-fetch-site", "sec-fetch-mode", "user-agent", "accept-language", "sec-fetch-dest"},
 				Reason:     "no CF insertion history reproduces this top-level navigation's dictionary",
@@ -76,23 +75,23 @@ var law = &lawFile{
 		},
 		UnwitnessedClasses: map[string]string{
 			"navigation": "Safari orders one top-level navigation dictionary more than one way within one version (18.7.5, 26.2, 26.5 captures: sec-fetch-dest,user-agent,... and accept,sec-fetch-site,... on the same names); no capture decides which",
-			"script":     "a parser-requested classic script (HTML parser or preload scanner) is ordered sec-fetch-dest,user-agent on 18.7.5/26.2/26.5 and user-agent,sec-fetch-dest during the early page load on 26.6.1 (target_cart_iphone17-safari26.6_1_1006/3); only the JS-inserted script law (inserted_script) is certified",
+			"script":     "a parser-requested classic script (HTML parser or preload scanner) is ordered sec-fetch-dest,user-agent on 18.7.5/26.2/26.5 and user-agent,sec-fetch-dest during the early page load on 26.6.1 (safari26.6-a/3); only the JS-inserted script law (inserted_script) is certified",
 		},
 		InsertedScript: webkitInsertedScript{
 			Insertion: []string{"accept", "referer", "sec-fetch-dest", "sec-fetch-mode", "sec-fetch-site", "user-agent"},
 			Counterwitness: []Counterwitness{
 				{
-					HAR:        "target_cart_iphone17-safari26.6_1_1006",
+					HAR:        "safari26.6-a",
 					Entry:      130,
 					Dictionary: []string{"user-agent", "sec-fetch-dest", "accept", "referer", "sec-fetch-site", "sec-fetch-mode"},
-					Reason:     "Safari 26.6.1 Shape VM fetched 63 ms after the document, inside the early-load burst whose every request puts user-agent before sec-fetch-dest; the session's later VM fetch (entry 192) and target_cart_iphone17-safari26.6_2_1006#184 reproduce the law",
+					Reason:     "Safari 26.6.1 Shape VM fetched 63 ms after the document, inside the early-load burst whose every request puts user-agent before sec-fetch-dest; the session's later VM fetch (entry 192) and safari26.6-b#184 reproduce the law",
 				},
 			},
 		},
-		// Reproduces all 157 captured late navigations of these names, 31 of them redirect hops (target_login_iphone12-safari18.7_1_0910#39, #320,
+		// Reproduces all 157 captured late navigations of these names, 31 of them redirect hops (safari18.7-a#39, #320,
 		// #404), and 1946 of 2052 parser scripts and no-cors element loads; the rest are 62 redirected loads, which
 		// OrderUniversal does not frame, and the 26.6.1 early-load burst's 44 (InsertedScript.Counterwitness's
-		// user-agent first, target_cart_iphone17-safari26.6_1_1006#7).
+		// user-agent first, safari26.6-a#7).
 		BrowserLoad: webkitBrowserLoad{
 			Insertion:       []string{"accept", "upgrade-insecure-requests", "referer", "sec-fetch-dest", "sec-fetch-mode", "sec-fetch-site", "user-agent"},
 			RedirectCarried: []string{"accept-language", "priority"},
@@ -227,19 +226,19 @@ var law = &lawFile{
 				},
 				Witnesses: []GenerationWitness{
 					{
-						HAR:       "target_cart_iphone12-safari18.7_1_1006",
+						HAR:       "safari18.7-c",
 						UserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.7.5 Mobile/15E148 Safari/604.1",
 					},
 					{
-						HAR:       "target_login_iphone13-safari26.2_1_0912",
+						HAR:       "safari26.2-a",
 						UserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Mobile/15E148 Safari/604.1",
 					},
 					{
-						HAR:       "target_login_iphone15-safari26.5_1_0909",
+						HAR:       "safari26.5-a",
 						UserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Mobile/15E148 Safari/604.1",
 					},
 					{
-						HAR:       "target_cart_iphone17-safari26.6_1_1006",
+						HAR:       "safari26.6-a",
 						UserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15E148 Safari/604.1",
 					},
 					{
@@ -251,7 +250,7 @@ var law = &lawFile{
 						UserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Mobile/15E148 Safari/604.1",
 					},
 					{
-						HAR:       "target-ios27",
+						HAR:       "safari27.0-a",
 						UserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
 					},
 					{

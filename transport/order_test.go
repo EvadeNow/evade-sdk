@@ -240,8 +240,8 @@ func TestOrderReturnsCallerOwnedSlice(t *testing.T) {
 	}
 }
 
-// Real browser requests (capture#entry, header names in received order) of the classes strict Order refuses, from
-// wireorder's universal witnesses: OrderUniversal answers each with one law result, header and pseudo-header order.
+// Real browser requests (header names in received order) of the classes strict Order refuses, from wireorder's
+// universal witnesses: OrderUniversal answers each with one law result, header and pseudo-header order.
 func TestOrderUniversalReproducesCaptures(t *testing.T) {
 	chromeForm := wireorder.Added{ClientHints: lowEntropyHints, Origin: true, Body: true, Referer: true, Cookie: true, Priority: true, FetchUser: true}
 	cases := []struct {
@@ -250,41 +250,41 @@ func TestOrderUniversalReproducesCaptures(t *testing.T) {
 		wire   string
 		pseudo []string
 	}{
-		{"bandai-jp_product_windows-chrome151_1_0809#54 p-bandai.jp/login_chk/ (Chrome 151 login form)",
+		{"Chrome 151 login form",
 			OrderRequest{UserAgent: chrome151, Class: ClassForm, Method: "POST", HTTP2: true, Added: chromeForm},
 			"content-length cache-control sec-ch-ua sec-ch-ua-mobile sec-ch-ua-platform upgrade-insecure-requests content-type user-agent origin accept sec-fetch-site sec-fetch-mode sec-fetch-user sec-fetch-dest referer accept-encoding accept-language cookie priority",
 			chromiumPseudo},
-		{"bandai-jp_login_iphone-safari18.7_1_1020#543 p-bandai.jp/login_chk/ (Safari 18.7.5 login form)",
+		{"Safari 18.7.5 login form",
 			OrderRequest{UserAgent: safariUA, Class: ClassForm, Method: "POST", HTTP2: true,
 				Added: wireorder.Added{Origin: true, Body: true, Referer: true, Cookie: true, Priority: true}},
 			"accept content-type origin sec-fetch-site sec-fetch-mode user-agent referer sec-fetch-dest content-length accept-language priority accept-encoding cookie",
 			webkitPseudo},
-		{"target_register_android-chrome151_1_0831#265 gsp.target.com passwordless_preauthentications (Chrome 151 preflight)",
+		{"Chrome 151 preflight",
 			OrderRequest{UserAgent: chrome151, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
 				Added: wireorder.Added{Origin: true, Referer: true, Priority: true, RequestHeaders: true}},
 			"accept access-control-request-method access-control-request-headers origin user-agent sec-fetch-mode sec-fetch-site sec-fetch-dest referer accept-encoding accept-language priority",
 			chromiumPseudo},
-		{"morerewards_login_iphone-safari18.7_2_1020#127 login.morerewards.ca authenticate (Safari 18.7 preflight without a referrer)",
+		{"Safari 18.7 preflight without a referrer",
 			OrderRequest{UserAgent: safariUA, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
 				Added: wireorder.Added{Origin: true, Priority: true, RequestHeaders: true}},
 			"sec-fetch-site origin access-control-request-method access-control-request-headers sec-fetch-mode user-agent content-length sec-fetch-dest accept accept-language priority accept-encoding",
 			webkitPseudo},
-		{"bandai-login15#7 gem-bandai.global-e.com stylesheet (Chrome 151 no-cors)",
+		{"Chrome 151 cross-site stylesheet (no-cors)",
 			OrderRequest{UserAgent: chrome151, Class: ClassNoCORS, Method: "GET", HTTP2: true,
 				Added: wireorder.Added{ClientHints: lowEntropyHints, Referer: true, Priority: true, StorageAccess: true}},
 			"sec-ch-ua-platform user-agent sec-ch-ua sec-ch-ua-mobile accept sec-fetch-site sec-fetch-mode sec-fetch-dest sec-fetch-storage-access referer accept-encoding accept-language priority",
 			chromiumPseudo},
-		{"target_register_android-chrome151_1_0831#120 www.target.com bullseye image (Chrome 151 image)",
+		{"Chrome 151 image",
 			OrderRequest{UserAgent: chrome151, Class: ClassImage, Method: "GET", HTTP2: true,
 				Added: wireorder.Added{ClientHints: lowEntropyHints, Referer: true, Cookie: true, Priority: true}},
 			"sec-ch-ua-platform user-agent sec-ch-ua sec-ch-ua-mobile accept sec-fetch-site sec-fetch-mode sec-fetch-dest referer accept-encoding accept-language cookie priority",
 			chromiumPseudo},
-		{"morerewards_login_iphone-safari26.6_1_1019#29 www.morerewards.ca arrow image (Safari 26.6 no-cors)",
+		{"Safari 26.6 image (no-cors)",
 			OrderRequest{UserAgent: safari266, Class: ClassNoCORS, Method: "GET", HTTP2: true,
 				Added: wireorder.Added{Referer: true, Cookie: true, Priority: true}},
 			"sec-fetch-dest user-agent accept referer sec-fetch-site sec-fetch-mode accept-language priority accept-encoding cookie",
 			webkitPseudo},
-		{"morerewards_login_iphone-safari26.6_1_1019#29 www.morerewards.ca arrow image (Safari 26.6 image)",
+		{"Safari 26.6 image (image)",
 			OrderRequest{UserAgent: safari266, Class: ClassImage, Method: "GET", HTTP2: true,
 				Added: wireorder.Added{Referer: true, Cookie: true, Priority: true}},
 			"sec-fetch-dest user-agent accept referer sec-fetch-site sec-fetch-mode accept-language priority accept-encoding cookie",
@@ -439,25 +439,25 @@ func TestOrderUniversalFailsClosed(t *testing.T) {
 	}
 }
 
-// targetShapePrefix is Target username validation's Shape prefix (target_login_iphone12-safari18.7_1_0910#398).
-const targetShapePrefix = "x-gyjwza5z-"
+// testShapePrefix is a captured Safari 18.7 username-validation XHR's Shape prefix (safari18.7-a#398).
+const testShapePrefix = "x-gyjwza5z-"
 
-// targetShapeXHR is target_login_iphone12-safari18.7_1_0910#398's request: content-type, then the Shape block without -a0.
-func targetShapeXHR(ua string, hints []string, pins ...*wireorder.Pin) OrderRequest {
+// shapeXHR is safari18.7-a#398's request: content-type, then the Shape block without -a0.
+func shapeXHR(ua string, hints []string, pins ...*wireorder.Pin) OrderRequest {
 	calls := []string{"content-type"}
 	for _, s := range "fbcdza" {
-		calls = append(calls, targetShapePrefix+string(s))
+		calls = append(calls, testShapePrefix+string(s))
 	}
-	return OrderRequest{UserAgent: ua, Class: ClassXHR, Method: "POST", HTTP2: true, Calls: calls, ShapePrefix: targetShapePrefix,
+	return OrderRequest{UserAgent: ua, Class: ClassXHR, Method: "POST", HTTP2: true, Calls: calls, ShapePrefix: testShapePrefix,
 		Pins: pins, Added: wireorder.Added{ClientHints: hints, Origin: true, Referer: true, Cookie: true, Body: true, Priority: true}}
 }
 
-// A captured WebKit case on target_login_iphone12-safari18.7_1_0910#398's dictionary: its reverse of the law's first outcome (a captured case
+// A captured WebKit case on safari18.7-a#398's dictionary: its reverse of the law's first outcome (a captured case
 // is its own order) followed by the generation's tail.
-func targetCapturedPin(t *testing.T) (*wireorder.Pin, []string) {
+func capturedPin(t *testing.T) (*wireorder.Pin, []string) {
 	t.Helper()
 	safari := wireorder.Engine{Kind: wireorder.WebKit, Major: 18, Minor: 7}
-	r := targetShapeXHR(safariUA, nil)
+	r := shapeXHR(safariUA, nil)
 	outcomes, err := wireorder.Outcomes(r.law(safari, wireorder.ClassXHR, nil))
 	if err != nil {
 		t.Fatal(err)
@@ -469,19 +469,19 @@ func targetCapturedPin(t *testing.T) (*wireorder.Pin, []string) {
 	dict := slices.DeleteFunc(slices.Clone(outcomes[0]), func(name string) bool { return slices.Contains(facts.Generation.Tail, name) })
 	captured := slices.Clone(dict)
 	slices.Reverse(captured)
-	pin := &wireorder.Pin{ID: "target-captured", Engine: wireorder.WebKit.String(), Cases: []wireorder.PinCase{{
+	pin := &wireorder.Pin{ID: "test-captured", Engine: wireorder.WebKit.String(), Cases: []wireorder.PinCase{{
 		Dictionary: captured, Captured: true, Generations: []string{facts.Generation.Name}, Witnesses: []wireorder.Witness{{HAR: "test"}}}}}
 	return pin, slices.Concat(captured, outcomes[0][len(dict):])
 }
 
 // OrderUniversal passes the resolved engine's pins from a mixed candidate set and ShapePrefix unchanged.
 func TestOrderUniversalSelectsEnginePins(t *testing.T) {
-	pin, want := targetCapturedPin(t)
-	install := &wireorder.Pin{ID: "target-install", Engine: wireorder.WebKit.String(), Install: [][2]string{{"shape:a", "shape:b"}}}
+	pin, want := capturedPin(t)
+	install := &wireorder.Pin{ID: "test-install", Engine: wireorder.WebKit.String(), Install: [][2]string{{"shape:a", "shape:b"}}}
 	foreign := &wireorder.Pin{ID: "chromium-label", Engine: wireorder.Chromium.String()}
 
 	// WebKit: the captured case orders the request; the chromium-labelled candidate is dropped.
-	got, err := OrderUniversal(targetShapeXHR(safariUA, nil, foreign, pin, install))
+	got, err := OrderUniversal(shapeXHR(safariUA, nil, foreign, pin, install))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -491,7 +491,7 @@ func TestOrderUniversalSelectsEnginePins(t *testing.T) {
 
 	// Chromium: the WebKit candidates are dropped (the Chromium law refuses any pin) and ShapePrefix still reaches it.
 	chromium := wireorder.Engine{Kind: wireorder.Chromium, Major: 152}
-	r := targetShapeXHR(chromeUA, lowEntropyHints, pin, install)
+	r := shapeXHR(chromeUA, lowEntropyHints, pin, install)
 	got, err = OrderUniversal(r)
 	law, lawErr := wireorder.OrderUniversal(r.law(chromium, wireorder.ClassXHR, nil))
 	if err != nil || lawErr != nil || !reflect.DeepEqual(got, law) {
@@ -504,19 +504,19 @@ func TestOrderUniversalSelectsEnginePins(t *testing.T) {
 		t.Fatalf("Chromium with a prefix no call carries: %v, want the law's shape_prefix InputError", err)
 	}
 	// A matching-engine candidate is passed, so the Chromium law's own refusal stands.
-	_, err = OrderUniversal(targetShapeXHR(chromeUA, lowEntropyHints, foreign))
+	_, err = OrderUniversal(shapeXHR(chromeUA, lowEntropyHints, foreign))
 	if input, ok := errors.AsType[*wireorder.InputError](err); !ok || input.Field != "pins" {
 		t.Fatalf("Chromium with a chromium-labelled pin: %v, want the law's pins InputError", err)
 	}
 
 	// Strict Order passes pins as given: a WebKit pin on Chromium is the law's refusal.
-	if _, err := Order(targetShapeXHR(chromeUA, lowEntropyHints, pin)); !errors.As(err, new(*wireorder.InputError)) {
+	if _, err := Order(shapeXHR(chromeUA, lowEntropyHints, pin)); !errors.As(err, new(*wireorder.InputError)) {
 		t.Fatalf("strict Chromium with a WebKit pin: %v, want the law's InputError", err)
 	}
 }
 
 func TestOrderUniversalRefusesMalformedPinCandidates(t *testing.T) {
-	pin, _ := targetCapturedPin(t)
+	pin, _ := capturedPin(t)
 	for name, tc := range map[string]struct {
 		bad   *wireorder.Pin
 		field string
@@ -527,7 +527,7 @@ func TestOrderUniversalRefusesMalformedPinCandidates(t *testing.T) {
 		"unknown":      {&wireorder.Pin{ID: "p", Engine: "gecko"}, "pins[1].engine"},
 	} {
 		for _, ua := range []string{safariUA, chromeUA} {
-			got, err := OrderUniversal(targetShapeXHR(ua, nil, pin, tc.bad))
+			got, err := OrderUniversal(shapeXHR(ua, nil, pin, tc.bad))
 			input, ok := errors.AsType[*wireorder.InputError](err)
 			if !ok || input.Field != tc.field || got.Header != nil {
 				t.Errorf("%s on %q: %q, %v; want an InputError on %s", name, ua, got.Header, err, tc.field)

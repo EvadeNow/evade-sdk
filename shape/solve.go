@@ -17,9 +17,9 @@ type wireRequest struct {
 	Request
 }
 
-// Solve fails with *evade.APIError; a solve_failed may carry ChallengeVariantID,
-// and a Debug request's failure carries the typed evade.Stop. A source body
-// JSON cannot carry byte for byte fails with *NotUTF8Error before any request.
+// Solve fails with *evade.APIError; a solve_failed may carry ChallengeVariantID.
+// A source body JSON cannot carry byte for byte fails with *NotUTF8Error
+// before any request.
 func Solve(ctx context.Context, c *evade.Client, r Request) (Response, error) {
 	for _, source := range [...]struct{ field, body string }{
 		{"page_html", r.PageHTML}, {"loader_source", r.LoaderSource}, {"challenge_source", r.ChallengeSource},

@@ -126,7 +126,7 @@ func TestNamesPreservesDuplicates(t *testing.T) {
 }
 
 func TestApplyWireOrderInstallsBothOrders(t *testing.T) {
-	// target_register_android-chrome151_1_0831#120's Chrome 151 image load.
+	// chrome151-a#120's Chrome 151 image load.
 	wire, err := OrderUniversal(OrderRequest{UserAgent: chrome151, Class: ClassImage, Method: "GET", HTTP2: true,
 		Added: wireorder.Added{ClientHints: lowEntropyHints, Referer: true, Cookie: true, Priority: true}})
 	if err != nil {
@@ -169,7 +169,7 @@ func TestApplyWireOrderInstallsBothOrders(t *testing.T) {
 }
 
 func TestApplyWireOrderNeverFallsBackToAPseudoOrder(t *testing.T) {
-	// rg-ios-safari#2's Safari 18.7.5 HTTP/1.1 navigation: host and connection framed, no pseudo-headers.
+	// safari18.7-h#2's Safari 18.7.5 HTTP/1.1 navigation: host and connection framed, no pseudo-headers.
 	wire, err := OrderUniversal(OrderRequest{UserAgent: safariUA, Class: ClassNavigation, Method: "GET",
 		Added: wireorder.Added{Referer: true, Priority: true}})
 	if err != nil {
@@ -279,8 +279,8 @@ func TestApplyWireOrderMatchesSentContentLength(t *testing.T) {
 	}
 }
 
-// morerewards_login_iphone-safari18.7_2_1020#127's Safari 18.7 preflight sends content-length: 0, which fhttp never writes for an
-// empty OPTIONS: the caller sets it explicitly, and without it the wire's content-length is missing.
+// A captured Safari 18.7 preflight sends content-length: 0, which fhttp never writes for an empty OPTIONS: the caller
+// sets it explicitly, and without it the wire's content-length is missing.
 func TestApplyWireOrderAppliesWebKitPreflight(t *testing.T) {
 	wire, err := OrderUniversal(OrderRequest{UserAgent: safariUA, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
 		Added: wireorder.Added{Origin: true, Priority: true, RequestHeaders: true}})
@@ -291,7 +291,7 @@ func TestApplyWireOrderAppliesWebKitPreflight(t *testing.T) {
 		t.Fatalf("test wire %q carries no content-length", wire.Header)
 	}
 	preflight := func() *fhttp.Request {
-		req, err := fhttp.NewRequest("OPTIONS", "https://login.morerewards.ca/authenticate", nil)
+		req, err := fhttp.NewRequest("OPTIONS", "https://login.example.com/authenticate", nil)
 		if err != nil {
 			t.Fatal(err)
 		}

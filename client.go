@@ -289,8 +289,5 @@ func apiError(status int, raw []byte, limit RateLimit) *APIError {
 	failure.Code = Code(envelope.Error.Code)
 	failure.Message = envelope.Error.Message
 	failure.ChallengeVariantID = envelope.Error.ChallengeVariantID
-	if envelope.Debug != nil && envelope.Debug.Stage != "" {
-		failure.Stop = envelope.Debug
-	}
 	return failure
 }

@@ -226,6 +226,9 @@ func (law *lawFile) universalChromiumOrder(r *Request, unwitnessed func(string, 
 			return Wire{}, err
 		}
 		set := c.Form.browserSet(r.Engine.Major)
+		if set == nil {
+			return Wire{}, unwitnessed("Chromium %d form has no witnessed browser-set run", r.Engine.Major)
+		}
 		out = slices.Concat(out, c.Form.Prefix, hints, set)
 		for _, name := range c.NetworkAfter {
 			if !slices.Contains(set, name) && r.Added.present(name) {
@@ -248,7 +251,7 @@ func (law *lawFile) universalChromiumOrder(r *Request, unwitnessed func(string, 
 
 // browserSet is major's form BrowserSet. HYPOTHESIS(chromium-form-next-run): a major between two witnessed runs
 // (Chrome 142-149) sends the next later run's set, Chrome 150-155's origin after user-agent. Falsified by a
-// Chrome 142-149 form POST with origin before content-type, as Chrome 141's (xfinity_login_android-chrome141_1_0907#372).
+// Chrome 142-149 form POST with origin before content-type, as Chrome 141's (chrome141-a#372).
 func (f *chromiumForm) browserSet(major int) []string {
 	var next *chromiumFormMajors
 	for i := range f.Majors {
@@ -259,6 +262,9 @@ func (f *chromiumForm) browserSet(major int) []string {
 		if m.From > major && (next == nil || m.From < next.From) {
 			next = m
 		}
+	}
+	if next == nil {
+		return nil
 	}
 	return next.BrowserSet
 }
