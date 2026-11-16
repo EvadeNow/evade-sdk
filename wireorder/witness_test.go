@@ -1,7 +1,10 @@
 package wireorder
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -169,6 +172,43 @@ var witnesses = []witness{
 		r:    Request{Engine: Engine{Kind: WebKit, Major: 18, Minor: 6}, Class: ClassXHR, Method: "POST", HTTP2: true, Calls: []string{"X-Alpha", "Content-Type"}, Added: Added{Origin: true, Referer: true, Cookie: true, Body: true, Priority: true}},
 		want: []string{"accept", "content-type", "origin", "sec-fetch-site", "sec-fetch-mode", "x-alpha", "user-agent", "referer", "sec-fetch-dest", "content-length", "accept-language", "priority", "accept-encoding", "cookie"},
 	},
+	// Chrome 157 on Windows: measurement browser (plain channel=chrome) through compat-http against non-Target hosts,
+	// testdata/chrome157_measurement_witness.json.
+	{
+		id: "chrome157-m#f0a068", verdict: verdictOrder,
+		ua:     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+		r:      Request{Engine: Engine{Kind: Chromium, Major: 157}, Class: ClassNavigation, Method: "GET", HTTP2: true, Added: Added{ClientHints: lowEntropyHints, Priority: true, FetchUser: true}},
+		want:   []string{"sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform", "upgrade-insecure-requests", "user-agent", "accept", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-user", "sec-fetch-dest", "accept-encoding", "accept-language", "priority"},
+		pseudo: []string{":method", ":authority", ":scheme", ":path"},
+	},
+	{
+		id: "chrome157-m#a36c88", verdict: verdictOrder,
+		ua:     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+		r:      Request{Engine: Engine{Kind: Chromium, Major: 157}, Class: ClassScript, Method: "GET", HTTP2: true, Added: Added{ClientHints: lowEntropyHints, Referer: true, Cookie: true, Priority: true}},
+		want:   []string{"sec-ch-ua-platform", "user-agent", "sec-ch-ua", "sec-ch-ua-mobile", "accept", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest", "referer", "accept-encoding", "accept-language", "cookie", "priority"},
+		pseudo: []string{":method", ":authority", ":scheme", ":path"},
+	},
+	{
+		id: "chrome157-m#70bca8", verdict: verdictOrder,
+		ua:     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+		r:      Request{Engine: Engine{Kind: Chromium, Major: 157}, Class: ClassScript, Method: "GET", HTTP2: true, Added: Added{ClientHints: lowEntropyHints, Referer: true, StorageAccess: true}},
+		want:   []string{"sec-ch-ua-platform", "user-agent", "sec-ch-ua", "sec-ch-ua-mobile", "accept", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest", "sec-fetch-storage-access", "referer", "accept-encoding", "accept-language"},
+		pseudo: []string{":method", ":authority", ":scheme", ":path"},
+	},
+	{
+		id: "chrome157-m#63acd2", verdict: verdictOrder,
+		ua:     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+		r:      Request{Engine: Engine{Kind: Chromium, Major: 157}, Class: ClassFetch, Method: "GET", HTTP2: true, Calls: []string{"x-alpha", "x-beta"}, Added: Added{ClientHints: lowEntropyHints, Origin: true, Referer: true, Priority: true}},
+		want:   []string{"x-beta", "x-alpha", "sec-ch-ua-platform", "user-agent", "sec-ch-ua", "sec-ch-ua-mobile", "accept", "origin", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest", "referer", "accept-encoding", "accept-language", "priority"},
+		pseudo: []string{":method", ":authority", ":scheme", ":path"},
+	},
+	{
+		id: "chrome157-m#95eaa0", verdict: verdictOrder,
+		ua:     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+		r:      Request{Engine: Engine{Kind: Chromium, Major: 157}, Class: ClassFetch, Method: "POST", HTTP2: true, Calls: []string{"x-probe", "content-type"}, Added: Added{ClientHints: lowEntropyHints, Origin: true, Referer: true, Body: true, Priority: true}},
+		want:   []string{"content-length", "sec-ch-ua-platform", "user-agent", "x-probe", "sec-ch-ua", "content-type", "sec-ch-ua-mobile", "accept", "origin", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest", "referer", "accept-encoding", "accept-language", "priority"},
+		pseudo: []string{":method", ":authority", ":scheme", ":path"},
+	},
 }
 
 func TestWitnesses(t *testing.T) {
@@ -199,8 +239,8 @@ func TestWitnesses(t *testing.T) {
 			}
 		})
 	}
-	if law.Chromium.Witnessed[1] < 155 {
-		t.Errorf("Chrome 155 witnesses reproduce but the law's majors %v stop before 155", law.Chromium.Witnessed)
+	if law.Chromium.Witnessed[1] < 157 {
+		t.Errorf("Chrome 157 witnesses reproduce but the law's majors %v stop before 157", law.Chromium.Witnessed)
 	}
 }
 
@@ -377,4 +417,45 @@ func TestWebKitPageSetAcceptLanguageByGeneration(t *testing.T) {
 	early.Engine = Engine{Kind: WebKit, Major: 18}
 	_, err = Order(early)
 	wantErr[*UnwitnessedError](t, err)
+}
+
+// TestChrome157FormWitnesses reproduces the Chrome 157 native form POSTs of
+// testdata/chrome157_qantas_form_witness.json (qantas-1#346, qantas-2#371,
+// qantas-3#366: one Windows Chrome 157 machine's same-site booking form to
+// book.qantas.com), which carry the Chrome 150-155 run's browser set.
+func TestChrome157FormWitnesses(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("testdata", "chrome157_qantas_form_witness.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fixture struct {
+		UA       string `json:"ua"`
+		Captures []struct {
+			ID     string   `json:"id"`
+			Pseudo []string `json:"pseudo"`
+			Order  []string `json:"order"`
+		} `json:"captures"`
+	}
+	if err := json.Unmarshal(raw, &fixture); err != nil {
+		t.Fatal(err)
+	}
+	engine := EngineFromUserAgent(fixture.UA)
+	if engine != (Engine{Kind: Chromium, Major: 157}) {
+		t.Fatalf("fixture UA parses as %s", engine)
+	}
+	if len(fixture.Captures) != 3 {
+		t.Fatalf("fixture holds %d captures, want the three qantas HARs'", len(fixture.Captures))
+	}
+	for _, capture := range fixture.Captures {
+		t.Run(capture.ID, func(t *testing.T) {
+			r := Request{Engine: engine, Class: ClassForm, Method: "POST", HTTP2: true, Added: Added{
+				ClientHints: lowEntropyHints, Origin: true, Body: true, Referer: true,
+				Cookie: slices.Contains(capture.Order, "cookie"), Priority: true, FetchUser: true,
+			}}
+			got, err := OrderUniversal(r)
+			if err != nil || !slices.Equal(got.Header, capture.Order) || !slices.Equal(got.Pseudo, capture.Pseudo) {
+				t.Fatalf("law %v %v (%v)\ncapture %v %v", got.Pseudo, got.Header, err, capture.Pseudo, capture.Order)
+			}
+		})
+	}
 }

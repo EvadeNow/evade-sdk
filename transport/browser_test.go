@@ -45,7 +45,7 @@ func TestNewBrowserBindsTheModeledBrowsers(t *testing.T) {
 		macSafari:     {useragent.FamilySafariMacOS, "safari_", "gzip, deflate, br, zstd", false, false},
 		windowsChrome: {useragent.FamilyChrome, "chrome_", ChromeAcceptEncoding, true, true},
 		macChrome:     {useragent.FamilyChrome, "chrome_", ChromeAcceptEncoding, true, true},
-		androidChrome: {useragent.FamilyChrome, "chrome_152", ChromeAcceptEncoding, false, true},
+		androidChrome: {useragent.FamilyChrome, "chrome_154", ChromeAcceptEncoding, false, true},
 	} {
 		browser := mustBrowser(t, ua)
 		if browser.Agent.Family != want.family || !strings.HasPrefix(browser.TLS.Name, want.tls) ||

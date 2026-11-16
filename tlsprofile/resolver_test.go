@@ -1,11 +1,16 @@
 package tlsprofile
 
 import (
+	"encoding/binary"
 	"errors"
+	"fmt"
+	"io"
+	"net"
+	"os"
 	"reflect"
-	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/EvadeNow/evade-sdk/useragent"
 	"github.com/bogdanfinn/tls-client/profiles"
@@ -56,9 +61,9 @@ func TestResolve(t *testing.T) {
 		behavior Behavior
 	}{
 		{
-			name: "chrome 154 takes the newest key below it",
-			ua:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
-			want: "chrome_152", behavior: blinkBehavior,
+			name: "chrome 157 takes the newest key below it",
+			ua:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+			want: "chrome_154", behavior: blinkBehavior, // tls-client 1.18.1's newest non-PSK Chrome key
 		},
 		{
 			name: "chrome 120 exact",
@@ -88,7 +93,7 @@ func TestResolve(t *testing.T) {
 		{
 			name: "android chrome 156 takes newest compatible non-PSK key",
 			ua:   "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
-			want: "chrome_152", behavior: blinkBehavior,
+			want: "chrome_154", behavior: blinkBehavior,
 		},
 		{
 			name: "android webview 151 takes chrome_150",
@@ -269,7 +274,7 @@ func TestResolveVersion(t *testing.T) {
 
 func TestSafariHeaderPriorityMatchesVersion(t *testing.T) {
 	r := newResolver(t)
-	p26, err := r.ResolveVersion(useragent.FamilySafariIOS, 26, 2)
+	p26, err := r.ResolveVersion(useragent.FamilySafariIOS, 26, 6)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -287,49 +292,129 @@ func TestSafariHeaderPriorityMatchesVersion(t *testing.T) {
 	}
 }
 
-func TestSafariSessionTicketMatchesVersion(t *testing.T) {
+func TestSafari26ClientHelloMatchesNative26_6Extensions(t *testing.T) {
 	r := newResolver(t)
-	for _, version := range []int{26, 27} {
-		t.Run(strconv.Itoa(version), func(t *testing.T) {
-			p, err := r.ResolveVersion(useragent.FamilySafariIOS, version, 0)
-			if err != nil {
-				t.Fatal(err)
-			}
-			spec, err := p.Client.GetClientHelloSpec()
-			if err != nil {
-				t.Fatal(err)
-			}
-			points, ticket, alpn, tickets := -1, -1, -1, 0
-			for i, extension := range spec.Extensions {
-				switch extension.(type) {
-				case *tls.SupportedPointsExtension:
-					points = i
-				case *tls.SessionTicketExtension:
-					ticket, tickets = i, tickets+1
-				case *tls.ALPNExtension:
-					alpn = i
-				}
-			}
-			if tickets != 1 || ticket != points+1 || alpn != ticket+1 {
-				t.Fatalf("Safari %d extension indexes: ec_point_formats=%d session_ticket=%d ALPN=%d tickets=%d",
-					version, points, ticket, alpn, tickets)
-			}
-		})
+	profile, err := r.ResolveVersion(useragent.FamilySafariIOS, 26, 6)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	p18, err := r.Named("safari_ios_18_5")
+	clientConn, serverConn := net.Pipe()
+	defer clientConn.Close()
+	defer serverConn.Close()
+	if err := serverConn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	handshakeErr := make(chan error, 1)
+	go func() {
+		conn := tls.UClient(clientConn, &tls.Config{ServerName: "example.com"},
+			profile.Client.GetClientHelloId(), false, false, false)
+		handshakeErr <- conn.Handshake()
+	}()
+
+	got, err := formatClientHelloExtensions(readTLSRecord(t, serverConn))
 	if err != nil {
 		t.Fatal(err)
 	}
-	spec, err := p18.Client.GetClientHelloSpec()
+	if err := serverConn.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := <-handshakeErr; err == nil {
+		t.Fatal("ClientHello-only handshake unexpectedly completed")
+	}
+
+	fixture, err := os.ReadFile("testdata/safari_ios_26_6_extensions.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, extension := range spec.Extensions {
-		if _, ok := extension.(*tls.SessionTicketExtension); ok {
-			t.Fatal("Safari 18.5 unexpectedly has session_ticket")
+	want := strings.TrimSpace(string(fixture))
+	if got != want {
+		t.Fatalf("serialized Safari 26 ClientHello extensions:\n%s\nwant native Safari 26.6 fixture:\n%s", got, want)
+	}
+}
+
+func readTLSRecord(t *testing.T, conn net.Conn) []byte {
+	t.Helper()
+	header := make([]byte, 5)
+	if _, err := io.ReadFull(conn, header); err != nil {
+		t.Fatalf("read TLS record header: %v", err)
+	}
+	if header[0] != 22 {
+		t.Fatalf("TLS record type = %d, want handshake", header[0])
+	}
+	payload := make([]byte, int(binary.BigEndian.Uint16(header[3:])))
+	if _, err := io.ReadFull(conn, payload); err != nil {
+		t.Fatalf("read TLS record payload: %v", err)
+	}
+	return payload
+}
+
+func formatClientHelloExtensions(record []byte) (string, error) {
+	if len(record) < 4 || record[0] != 1 {
+		return "", fmt.Errorf("tlsprofile: first handshake message is not a ClientHello")
+	}
+	helloLen := int(record[1])<<16 | int(record[2])<<8 | int(record[3])
+	if helloLen > len(record)-4 {
+		return "", fmt.Errorf("tlsprofile: ClientHello spans TLS records")
+	}
+	hello := record[4 : 4+helloLen]
+	offset := 2 + 32 // legacy_version and random
+	skipVector := func(width int) error {
+		if len(hello)-offset < width {
+			return io.ErrUnexpectedEOF
+		}
+		size := int(hello[offset])
+		if width == 2 {
+			size = int(binary.BigEndian.Uint16(hello[offset:]))
+		}
+		offset += width
+		if len(hello)-offset < size {
+			return io.ErrUnexpectedEOF
+		}
+		offset += size
+		return nil
+	}
+	if len(hello) < offset {
+		return "", io.ErrUnexpectedEOF
+	}
+	if err := skipVector(1); err != nil { // legacy_session_id
+		return "", err
+	}
+	if err := skipVector(2); err != nil { // cipher_suites
+		return "", err
+	}
+	if err := skipVector(1); err != nil { // legacy_compression_methods
+		return "", err
+	}
+	if len(hello)-offset < 2 {
+		return "", io.ErrUnexpectedEOF
+	}
+	end := offset + 2 + int(binary.BigEndian.Uint16(hello[offset:]))
+	offset += 2
+	if end > len(hello) {
+		return "", io.ErrUnexpectedEOF
+	}
+
+	var extensionTypes []string
+	for offset < end {
+		if end-offset < 4 {
+			return "", io.ErrUnexpectedEOF
+		}
+		extensionType := binary.BigEndian.Uint16(hello[offset:])
+		extensionLen := int(binary.BigEndian.Uint16(hello[offset+2:]))
+		offset += 4
+		if end-offset < extensionLen {
+			return "", io.ErrUnexpectedEOF
+		}
+		offset += extensionLen
+		high, low := byte(extensionType>>8), byte(extensionType)
+		if high == low && low&0x0f == 0x0a {
+			extensionTypes = append(extensionTypes, "GREASE")
+		} else {
+			extensionTypes = append(extensionTypes, fmt.Sprintf("%04x", extensionType))
 		}
 	}
+	return strings.Join(extensionTypes, "\n"), nil
 }
 
 func TestResolveVersionNeverPSK(t *testing.T) {

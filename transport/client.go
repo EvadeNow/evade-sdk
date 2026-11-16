@@ -26,6 +26,7 @@ type Config struct {
 	Timeout            time.Duration
 	Jar                fhttp.CookieJar
 	FollowRedirects    bool
+	CheckRedirect      func(*fhttp.Request, []*fhttp.Request) error            // nil preserves tls-client's redirect policy
 	DisableCompression bool                                                    // for callers sending the browser's own accept-encoding
 	DialContext        func(context.Context, string, string) (net.Conn, error) // replaces proxy dialing; the caller routes through Proxy
 	CaptureCA          *x509.CertPool                                          // capture-proxy CA, verified rather than skipping verification
@@ -76,6 +77,7 @@ type clientOptions struct {
 	dialContext          func(context.Context, string, string) (net.Conn, error)
 	trace                *ConnectTrace
 	followRedirects      bool
+	checkRedirect        func(*fhttp.Request, []*fhttp.Request) error
 }
 
 func resolveOptions(c Config) (clientOptions, error) {
@@ -105,6 +107,7 @@ func resolveOptions(c Config) (clientOptions, error) {
 		jar:                  c.Jar,
 		randomExtensionOrder: c.Profile.Behavior.RandomizeExtensionOrder,
 		followRedirects:      c.FollowRedirects,
+		checkRedirect:        c.CheckRedirect,
 	}
 	switch {
 	case c.Trace != nil && c.DialContext != nil:
@@ -150,6 +153,9 @@ func (o clientOptions) options() []tlsclient.HttpClientOption {
 	}
 	if o.transport != nil {
 		options = append(options, tlsclient.WithTransportOptions(o.transport))
+	}
+	if o.checkRedirect != nil {
+		options = append(options, tlsclient.WithCustomRedirectFunc(o.checkRedirect))
 	}
 	switch o.route {
 	case routeProxyURL:

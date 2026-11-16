@@ -15,6 +15,16 @@ client, err := evade.NewClient(evade.Config{
 
 One client serves every solver and is safe for concurrent use.
 
+Low-level browser HTTP clients use `transport.New`. Its optional
+`Config.CheckRedirect` callback observes a redirect request before transport
+acquisition and controls whether it is followed. A nil callback preserves
+tls-client's default redirect policy; a custom callback must enforce its own
+redirect limit.
+
+Safari 26 transport follows fresh native Safari/iOS 26.6 evidence: its
+ClientHello omits `session_ticket`, and HTTP/2 HEADERS omit priority. Exact
+Safari 26.6.1 ClientHello and HTTP/2 behavior remain unconfirmed.
+
 ## Shape
 
 ```go

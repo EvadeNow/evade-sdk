@@ -12,10 +12,10 @@ type Request struct {
 	TargetAPIMethod      string          `json:"target_api_method"` // GET, POST or PUT
 	TargetAPIContentType string          `json:"target_api_content_type,omitempty"`
 	InteractionMode      InteractionMode `json:"interaction_mode,omitempty"`
-	// InteractionBody is the protected request's exact body. Optional: the solver
-	// types each field the page's statement types in the shape of its value (never
-	// keeping the value); send it only to a solver whose GET /solve/fields lists
-	// interaction_body, since an older one refuses unknown members.
+	// InteractionBody is the protected request's exact body. The solver
+	// types each field the page's statement types in the shape of its value
+	// (never keeping the value). It is required for Target credential
+	// validation and any other solve following fresh user input.
 	InteractionBody      string               `json:"interaction_body,omitempty"`
 	AuxiliaryNetworkMode AuxiliaryNetworkMode `json:"auxiliary_network_mode,omitempty"`
 	Referer              string               `json:"referer,omitempty"`
@@ -33,8 +33,19 @@ type Request struct {
 	// LoaderSource is the exact body of ShapeJSURL the caller's browser
 	// fetched, sent instead of the solver's own GET (a body that does not
 	// parse as a loader is fetched as without it); valid UTF-8 only.
-	LoaderSource    string `json:"loader_source,omitempty"`
-	ChallengeSource string `json:"challenge_source,omitempty"`
+	LoaderSource string `json:"loader_source,omitempty"`
+	// ChallengeReadyUnixMS is when LoaderSource finished arriving on the
+	// caller's Unix-ms wall clock. All caller timing fields use this clock.
+	ChallengeReadyUnixMS float64 `json:"challenge_ready_unix_ms,omitempty"`
+	// LoaderRequestStartUnixMS is when the caller handed the LoaderSource GET
+	// to its HTTP client. With ChallengeReadyUnixMS it is a complete interval.
+	LoaderRequestStartUnixMS float64 `json:"loader_request_start_unix_ms,omitempty"`
+	ChallengeSource          string  `json:"challenge_source,omitempty"`
+	// NavigationStartUnixMS is when the caller began the top-level
+	// navigation. It requires DocumentRequestUnixMS.
+	NavigationStartUnixMS float64 `json:"navigation_start_unix_ms,omitempty"`
+	// DocumentRequestUnixMS is when the caller began the final document
+	// request after redirects.
 	DocumentRequestUnixMS float64 `json:"document_request_unix_ms,omitempty"`
 	// UA is an exact User-Agent or an OS selector (OSIOS, ...); empty selects the iOS pool.
 	UA string `json:"ua,omitempty"`
@@ -47,7 +58,7 @@ type Request struct {
 	RequestTransport         HeaderTransport `json:"request_transport,omitempty"`
 	FetchLoaderThroughProxy  bool            `json:"fetch_loader_through_proxy,omitempty"` // session-opening request only
 	RetainSession            bool            `json:"retain_session,omitempty"`
-	SkipZeronaught           *bool           `json:"skip_zeronaught,omitempty"`            // nil leaves the server default
+	SkipZeronaught           *bool           `json:"skip_zeronaught,omitempty"`            // nil leaves the server default; never true on a retained Target authentication session
 	Debug                    bool            `json:"debug,omitempty"`                      // needs a debug- or internal-scope key
 	IncludeInteractionTiming bool            `json:"include_interaction_timing,omitempty"` // with Debug only
 	// PageProfile: empty infers it from TargetURL, "none" disables it; session-opening request only.
@@ -55,8 +66,8 @@ type Request struct {
 	// TargetDeviceInfo asks a fresh solve for the target's device_info
 	// capture its device record pairs with (Response.TargetDeviceInfo), so a
 	// caller sends the target's own fingerprint object from the same device
-	// the Shape payload states; a continuation refuses it. Send it only to a solver
-	// whose GET /solve/fields lists target_device_info.
+	// the Shape payload states. It is required on the opening Target sign-in
+	// solve; a continuation refuses it.
 	TargetDeviceInfo bool `json:"target_device_info,omitempty"`
 }
 

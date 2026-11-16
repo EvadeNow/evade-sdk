@@ -4,7 +4,7 @@ package wireorder
 var law = &lawFile{
 	Forbidden: []string{"accept-charset", "accept-encoding", "access-control-request-headers", "access-control-request-method", "connection", "content-length", "cookie", "cookie2", "date", "dnt", "expect", "host", "keep-alive", "origin", "referer", "set-cookie", "te", "trailer", "transfer-encoding", "upgrade", "via"},
 	Chromium: chromiumLaw{
-		Witnessed:     [2]int{141, 156},
+		Witnessed:     [2]int{141, 157},
 		BlinkSetOrder: []string{"user-agent", "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-arch", "sec-ch-ua-platform", "sec-ch-ua-platform-version", "sec-ch-ua-model", "sec-ch-ua-full-version", "sec-ch-ua-full-version-list", "sec-ch-ua-bitness", "sec-ch-ua-wow64", "sec-ch-ua-form-factors"},
 		HTTP1Prefix:   []string{"host", "connection"},
 		NetworkAfter:  []string{"origin", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-user", "sec-fetch-dest", "sec-fetch-storage-access", "referer"},
@@ -28,11 +28,11 @@ var law = &lawFile{
 				{From: 141, To: 141, BrowserSet: []string{"origin", "content-type", "upgrade-insecure-requests", "user-agent", "accept"},
 					Witnesses: []string{"chrome141-a#372"}},
 				// Chrome 155 forms are witnessed only with an automation Accept-Language override (chrome155-a#275), whose accept-language precedes accept.
-				{From: 150, To: 155, BrowserSet: []string{"upgrade-insecure-requests", "content-type", "user-agent", "origin", "accept"},
+				{From: 150, To: 157, BrowserSet: []string{"upgrade-insecure-requests", "content-type", "user-agent", "origin", "accept"},
 					Witnesses: []string{"chrome150-a#217", "chrome151-b#54", "chrome151-f#182", "chrome-a#188", "chrome154-a#174", "chrome-b#186"}},
 			},
 		},
-		// Every captured Chrome 141-156 preflight (including morerewards_android.har e123/e129/e156/e159).
+		// Every captured Chrome 141-157 preflight (including morerewards_android.har e123/e129/e156/e159 and chrome157-m).
 		Preflight: []string{"accept", "access-control-request-method", "access-control-request-headers", "origin", "user-agent", "sec-fetch-mode", "sec-fetch-site", "sec-fetch-dest", "referer", "accept-encoding", "accept-language"},
 	},
 	WebKit: webkitLaw{

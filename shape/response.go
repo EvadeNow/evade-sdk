@@ -34,10 +34,65 @@ type Response struct {
 	OneTime         bool        `json:"one_time,omitempty"` // interstitial challenge; the session cannot be continued
 	FingerprintHash string      `json:"fingerprint_hash,omitempty"`
 	SolveID         string      `json:"solve_id,omitempty"` // identifies this solve to ReportOutcome
+	// Timing reports each generated or observed instant with its provenance.
+	Timing *TimingContract `json:"timing,omitempty"`
 	// TargetDeviceInfo is the target's device_info capture the session
 	// record pairs with, on a fresh solve that asked for it
 	// (Request.TargetDeviceInfo) only.
 	TargetDeviceInfo *TargetDeviceInfo `json:"target_device_info,omitempty"`
+}
+type TimingSource string
+
+const (
+	TimingCallerMeasured   TimingSource = "caller_measured"
+	TimingSolverMeasured   TimingSource = "solver_measured"
+	TimingPageCertificate  TimingSource = "page_certificate"
+	TimingFamilyHypothesis TimingSource = "family_hypothesis"
+	TimingUnavailable      TimingSource = "unavailable"
+)
+
+type TimingSemantic string
+
+const (
+	TimingNavigationStart           TimingSemantic = "navigation_start"
+	TimingFinalDocumentRequestStart TimingSemantic = "final_document_request_start"
+	TimingLoaderRequestStart        TimingSemantic = "loader_request_start"
+	TimingLoaderResponseComplete    TimingSemantic = "loader_response_complete"
+	TimingCollectorStart            TimingSemantic = "collector_start"
+	TimingRequestFinalize           TimingSemantic = "request_finalize"
+	TimingModeledFetchInvocation    TimingSemantic = "modeled_fetch_invocation"
+	TimingTransportHandoff          TimingSemantic = "transport_handoff"
+	TimingHeadersWritten            TimingSemantic = "headers_written"
+)
+
+type TimingInstant struct {
+	UnixMS   *float64       `json:"unix_ms,omitempty"`
+	Source   TimingSource   `json:"source"`
+	Semantic TimingSemantic `json:"semantic"`
+}
+
+type LoaderIssueCompatibility string
+
+const (
+	LoaderIssueCompatible             LoaderIssueCompatibility = "compatible"
+	LoaderIssueUnverifiedMissingStart LoaderIssueCompatibility = "unverified_missing_start"
+	LoaderIssueUnavailable            LoaderIssueCompatibility = "unavailable"
+)
+
+// TimingContract distinguishes modeled instants from caller observations.
+// LoaderIssueCompatible means only that token issue lies in the complete
+// loader interval; it does not prove exact cross-host clock equality.
+type TimingContract struct {
+	NavigationStart        TimingInstant            `json:"navigation_start"`
+	DocumentRequestStart   TimingInstant            `json:"document_request_start"`
+	LoaderRequestStart     TimingInstant            `json:"loader_request_start"`
+	LoaderComplete         TimingInstant            `json:"loader_complete"`
+	CollectorStart         TimingInstant            `json:"collector_start"`
+	Finalize               TimingInstant            `json:"finalize"`
+	ModeledFetchInvocation TimingInstant            `json:"modeled_fetch_invocation"`
+	TransportHandoff       TimingInstant            `json:"transport_handoff"`
+	HeadersWritten         TimingInstant            `json:"headers_written"`
+	LoaderIssue            LoaderIssueCompatibility `json:"loader_issue_compatibility"`
 }
 
 // TargetDeviceInfo is the stored target device_info capture a solve's device

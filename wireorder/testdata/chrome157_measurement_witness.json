@@ -1,0 +1,959 @@
+{
+ "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+ "session": "ses_583f794ccf75d35b38fd87aaa8428ae5",
+ "measurement": "plain Google Chrome 157.0.8103.79 channel=chrome through compat-http session; non-Target hosts only",
+ "captures": {
+  "nav": [
+   {
+    "id": "ent_fb4ea029983d5a227ed52eb642b849d2",
+    "url": "https://developer.mozilla.org/en-US/",
+    "protocol": "HTTP2",
+    "pseudo": [
+     ":method",
+     ":authority",
+     ":scheme",
+     ":path"
+    ],
+    "order": [
+     "sec-ch-ua",
+     "sec-ch-ua-mobile",
+     "sec-ch-ua-platform",
+     "upgrade-insecure-requests",
+     "user-agent",
+     "accept",
+     "sec-fetch-site",
+     "sec-fetch-mode",
+     "sec-fetch-user",
+     "sec-fetch-dest",
+     "accept-encoding",
+     "accept-language",
+     "priority"
+    ],
+    "fields": [
+     [
+      "sec-ch-ua",
+      "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v="
+     ],
+     [
+      "sec-ch-ua-mobile",
+      "?0"
+     ],
+     [
+      "sec-ch-ua-platform",
+      "\"Windows\""
+     ],
+     [
+      "upgrade-insecure-requests",
+      "1"
+     ],
+     [
+      "user-agent",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+     ],
+     [
+      "accept",
+      "text/html,application/xhtml+xml,application/xml;q=0.9,image/"
+     ],
+     [
+      "sec-fetch-site",
+      "none"
+     ],
+     [
+      "sec-fetch-mode",
+      "navigate"
+     ],
+     [
+      "sec-fetch-user",
+      "?1"
+     ],
+     [
+      "sec-fetch-dest",
+      "document"
+     ],
+     [
+      "accept-encoding",
+      "gzip, deflate, br, zstd"
+     ],
+     [
+      "accept-language",
+      "en-US,en;q=0.9"
+     ],
+     [
+      "priority",
+      "u=0, i"
+     ]
+    ],
+    "complete": true,
+    "problems": []
+   },
+   {
+    "id": "ent_f0a068cb98fb26267e77662112a14145",
+    "url": "https://www.wikipedia.org/",
+    "protocol": "HTTP2",
+    "pseudo": [
+     ":method",
+     ":authority",
+     ":scheme",
+     ":path"
+    ],
+    "order": [
+     "sec-ch-ua",
+     "sec-ch-ua-mobile",
+     "sec-ch-ua-platform",
+     "upgrade-insecure-requests",
+     "user-agent",
+     "accept",
+     "sec-fetch-site",
+     "sec-fetch-mode",
+     "sec-fetch-user",
+     "sec-fetch-dest",
+     "accept-encoding",
+     "accept-language",
+     "priority"
+    ],
+    "fields": [
+     [
+      "sec-ch-ua",
+      "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v="
+     ],
+     [
+      "sec-ch-ua-mobile",
+      "?0"
+     ],
+     [
+      "sec-ch-ua-platform",
+      "\"Windows\""
+     ],
+     [
+      "upgrade-insecure-requests",
+      "1"
+     ],
+     [
+      "user-agent",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+     ],
+     [
+      "accept",
+      "text/html,application/xhtml+xml,application/xml;q=0.9,image/"
+     ],
+     [
+      "sec-fetch-site",
+      "none"
+     ],
+     [
+      "sec-fetch-mode",
+      "navigate"
+     ],
+     [
+      "sec-fetch-user",
+      "?1"
+     ],
+     [
+      "sec-fetch-dest",
+      "document"
+     ],
+     [
+      "accept-encoding",
+      "gzip, deflate, br, zstd"
+     ],
+     [
+      "accept-language",
+      "en-US,en;q=0.9"
+     ],
+     [
+      "priority",
+      "u=0, i"
+     ]
+    ],
+    "complete": true,
+    "problems": []
+   },
+   {
+    "id": "ent_fab233d178bad9e252175956f497f01b",
+    "url": "https://example.com/",
+    "protocol": "HTTP2",
+    "pseudo": [
+     ":method",
+     ":authority",
+     ":scheme",
+     ":path"
+    ],
+    "order": [
+     "sec-ch-ua",
+     "sec-ch-ua-mobile",
+     "sec-ch-ua-platform",
+     "upgrade-insecure-requests",
+     "user-agent",
+     "accept",
+     "sec-fetch-site",
+     "sec-fetch-mode",
+     "sec-fetch-user",
+     "sec-fetch-dest",
+     "accept-encoding",
+     "accept-language",
+     "priority"
+    ],
+    "fields": [
+     [
+      "sec-ch-ua",
+      "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v="
+     ],
+     [
+      "sec-ch-ua-mobile",
+      "?0"
+     ],
+     [
+      "sec-ch-ua-platform",
+      "\"Windows\""
+     ],
+     [
+      "upgrade-insecure-requests",
+      "1"
+     ],
+     [
+      "user-agent",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+     ],
+     [
+      "accept",
+      "text/html,application/xhtml+xml,application/xml;q=0.9,image/"
+     ],
+     [
+      "sec-fetch-site",
+      "none"
+     ],
+     [
+      "sec-fetch-mode",
+      "navigate"
+     ],
+     [
+      "sec-fetch-user",
+      "?1"
+     ],
+     [
+      "sec-fetch-dest",
+      "document"
+     ],
+     [
+      "accept-encoding",
+      "gzip, deflate, br, zstd"
+     ],
+     [
+      "accept-language",
+      "en-US,en;q=0.9"
+     ],
+     [
+      "priority",
+      "u=0, i"
+     ]
+    ],
+    "complete": true,
+    "problems": []
+   }
+  ],
+  "script_parser": [
+   {
+    "id": "ent_a36c88f35d46c5e58d021895225c1afa",
+    "url": "https://www.wikipedia.org/portal/wikipedia.org/assets/js/index-be66aee782.js",
+    "protocol": "HTTP2",
+    "pseudo": [
+     ":method",
+     ":authority",
+     ":scheme",
+     ":path"
+    ],
+    "order": [
+     "sec-ch-ua-platform",
+     "user-agent",
+     "sec-ch-ua",
+     "sec-ch-ua-mobile",
+     "accept",
+     "sec-fetch-site",
+     "sec-fetch-mode",
+     "sec-fetch-dest",
+     "referer",
+     "accept-encoding",
+     "accept-language",
+     "cookie",
+     "cookie",
+     "cookie",
+     "cookie",
+     "cookie",
+     "priority"
+    ],
+    "fields": [
+     [
+      "sec-ch-ua-platform",
+      "\"Windows\""
+     ],
+     [
+      "user-agent",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+     ],
+     [
+      "sec-ch-ua",
+      "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v="
+     ],
+     [
+      "sec-ch-ua-mobile",
+      "?0"
+     ],
+     [
+      "accept",
+      "*/*"
+     ],
+     [
+      "sec-fetch-site",
+      "same-origin"
+     ],
+     [
+      "sec-fetch-mode",
+      "no-cors"
+     ],
+     [
+      "sec-fetch-dest",
+      "script"
+     ],
+     [
+      "referer",
+      "https://www.wikipedia.org/"
+     ],
+     [
+      "accept-encoding",
+      "gzip, deflate, br, zstd"
+     ],
+     [
+      "accept-language",
+      "en-US,en;q=0.9"
+     ],
+     [
+      "cookie",
+      "WMF-Last-Access=14-Nov-2026"
+     ],
+     [
+      "cookie",
+      "WMF-Last-Access-Global=14-Nov-2026"
+     ],
+     [
+      "cookie",
+      "GeoIP=BG:22:Sofia:42.68:23.32:v4"
+     ],
+     [
+      "cookie",
+      "NetworkProbeLimit=0.001"
+     ],
+     [
+      "cookie",
+      "WMF-Uniq=07tLbVmRZNwyv6b82qZViwQYAAAAAFvdFnS9LgBiFIGlJfqpVg4"
+     ],
+     [
+      "priority",
+      "u=1"
+     ]
+    ],
+    "complete": true,
+    "problems": []
+   }
+  ],
+  "image": [
+   {
+    "id": "ent_6154e0d811c0a91316be0c5bee5e02f8",
+    "url": "https://www.wikipedia.org/portal/wikipedia.org/assets/img/Wikipedia-logo-v2.png",
+    "protocol": "HTTP2",
+    "pseudo": [
+     ":method",
+     ":authority",
+     ":scheme",
+     ":path"
+    ],
+    "order": [
+     "sec-ch-ua-platform",
+     "user-agent",
+     "sec-ch-ua",
+     "sec-ch-ua-mobile",
+     "accept",
+     "sec-fetch-site",
+     "sec-fetch-mode",
+     "sec-fetch-dest",
+     "referer",
+     "accept-encoding",
+     "accept-language",
+     "cookie",
+     "cookie",
+     "cookie",
+     "cookie",
+     "cookie",
+     "priority"
+    ],
+    "fields": [
+     [
+      "sec-ch-ua-platform",
+      "\"Windows\""
+     ],
+     [
+      "user-agent",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+     ],
+     [
+      "sec-ch-ua",
+      "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v="
+     ],
+     [
+      "sec-ch-ua-mobile",
+      "?0"
+     ],
+     [
+      "accept",
+      "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,ima"
+     ],
+     [
+      "sec-fetch-site",
+      "same-origin"
+     ],
+     [
+      "sec-fetch-mode",
+      "no-cors"
+     ],
+     [
+      "sec-fetch-dest",
+      "image"
+     ],
+     [
+      "referer",
+      "https://www.wikipedia.org/"
+     ],
+     [
+      "accept-encoding",
+      "gzip, deflate, br, zstd"
+     ],
+     [
+      "accept-language",
+      "en-US,en;q=0.9"
+     ],
+     [
+      "cookie",
+      "WMF-Last-Access=14-Nov-2026"
+     ],
+     [
+      "cookie",
+      "WMF-Last-Access-Global=14-Nov-2026"
+     ],
+     [
+      "cookie",
+      "GeoIP=BG:22:Sofia:42.68:23.32:v4"
+     ],
+     [
+      "cookie",
+      "NetworkProbeLimit=0.001"
+     ],
+     [
+      "cookie",
+      "WMF-Uniq=07tLbVmRZNwyv6b82qZViwQYAAAAAFvdFnS9LgBiFIGlJfqpVg4"
+     ],
+     [
+      "priority",
+      "u=2, i"
+     ]
+    ],
+    "complete": true,
+    "problems": []
+   }
+  ],
+  "css": [
+   {
+    "id": "ent_71f66225705587de33703afffbf96e80",
+    "url": "https://developer.mozilla.org/static/client/styles-global.19cc0c980e463125.css",
+    "protocol": "HTTP2",
+    "pseudo": [
+     ":method",
+     ":authority",
+     ":scheme",
+     ":path"
+    ],
+    "order": [
+     "sec-ch-ua-platform",
+     "user-agent",
+     "sec-ch-ua",
+     "sec-ch-ua-mobile",
+     "accept",
+     "sec-fetch-site",
+     "sec-fetch-mode",
+     "sec-fetch-dest",
+     "referer",
+     "accept-encoding",
+     "accept-language",
+     "priority"
+    ],
+    "fields": [
+     [
+      "sec-ch-ua-platform",
+      "\"Windows\""
+     ],
+     [
+      "user-agent",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+     ],
+     [
+      "sec-ch-ua",
+      "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v="
+     ],
+     [
+      "sec-ch-ua-mobile",
+      "?0"
+     ],
+     [
+      "accept",
+      "text/css,*/*;q=0.1"
+     ],
+     [
+      "sec-fetch-site",
+      "same-origin"
+     ],
+     [
+      "sec-fetch-mode",
+      "no-cors"
+     ],
+     [
+      "sec-fetch-dest",
+      "style"
+     ],
+     [
+      "referer",
+      "https://developer.mozilla.org/en-US/"
+     ],
+     [
+      "accept-encoding",
+      "gzip, deflate, br, zstd"
+     ],
+     [
+      "accept-language",
+      "en-US,en;q=0.9"
+     ],
+     [
+      "priority",
+      "u=0"
+     ]
+    ],
+    "complete": true,
+    "problems": []
+   }
+  ],
+  "extra": [
+   {
+    "id": "ent_70bca82a4a684941fb2ccd9b160a67cd",
+    "url": "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js",
+    "method": "GET",
+    "protocol": "HTTP2",
+    "pseudo": [
+     ":method",
+     ":authority",
+     ":scheme",
+     ":path"
+    ],
+    "order": [
+     "sec-ch-ua-platform",
+     "user-agent",
+     "sec-ch-ua",
+     "sec-ch-ua-mobile",
+     "accept",
+     "sec-fetch-site",
+     "sec-fetch-mode",
+     "sec-fetch-dest",
+     "sec-fetch-storage-access",
+     "referer",
+     "accept-encoding",
+     "accept-language"
+    ],
+    "fields": [
+     [
+      "sec-ch-ua-platform",
+      "\"Windows\""
+     ],
+     [
+      "user-agent",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
+     ],
+     [
+      "sec-ch-ua",
+      "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\""
+     ],
+     [
+      "sec-ch-ua-mobile",
+      "?0"
+     ],
+     [
+      "accept",
+      "*/*"
+     ],
+     [
+      "sec-fetch-site",
+      "cross-site"
+     ],
+     [
+      "sec-fetch-mode",
+      "no-cors"
+     ],
+     [
+      "sec-fetch-dest",
+      "script"
+     ],
+     [
+      "sec-fetch-storage-access",
+      "active"
+     ],
+     [
+      "referer",
+      "https://example.com/"
+     ],
+     [
+      "accept-encoding",
+      "gzip, deflate, br, zstd"
+     ],
+     [
+      "accept-language",
+      "en-US,en;q=0.9"
+     ]
+    ]
+   },
+   {
+    "id": "ent_63acd279c03401e52f8d8950de6ded44",
+    "url": "https://httpbin.org/get",
+    "method": "GET",
+    "protocol": "HTTP2",
+    "pseudo": [
+     ":method",
+     ":authority",
+     ":scheme",
+     ":path"
+    ],
+    "order": [
+     "x-beta",
+     "x-alpha",
+     "sec-ch-ua-platform",
+     "user-agent",
+     "sec-ch-ua",
+     "sec-ch-ua-mobile",
+     "accept",
+     "origin",
+     "sec-fetch-site",
+     "sec-fetch-mode",
+     "sec-fetch-dest",
+     "referer",
+     "accept-encoding",
+     "accept-language",
+     "priority"
+    ],
+    "fields": [
+     [
+      "x-beta",
+      "b"
+     ],
+     [
+      "x-alpha",
+      "a"
+     ],
+     [
+      "sec-ch-ua-platform",
+      "\"Windows\""
+     ],
+     [
+      "user-agent",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
+     ],
+     [
+      "sec-ch-ua",
+      "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\""
+     ],
+     [
+      "sec-ch-ua-mobile",
+      "?0"
+     ],
+     [
+      "accept",
+      "*/*"
+     ],
+     [
+      "origin",
+      "https://example.com"
+     ],
+     [
+      "sec-fetch-site",
+      "cross-site"
+     ],
+     [
+      "sec-fetch-mode",
+      "cors"
+     ],
+     [
+      "sec-fetch-dest",
+      "empty"
+     ],
+     [
+      "referer",
+      "https://example.com/"
+     ],
+     [
+      "accept-encoding",
+      "gzip, deflate, br, zstd"
+     ],
+     [
+      "accept-language",
+      "en-US,en;q=0.9"
+     ],
+     [
+      "priority",
+      "u=1, i"
+     ]
+    ]
+   },
+   {
+    "id": "ent_519891986f44345df186db8cb0e0ad22",
+    "url": "https://httpbin.org/get",
+    "method": "OPTIONS",
+    "protocol": "HTTP2",
+    "pseudo": [
+     ":method",
+     ":authority",
+     ":scheme",
+     ":path"
+    ],
+    "order": [
+     "accept",
+     "access-control-request-method",
+     "access-control-request-headers",
+     "origin",
+     "user-agent",
+     "sec-fetch-mode",
+     "sec-fetch-site",
+     "sec-fetch-dest",
+     "referer",
+     "accept-encoding",
+     "accept-language",
+     "priority"
+    ],
+    "fields": [
+     [
+      "accept",
+      "*/*"
+     ],
+     [
+      "access-control-request-method",
+      "GET"
+     ],
+     [
+      "access-control-request-headers",
+      "x-alpha,x-beta"
+     ],
+     [
+      "origin",
+      "https://example.com"
+     ],
+     [
+      "user-agent",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
+     ],
+     [
+      "sec-fetch-mode",
+      "cors"
+     ],
+     [
+      "sec-fetch-site",
+      "cross-site"
+     ],
+     [
+      "sec-fetch-dest",
+      "empty"
+     ],
+     [
+      "referer",
+      "https://example.com/"
+     ],
+     [
+      "accept-encoding",
+      "gzip, deflate, br, zstd"
+     ],
+     [
+      "accept-language",
+      "en-US,en;q=0.9"
+     ],
+     [
+      "priority",
+      "u=1, i"
+     ]
+    ]
+   },
+   {
+    "id": "ent_95eaa029f10cfda2bb0856881ea999c7",
+    "url": "https://httpbin.org/anything",
+    "method": "POST",
+    "protocol": "HTTP2",
+    "pseudo": [
+     ":method",
+     ":authority",
+     ":scheme",
+     ":path"
+    ],
+    "order": [
+     "content-length",
+     "sec-ch-ua-platform",
+     "user-agent",
+     "x-probe",
+     "sec-ch-ua",
+     "content-type",
+     "sec-ch-ua-mobile",
+     "accept",
+     "origin",
+     "sec-fetch-site",
+     "sec-fetch-mode",
+     "sec-fetch-dest",
+     "referer",
+     "accept-encoding",
+     "accept-language",
+     "priority"
+    ],
+    "fields": [
+     [
+      "content-length",
+      "2"
+     ],
+     [
+      "sec-ch-ua-platform",
+      "\"Windows\""
+     ],
+     [
+      "user-agent",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
+     ],
+     [
+      "x-probe",
+      "1"
+     ],
+     [
+      "sec-ch-ua",
+      "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\""
+     ],
+     [
+      "content-type",
+      "application/json"
+     ],
+     [
+      "sec-ch-ua-mobile",
+      "?0"
+     ],
+     [
+      "accept",
+      "*/*"
+     ],
+     [
+      "origin",
+      "https://example.com"
+     ],
+     [
+      "sec-fetch-site",
+      "cross-site"
+     ],
+     [
+      "sec-fetch-mode",
+      "cors"
+     ],
+     [
+      "sec-fetch-dest",
+      "empty"
+     ],
+     [
+      "referer",
+      "https://example.com/"
+     ],
+     [
+      "accept-encoding",
+      "gzip, deflate, br, zstd"
+     ],
+     [
+      "accept-language",
+      "en-US,en;q=0.9"
+     ],
+     [
+      "priority",
+      "u=1, i"
+     ]
+    ]
+   },
+   {
+    "id": "ent_2283fb0e1dd5895103fccf360d62c4b7",
+    "url": "https://httpbin.org/anything",
+    "method": "OPTIONS",
+    "protocol": "HTTP2",
+    "pseudo": [
+     ":method",
+     ":authority",
+     ":scheme",
+     ":path"
+    ],
+    "order": [
+     "accept",
+     "access-control-request-method",
+     "access-control-request-headers",
+     "origin",
+     "user-agent",
+     "sec-fetch-mode",
+     "sec-fetch-site",
+     "sec-fetch-dest",
+     "referer",
+     "accept-encoding",
+     "accept-language",
+     "priority"
+    ],
+    "fields": [
+     [
+      "accept",
+      "*/*"
+     ],
+     [
+      "access-control-request-method",
+      "POST"
+     ],
+     [
+      "access-control-request-headers",
+      "content-type,x-probe"
+     ],
+     [
+      "origin",
+      "https://example.com"
+     ],
+     [
+      "user-agent",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
+     ],
+     [
+      "sec-fetch-mode",
+      "cors"
+     ],
+     [
+      "sec-fetch-site",
+      "cross-site"
+     ],
+     [
+      "sec-fetch-dest",
+      "empty"
+     ],
+     [
+      "referer",
+      "https://example.com/"
+     ],
+     [
+      "accept-encoding",
+      "gzip, deflate, br, zstd"
+     ],
+     [
+      "accept-language",
+      "en-US,en;q=0.9"
+     ],
+     [
+      "priority",
+      "u=1, i"
+     ]
+    ]
+   }
+  ]
+ }
+}

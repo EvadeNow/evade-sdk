@@ -114,7 +114,7 @@ func TestBrowserClassesFailClosed(t *testing.T) {
 			r.Engine = EngineFromUserAgent("Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0")
 		}),
 		"chromium 140":         nav(func(r *Request) { r.Engine.Major = 140 }),
-		"chromium 157":         script(func(r *Request) { r.Engine.Major = 157 }),
+		"chromium 158":         script(func(r *Request) { r.Engine.Major = 158 }),
 		"POST navigation":      nav(func(r *Request) { r.Method = "POST" }),
 		"Accept-CH navigation": nav(func(r *Request) { r.Added.ClientHints = append(r.Added.ClientHints, "sec-ch-ua-model") }),
 		"storage-access nav":   nav(func(r *Request) { r.Added.StorageAccess = true }),
@@ -262,6 +262,18 @@ var universalWitnesses = []struct {
 		Request{Engine: chrome151, Class: ClassNoCORS, Method: "GET", HTTP2: true,
 			Added: Added{ClientHints: lowEntropyHints, Referer: true, Priority: true, StorageAccess: true}},
 		"sec-ch-ua-platform user-agent sec-ch-ua sec-ch-ua-mobile accept sec-fetch-site sec-fetch-mode sec-fetch-dest sec-fetch-storage-access referer accept-encoding accept-language priority"},
+	{"chrome157-m#6154e0 (www.wikipedia.org Chrome 157 no-cors, measurement browser)", strictRefuses,
+		Request{Engine: Engine{Kind: Chromium, Major: 157}, Class: ClassNoCORS, Method: "GET", HTTP2: true,
+			Added: Added{ClientHints: lowEntropyHints, Referer: true, Priority: true, Cookie: true}},
+		"sec-ch-ua-platform user-agent sec-ch-ua sec-ch-ua-mobile accept sec-fetch-site sec-fetch-mode sec-fetch-dest referer accept-encoding accept-language cookie priority"},
+	{"chrome157-m#71f662 (developer.mozilla.org Chrome 157 no-cors, measurement browser)", strictRefuses,
+		Request{Engine: Engine{Kind: Chromium, Major: 157}, Class: ClassNoCORS, Method: "GET", HTTP2: true,
+			Added: Added{ClientHints: lowEntropyHints, Referer: true, Priority: true}},
+		"sec-ch-ua-platform user-agent sec-ch-ua sec-ch-ua-mobile accept sec-fetch-site sec-fetch-mode sec-fetch-dest referer accept-encoding accept-language priority"},
+	{"chrome157-m#2283fb (httpbin.org Chrome 157 preflight, measurement browser)", strictRefuses,
+		Request{Engine: Engine{Kind: Chromium, Major: 157}, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
+			Added: Added{Origin: true, Referer: true, Priority: true, RequestHeaders: true}},
+		"accept access-control-request-method access-control-request-headers origin user-agent sec-fetch-mode sec-fetch-site sec-fetch-dest referer accept-encoding accept-language priority"},
 	// WebKit late and law generations.
 	{"safari18.7-d#543 (Safari 18.7.5 login form)", strictRefuses,
 		Request{Engine: safari187, Class: ClassForm, Method: "POST", HTTP2: true,
@@ -501,7 +513,7 @@ func TestOrderUniversalBrowserClassesFailClosed(t *testing.T) {
 		}
 	}
 	unwitnessed := map[string]Request{
-		"chromium 156 form":             form(Engine{Kind: Chromium, Major: 156}, func(*Request) {}),
+		"chromium 158 form":             form(Engine{Kind: Chromium, Major: 158}, func(*Request) {}),
 		"chromium 140 preflight":        preflight(Engine{Kind: Chromium, Major: 140}, func(*Request) {}),
 		"chromium 140 no-cors":          get(Engine{Kind: Chromium, Major: 140}, ClassNoCORS, func(*Request) {}),
 		"storage-access preflight":      preflight(chrome151, func(r *Request) { r.Added.StorageAccess = true }),

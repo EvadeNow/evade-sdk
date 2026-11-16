@@ -1,0 +1,108 @@
+{
+ "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+ "measurement": "powhttp HARs of one Windows Chrome 157 machine (akamai/hars/qantas-1/2/3.har, Git LFS): the Qantas booking search's native form POST to book.qantas.com, same-site from www.qantas.com; header names in received wire order (HAR header arrays from powhttp keep the sent sequence; HTTP/2 cookie crumbs folded to one position)",
+ "captures": [
+  {
+   "id": "qantas-1#346",
+   "har": "akamai/hars/qantas-1.har",
+   "entry": 346,
+   "url": "https://book.qantas.com/qf-booking/dyn/air/tripflow.redirect",
+   "protocol": "HTTP2",
+   "pseudo": [
+    ":method",
+    ":authority",
+    ":scheme",
+    ":path"
+   ],
+   "order": [
+    "content-length",
+    "cache-control",
+    "sec-ch-ua",
+    "sec-ch-ua-mobile",
+    "sec-ch-ua-platform",
+    "upgrade-insecure-requests",
+    "content-type",
+    "user-agent",
+    "origin",
+    "accept",
+    "sec-fetch-site",
+    "sec-fetch-mode",
+    "sec-fetch-user",
+    "sec-fetch-dest",
+    "referer",
+    "accept-encoding",
+    "accept-language",
+    "cookie",
+    "priority"
+   ]
+  },
+  {
+   "id": "qantas-2#371",
+   "har": "akamai/hars/qantas-2.har",
+   "entry": 371,
+   "url": "https://book.qantas.com/qf-booking/dyn/air/tripflow.redirect",
+   "protocol": "HTTP2",
+   "pseudo": [
+    ":method",
+    ":authority",
+    ":scheme",
+    ":path"
+   ],
+   "order": [
+    "content-length",
+    "cache-control",
+    "sec-ch-ua",
+    "sec-ch-ua-mobile",
+    "sec-ch-ua-platform",
+    "upgrade-insecure-requests",
+    "content-type",
+    "user-agent",
+    "origin",
+    "accept",
+    "sec-fetch-site",
+    "sec-fetch-mode",
+    "sec-fetch-user",
+    "sec-fetch-dest",
+    "referer",
+    "accept-encoding",
+    "accept-language",
+    "cookie",
+    "priority"
+   ]
+  },
+  {
+   "id": "qantas-3#366",
+   "har": "akamai/hars/qantas-3.har",
+   "entry": 366,
+   "url": "https://book.qantas.com/qf-booking/dyn/air/tripflow.redirect",
+   "protocol": "HTTP2",
+   "pseudo": [
+    ":method",
+    ":authority",
+    ":scheme",
+    ":path"
+   ],
+   "order": [
+    "content-length",
+    "cache-control",
+    "sec-ch-ua",
+    "sec-ch-ua-mobile",
+    "sec-ch-ua-platform",
+    "upgrade-insecure-requests",
+    "content-type",
+    "user-agent",
+    "origin",
+    "accept",
+    "sec-fetch-site",
+    "sec-fetch-mode",
+    "sec-fetch-user",
+    "sec-fetch-dest",
+    "referer",
+    "accept-encoding",
+    "accept-language",
+    "cookie",
+    "priority"
+   ]
+  }
+ ]
+}

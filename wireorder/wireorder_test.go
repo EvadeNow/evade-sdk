@@ -146,7 +146,7 @@ func TestOrderRefusesClassesOutsideTheCertificate(t *testing.T) {
 func TestOrderRefusesUnwitnessedEngines(t *testing.T) {
 	for _, r := range []Request{
 		chromeXHR(140, "content-type"),
-		chromeXHR(157, "content-type"),
+		chromeXHR(158, "content-type"),
 		{Engine: Engine{Kind: EngineUnknown, Major: 148}, Class: ClassFetch, Method: "GET"},
 		func() Request { r := safariShapeXHR(testInstall); r.Engine.Major = 17; return r }(),
 		func() Request { r := safariShapeXHR(testInstall); r.Engine.Major = 19; return r }(),

@@ -12,7 +12,6 @@ import (
 	"github.com/EvadeNow/evade-sdk/useragent"
 	"github.com/bogdanfinn/fhttp/http2"
 	"github.com/bogdanfinn/tls-client/profiles"
-	tls "github.com/bogdanfinn/utls"
 )
 
 // Behavior is connection behavior that belongs to a browser family rather than to one ClientHello.
@@ -134,13 +133,10 @@ func New() (*Resolver, error) {
 				// fhttp's exclusive fallback. The wire weight is encoded minus one.
 				p.Client = withHeaderPriority(client, &http2.PriorityParam{Weight: 255})
 			case majorAtLeast(m[1], 26):
-				// HYPOTHESIS(safari26_no_stream_priority): iOS Safari 26 and later
-				// send no HTTP/2 stream priority (curl-impersonate curl_safari260_ios:
-				// "HTTP/2: removed priority", --http2-no-priority). A zero priority
-				// param makes the HEADERS frame skip the block (fhttp http2 frame.go
-				// IsZero). Falsified by a real Safari 26 frame capture showing a
-				// priority block.
-				p.Client = withHeaderPriority(withSessionTicket(client), &http2.PriorityParam{})
+				// Native Safari 26.6 sends no HTTP/2 HEADERS priority. A zero
+				// priority param suppresses fhttp's non-browser fallback without
+				// serializing a priority block.
+				p.Client = withHeaderPriority(client, &http2.PriorityParam{})
 			}
 		}
 		r.named[key] = p
@@ -177,39 +173,6 @@ func withHeaderPriority(c profiles.ClientProfile, priority *http2.PriorityParam)
 		c.GetHttp3PriorityParam(), c.GetHttp3PseudoHeaderOrder(), c.GetHttp3SendGreaseFrames())
 }
 
-// withSessionTicket inserts Safari 26's empty session_ticket extension between
-// ec_point_formats and ALPN, preserving the captured fixed extension order.
-func withSessionTicket(c profiles.ClientProfile) profiles.ClientProfile {
-	id := c.GetClientHelloId()
-	id.SpecFactory = func() (tls.ClientHelloSpec, error) {
-		spec, err := c.GetClientHelloSpec()
-		if err != nil {
-			return tls.ClientHelloSpec{}, err
-		}
-		insertAt := -1
-		for i, extension := range spec.Extensions {
-			switch extension.(type) {
-			case *tls.SessionTicketExtension:
-				return spec, nil
-			case *tls.ALPNExtension:
-				insertAt = i
-			}
-		}
-		if insertAt < 0 {
-			return tls.ClientHelloSpec{}, fmt.Errorf("tlsprofile: Safari 26 ClientHello has no ALPN extension")
-		}
-		extensions := make([]tls.TLSExtension, len(spec.Extensions)+1)
-		copy(extensions, spec.Extensions[:insertAt])
-		extensions[insertAt] = &tls.SessionTicketExtension{}
-		copy(extensions[insertAt+1:], spec.Extensions[insertAt:])
-		spec.Extensions = extensions
-		return spec, nil
-	}
-	return profiles.NewClientProfile(id, c.GetSettings(), c.GetSettingsOrder(), c.GetPseudoHeaderOrder(),
-		c.GetConnectionFlow(), c.GetPriorities(), c.GetHeaderPriority(), c.GetStreamID(), c.GetAllowHTTP(),
-		c.GetHttp3Settings(), c.GetHttp3SettingsOrder(), c.GetHttp3PriorityParam(),
-		c.GetHttp3PseudoHeaderOrder(), c.GetHttp3SendGreaseFrames())
-}
 
 func keyVersion(key string, parts []string) (versioned, error) {
 	var nums [3]int
