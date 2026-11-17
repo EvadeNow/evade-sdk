@@ -153,14 +153,15 @@ sbsd, err := akamai.SolveSBSD(ctx, client, akamai.SBSDRequest{
 
 ## reCAPTCHA v3 (botguard)
 
-Synchronous: the server runs the whole flow (page, loader, release, anchor,
-reload, clr, bcn) over your proxy as `UserAgent` and answers the token.
-`ua` must be a User-Agent `client.UserAgents(ctx, "botguard")` lists.
+Synchronous: the server runs the whole reCAPTCHA flow (loader, release,
+anchor, reload, clr, bcn) over your proxy as `UserAgent` and answers the
+token; it never fetches your page — the token binds to `URL`'s origin and
+`Action`. `ua` must be a User-Agent `client.UserAgents(ctx, "botguard")` lists.
 
 ```go
 res, err := recaptcha.Solve(ctx, client, recaptcha.TaskV3Enterprise, recaptcha.Request{
-	URL:       "https://www.example.com",   // the landed page (redirects are not followed)
-	SiteKey:   "6Lc…",                      // the sitekey the page renders
+	URL:       "https://www.example.com/checkout", // the page the token is for
+	SiteKey:   "6Lc…",                             // the sitekey the page renders
 	Action:    "checkout",
 	UserAgent: ua,
 	Proxy:     "http://user:pass@host:port",
@@ -168,13 +169,13 @@ res, err := recaptcha.Solve(ctx, client, recaptcha.TaskV3Enterprise, recaptcha.R
 // res.Token is the rresp token; res.Score and res.Verification are nil.
 ```
 
-`TaskV3Enterprise` is the enterprise surface (loader `enterprise.js` on
-www.google.com), `TaskV3` the api2 surface (loader `api.js` on recaptcha.net
-or www.google.com); the page's own loader URL states the host. `score` is
-never answered: it is not observable client-side (only the site's own
-siteverify call sees it). Refusals are `*evade.APIError` with
-`invalid_request` (no or several loaders on the page, the other surface,
-another sitekey, a malformed field), `device_unsupported`, `site_unsupported`,
+`TaskV3Enterprise` is the enterprise surface (loader `enterprise.js`), `TaskV3`
+the api2 surface (loader `api.js`). The loader is fetched from www.google.com;
+`Host: "recaptcha.net"` selects the other API host (the site never observes
+which host served its widget; both issue the same token). `score` is never
+answered: it is not observable client-side (only the site's own siteverify
+call sees it). Refusals are `*evade.APIError` with `invalid_request` (a
+malformed field, an unknown host), `device_unsupported`, `site_unsupported`,
 `generation_failed` (decoder refusal or a SHORT token), `proxy_failed`,
 `proxy_timeout`, `target_error`, `solve_canceled` or `solve_failed`.
 

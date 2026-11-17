@@ -91,7 +91,7 @@ func server(t *testing.T, status int, header http.Header, body []byte) (*evade.C
 
 // The task rides first on the wire; unknown response keys are tolerated.
 func TestSolveSendsTaskAndToleratesUnknownResponseKeys(t *testing.T) {
-	for _, task := range []recaptcha.Task{recaptcha.TaskV3Enterprise, recaptcha.TaskV3} {
+	for _, task := range []recaptcha.Task{recaptcha.TaskV3Enterprise, recaptcha.TaskV3, recaptcha.TaskV2InvisibleEnterprise, recaptcha.TaskV2Invisible} {
 		t.Run(string(task), func(t *testing.T) {
 			client, line, sent := server(t, http.StatusOK, nil, []byte(`{"stages":[{"name":"reload","status":200}],"success":true,"task":"`+string(task)+`","token":"03AFcWeA-token","score":null,"verification":null,"genMs":12.5}`))
 			got, err := recaptcha.Solve(context.Background(), client, task, checkoutRequest())
