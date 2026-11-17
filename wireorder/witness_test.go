@@ -459,3 +459,108 @@ func TestChrome157FormWitnesses(t *testing.T) {
 		})
 	}
 }
+
+// TestSafariEchoWitnesses replays testdata/safari27_echo_witness.json:
+// BrowserStack real iPhones on Safari 27.2 (two sessions, iPhone 18 Pro),
+// 27.0 and the 26.6.1 control, each request's HTTP/2 HEADERS frame as
+// tls.peet.ws received it from the device's own transport. Every class's
+// order is byte-identical across the four sessions; each capture states
+// its verdict under the late generation's law:
+//   - universal: OrderUniversal is the capture (navigations, the bare
+//     same-origin fetch GET);
+//   - refused: Order and OrderUniversal refuse it (the page-header fetch
+//     GET is probe-safari-16#19's dictionary);
+//   - outcome: Order leaves it ambiguous, the capture is one of its
+//     outcomes, and OrderUniversal's canonical history is another (a
+//     same-origin XHR POST: origin before sec-fetch-site);
+//   - unreached: no outcome of the law is the capture (same-origin
+//     page-header XHR and fetch POSTs).
+func TestSafariEchoWitnesses(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("testdata", "safari27_echo_witness.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fixture struct {
+		Sessions []struct {
+			Tag       string `json:"tag"`
+			UserAgent string `json:"user_agent"`
+			Captures  []struct {
+				ID      string     `json:"id"`
+				Class   string     `json:"class"`
+				Method  string     `json:"method"`
+				Calls   []string   `json:"calls"`
+				Pseudo  []string   `json:"pseudo"`
+				Order   []string   `json:"order"`
+				Fields  [][]string `json:"fields"`
+				Verdict string     `json:"verdict"`
+			} `json:"captures"`
+		} `json:"sessions"`
+	}
+	if err := json.Unmarshal(raw, &fixture); err != nil {
+		t.Fatal(err)
+	}
+	classes := map[string]Class{"navigation": ClassNavigation, "fetch": ClassFetch, "xhr": ClassXHR}
+	first := map[string][]string{}
+	releases := map[Engine]bool{}
+	for _, s := range fixture.Sessions {
+		engine := EngineFromUserAgent(s.UserAgent)
+		if g := testLaw(t).WebKit.generation(engine); g == nil || g.Name != "late" {
+			t.Fatalf("%s: %q is %s, not a late-generation build", s.Tag, s.UserAgent, engine)
+		}
+		releases[engine] = true
+		for _, c := range s.Captures {
+			t.Run(c.ID, func(t *testing.T) {
+				names := make([]string, len(c.Fields))
+				for i, f := range c.Fields {
+					names[i] = f[0]
+				}
+				if !slices.Equal(names, c.Order) {
+					t.Fatalf("fields %v disagree with order %v", names, c.Order)
+				}
+				class := strings.TrimPrefix(c.ID, s.Tag+"#")
+				if o, ok := first[class]; !ok {
+					first[class] = c.Order
+				} else if !slices.Equal(o, c.Order) {
+					t.Errorf("order %v differs from the first session's %v", c.Order, o)
+				}
+				r := Request{Engine: engine, Class: classes[c.Class], Method: c.Method, HTTP2: true, Calls: c.Calls, Added: Added{
+					Origin: slices.Contains(c.Order, "origin"), Referer: slices.Contains(c.Order, "referer"),
+					Cookie: slices.Contains(c.Order, "cookie"), Body: slices.Contains(c.Order, "content-length"),
+					Priority: slices.Contains(c.Order, "priority"),
+				}}
+				universal, uerr := OrderUniversal(r)
+				strict, serr := Order(r)
+				outcomes, _ := Outcomes(r)
+				switch c.Verdict {
+				case "universal":
+					if uerr != nil || !slices.Equal(universal.Header, c.Order) || !slices.Equal(universal.Pseudo, c.Pseudo) {
+						t.Fatalf("universal %v %v (%v)\ncapture %v %v", universal.Pseudo, universal.Header, uerr, c.Pseudo, c.Order)
+					}
+				case "refused":
+					wantErr[*UnwitnessedError](t, serr)
+					wantErr[*UnwitnessedError](t, uerr)
+				case "outcome":
+					wantErr[*AmbiguousError](t, serr)
+					if !containsOrder(outcomes, c.Order) {
+						t.Fatalf("outcomes %v omit the capture %v", outcomes, c.Order)
+					}
+					if uerr != nil || slices.Equal(universal.Header, c.Order) {
+						t.Fatalf("universal %v (%v) now reproduces the capture: reclassify it", universal.Header, uerr)
+					}
+				case "unreached":
+					if containsOrder(outcomes, c.Order) || serr == nil && slices.Equal(strict.Header, c.Order) ||
+						uerr == nil && slices.Equal(universal.Header, c.Order) {
+						t.Fatalf("the law now reaches the capture %v: reclassify it", c.Order)
+					}
+				default:
+					t.Fatalf("verdict %q", c.Verdict)
+				}
+			})
+		}
+	}
+	for _, want := range []Engine{{Kind: WebKit, Major: 27, Minor: 2}, {Kind: WebKit, Major: 26, Minor: 6}} {
+		if !releases[want] {
+			t.Errorf("no %s session in the fixture", want)
+		}
+	}
+}

@@ -1,0 +1,5428 @@
+{
+ "schema": "wireorder-header-witness/v2",
+ "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1",
+ "measurement": "BrowserStack Automate real-device iPhone Safari sessions (2026-11-17), no proxy and no Local tunnel: each request is sent by the device's own network stack straight to https://tls.peet.ws/api/all, which answers with the HTTP/2 HEADERS frame it received (pseudo-headers and regular headers in received order, values verbatim); 'fields' is that frame's regular headers. Driver: WebDriver Navigate To (nav-typed; BrowserStack's start page https://appium.io/ is its referrer), a WebDriver Element Click on a same-origin link (nav-click), location.assign (nav-script), a link clicked on https://example.com/ (nav-cross-click), then same-origin page requests from the echo document: fetch GET, fetch GET with X-Alpha/X-Beta, XHR POST of a string body (XHR's own text/plain content-type, modelled as the page's first call), XHR POST with Content-Type, XHR POST with Content-Type/X-Probe-A/X-Probe-B, fetch POST with six page headers. Every session's TLS and HTTP/2 identity is the same (ja4 t13d2013h2_a09f3c656075_7f0f34a4126d, akamai 2:0;3:100;4:2097152;9:1|10420225|0|m,s,a,p).",
+ "recording_transport": "Not available for https on these devices: routed through compat-http (BrowserStackLocal --force-local --force-proxy into an INTERCEPT session), Safari 27.2 shows 'This Connection Is Not Private' for the interception CA and its 'visit this website' control (WebDriver click, native XCUITest tap, the warning page's own visitInsecureWebsite / visitInsecureWebsiteWithTemporaryBypass commands) opens no bypass, and acceptInsecureCerts/acceptSsl do not pass it: the supervised BrowserStack iPhones refuse an untrusted certificate. compat-http did record the same session's plain http:// requests (ses_e53ab32cd47c25004d0b191077ce0341, BrowserStack 402443e9da0ec300826b8567e964762dcaeb90cb), but over http Safari sends no sec-fetch-* and adds upgrade-insecure-requests to every navigation, so those dictionaries are not the https ones and are not witnesses here.",
+ "equality": "Every class's header order and every value but the per-session ones (user-agent, referer, accept-language, :path) are identical across Safari 27.2 (2 sessions, iPhone 18 Pro), 27.0 (iPhone 15, 15 Pro, 16 Pro Max, 18 Pro Max) and the 26.6.1 control (iPhone 17 Pro): Safari 27.x is the late generation byte for byte on these classes. No BrowserStack device runs 27.1 or 27.3.",
+ "falsification": "A Safari 27.x capture of one of these classes whose order differs from the session's here, or whose Accept-Encoding is not 'gzip, deflate, br, zstd'.",
+ "sessions": [
+  {
+   "tag": "ip18pro-27",
+   "browserstack_session": "eee24935fbcfe7f9db9c92e787c61c3de1b028df",
+   "device": "iPhone 18 Pro",
+   "os_version": "27",
+   "started_unix": 1794920454,
+   "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1",
+   "languages": [
+    "en-GB"
+   ],
+   "http2_akamai_fingerprint": "2:0;3:100;4:2097152;9:1|10420225|0|m,s,a,p",
+   "ja4": "t13d2013h2_a09f3c656075_7f0f34a4126d",
+   "peetprint_hash": "62b834de729e78a9f0ebd1dd099314a7",
+   "captures": [
+    {
+     "id": "ip18pro-27#nav-typed",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=typed&tag=ip18pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://appium.io/"
+      ],
+      [
+       "sec-fetch-site",
+       "cross-site"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip18pro-27#nav-click",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=click&tag=ip18pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=typed&tag=ip18pro-27"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip18pro-27#nav-script",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=script&tag=ip18pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=click&tag=ip18pro-27"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip18pro-27#nav-cross-click",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=cross-click&tag=ip18pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://example.com/"
+      ],
+      [
+       "sec-fetch-site",
+       "cross-site"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip18pro-27#same-fetch-get",
+     "class": "fetch",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-get&tag=ip18pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18pro-27"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "accept-language",
+       "en-GB,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip18pro-27#same-fetch-get-headers",
+     "class": "fetch",
+     "method": "GET",
+     "calls": [
+      "X-Alpha",
+      "X-Beta"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-get-headers&tag=ip18pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "x-beta",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "x-alpha",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "x-beta",
+       "b"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "x-alpha",
+       "a"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18pro-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "accept-language",
+       "en-GB,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "refused"
+    },
+    {
+     "id": "ip18pro-27#same-xhr-post",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post&tag=ip18pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "text/plain;charset=UTF-8"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18pro-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-GB,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "outcome"
+    },
+    {
+     "id": "ip18pro-27#same-xhr-post-json",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post-json&tag=ip18pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18pro-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-GB,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "outcome"
+    },
+    {
+     "id": "ip18pro-27#same-xhr-post-headers",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type",
+      "X-Probe-A",
+      "X-Probe-B"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post-headers&tag=ip18pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "x-probe-b",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "x-probe-a",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "x-probe-b",
+       "b"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "x-probe-a",
+       "a"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18pro-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-GB,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "unreached"
+    },
+    {
+     "id": "ip18pro-27#same-fetch-post-headers",
+     "class": "fetch",
+     "method": "POST",
+     "calls": [
+      "Content-Type",
+      "Accept",
+      "X-Requested-With",
+      "X-Probe-A",
+      "X-Probe-B",
+      "Accept-API-Version"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-post-headers&tag=ip18pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "content-type",
+      "accept",
+      "x-requested-with",
+      "sec-fetch-site",
+      "x-probe-a",
+      "sec-fetch-mode",
+      "origin",
+      "x-probe-b",
+      "referer",
+      "user-agent",
+      "content-length",
+      "accept-api-version",
+      "sec-fetch-dest",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "accept",
+       "application/json"
+      ],
+      [
+       "x-requested-with",
+       "XMLHttpRequest"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "x-probe-a",
+       "a"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "x-probe-b",
+       "b"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18pro-27"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-api-version",
+       "protocol=1.0,resource=2.1"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "accept-language",
+       "en-GB,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "unreached"
+    }
+   ]
+  },
+  {
+   "tag": "ip18pro-27-r2",
+   "browserstack_session": "4bf785db25ef6e9a9cee13122c130a259dd1144f",
+   "device": "iPhone 18 Pro",
+   "os_version": "27",
+   "started_unix": 1794920636,
+   "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1",
+   "languages": [
+    "en-GB"
+   ],
+   "http2_akamai_fingerprint": "2:0;3:100;4:2097152;9:1|10420225|0|m,s,a,p",
+   "ja4": "t13d2013h2_a09f3c656075_7f0f34a4126d",
+   "peetprint_hash": "62b834de729e78a9f0ebd1dd099314a7",
+   "captures": [
+    {
+     "id": "ip18pro-27-r2#nav-typed",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=typed&tag=ip18pro-27-r2",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://appium.io/"
+      ],
+      [
+       "sec-fetch-site",
+       "cross-site"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip18pro-27-r2#nav-click",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=click&tag=ip18pro-27-r2",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=typed&tag=ip18pro-27-r2"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip18pro-27-r2#nav-script",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=script&tag=ip18pro-27-r2",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=click&tag=ip18pro-27-r2"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip18pro-27-r2#nav-cross-click",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=cross-click&tag=ip18pro-27-r2",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://example.com/"
+      ],
+      [
+       "sec-fetch-site",
+       "cross-site"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip18pro-27-r2#same-fetch-get",
+     "class": "fetch",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-get&tag=ip18pro-27-r2",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18pro-27-r2"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip18pro-27-r2#same-fetch-get-headers",
+     "class": "fetch",
+     "method": "GET",
+     "calls": [
+      "X-Alpha",
+      "X-Beta"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-get-headers&tag=ip18pro-27-r2",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "x-beta",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "x-alpha",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "x-beta",
+       "b"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "x-alpha",
+       "a"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18pro-27-r2"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "refused"
+    },
+    {
+     "id": "ip18pro-27-r2#same-xhr-post",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post&tag=ip18pro-27-r2",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "text/plain;charset=UTF-8"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18pro-27-r2"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "outcome"
+    },
+    {
+     "id": "ip18pro-27-r2#same-xhr-post-json",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post-json&tag=ip18pro-27-r2",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18pro-27-r2"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "outcome"
+    },
+    {
+     "id": "ip18pro-27-r2#same-xhr-post-headers",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type",
+      "X-Probe-A",
+      "X-Probe-B"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post-headers&tag=ip18pro-27-r2",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "x-probe-b",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "x-probe-a",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "x-probe-b",
+       "b"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "x-probe-a",
+       "a"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18pro-27-r2"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "unreached"
+    },
+    {
+     "id": "ip18pro-27-r2#same-fetch-post-headers",
+     "class": "fetch",
+     "method": "POST",
+     "calls": [
+      "Content-Type",
+      "Accept",
+      "X-Requested-With",
+      "X-Probe-A",
+      "X-Probe-B",
+      "Accept-API-Version"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-post-headers&tag=ip18pro-27-r2",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "content-type",
+      "accept",
+      "x-requested-with",
+      "sec-fetch-site",
+      "x-probe-a",
+      "sec-fetch-mode",
+      "origin",
+      "x-probe-b",
+      "referer",
+      "user-agent",
+      "content-length",
+      "accept-api-version",
+      "sec-fetch-dest",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "accept",
+       "application/json"
+      ],
+      [
+       "x-requested-with",
+       "XMLHttpRequest"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "x-probe-a",
+       "a"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "x-probe-b",
+       "b"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18pro-27-r2"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-api-version",
+       "protocol=1.0,resource=2.1"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "unreached"
+    }
+   ]
+  },
+  {
+   "tag": "ip15-27",
+   "browserstack_session": "71b4e96abd6ec436897fc3819bda9c34fb9d0e5a",
+   "device": "iPhone 15",
+   "os_version": "27",
+   "started_unix": 1794920836,
+   "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "languages": [
+    "en-US"
+   ],
+   "http2_akamai_fingerprint": "2:0;3:100;4:2097152;9:1|10420225|0|m,s,a,p",
+   "ja4": "t13d2013h2_a09f3c656075_7f0f34a4126d",
+   "peetprint_hash": "62b834de729e78a9f0ebd1dd099314a7",
+   "captures": [
+    {
+     "id": "ip15-27#nav-typed",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=typed&tag=ip15-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://appium.io/"
+      ],
+      [
+       "sec-fetch-site",
+       "cross-site"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip15-27#nav-click",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=click&tag=ip15-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=typed&tag=ip15-27"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip15-27#nav-script",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=script&tag=ip15-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=click&tag=ip15-27"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip15-27#nav-cross-click",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=cross-click&tag=ip15-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://example.com/"
+      ],
+      [
+       "sec-fetch-site",
+       "cross-site"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip15-27#same-fetch-get",
+     "class": "fetch",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-get&tag=ip15-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip15-27"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip15-27#same-fetch-get-headers",
+     "class": "fetch",
+     "method": "GET",
+     "calls": [
+      "X-Alpha",
+      "X-Beta"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-get-headers&tag=ip15-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "x-beta",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "x-alpha",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "x-beta",
+       "b"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "x-alpha",
+       "a"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip15-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "refused"
+    },
+    {
+     "id": "ip15-27#same-xhr-post",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post&tag=ip15-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "text/plain;charset=UTF-8"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip15-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "outcome"
+    },
+    {
+     "id": "ip15-27#same-xhr-post-json",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post-json&tag=ip15-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip15-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "outcome"
+    },
+    {
+     "id": "ip15-27#same-xhr-post-headers",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type",
+      "X-Probe-A",
+      "X-Probe-B"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post-headers&tag=ip15-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "x-probe-b",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "x-probe-a",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "x-probe-b",
+       "b"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "x-probe-a",
+       "a"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip15-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "unreached"
+    },
+    {
+     "id": "ip15-27#same-fetch-post-headers",
+     "class": "fetch",
+     "method": "POST",
+     "calls": [
+      "Content-Type",
+      "Accept",
+      "X-Requested-With",
+      "X-Probe-A",
+      "X-Probe-B",
+      "Accept-API-Version"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-post-headers&tag=ip15-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "content-type",
+      "accept",
+      "x-requested-with",
+      "sec-fetch-site",
+      "x-probe-a",
+      "sec-fetch-mode",
+      "origin",
+      "x-probe-b",
+      "referer",
+      "user-agent",
+      "content-length",
+      "accept-api-version",
+      "sec-fetch-dest",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "accept",
+       "application/json"
+      ],
+      [
+       "x-requested-with",
+       "XMLHttpRequest"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "x-probe-a",
+       "a"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "x-probe-b",
+       "b"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip15-27"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-api-version",
+       "protocol=1.0,resource=2.1"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "unreached"
+    }
+   ]
+  },
+  {
+   "tag": "ip18promax-27",
+   "browserstack_session": "67f008893b8120b160967497ac947d4aa9438a95",
+   "device": "iPhone 18 Pro Max",
+   "os_version": "27",
+   "started_unix": 1794921266,
+   "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "languages": [
+    "en-GB"
+   ],
+   "http2_akamai_fingerprint": "2:0;3:100;4:2097152;9:1|10420225|0|m,s,a,p",
+   "ja4": "t13d2013h2_a09f3c656075_7f0f34a4126d",
+   "peetprint_hash": "62b834de729e78a9f0ebd1dd099314a7",
+   "captures": [
+    {
+     "id": "ip18promax-27#nav-typed",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=typed&tag=ip18promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://appium.io/"
+      ],
+      [
+       "sec-fetch-site",
+       "cross-site"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip18promax-27#nav-click",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=click&tag=ip18promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=typed&tag=ip18promax-27"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip18promax-27#nav-script",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=script&tag=ip18promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=click&tag=ip18promax-27"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip18promax-27#nav-cross-click",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=cross-click&tag=ip18promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://example.com/"
+      ],
+      [
+       "sec-fetch-site",
+       "cross-site"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip18promax-27#same-fetch-get",
+     "class": "fetch",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-get&tag=ip18promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18promax-27"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip18promax-27#same-fetch-get-headers",
+     "class": "fetch",
+     "method": "GET",
+     "calls": [
+      "X-Alpha",
+      "X-Beta"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-get-headers&tag=ip18promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "x-beta",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "x-alpha",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "x-beta",
+       "b"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "x-alpha",
+       "a"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18promax-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "refused"
+    },
+    {
+     "id": "ip18promax-27#same-xhr-post",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post&tag=ip18promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "text/plain;charset=UTF-8"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18promax-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "outcome"
+    },
+    {
+     "id": "ip18promax-27#same-xhr-post-json",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post-json&tag=ip18promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18promax-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "outcome"
+    },
+    {
+     "id": "ip18promax-27#same-xhr-post-headers",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type",
+      "X-Probe-A",
+      "X-Probe-B"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post-headers&tag=ip18promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "x-probe-b",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "x-probe-a",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "x-probe-b",
+       "b"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "x-probe-a",
+       "a"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18promax-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "unreached"
+    },
+    {
+     "id": "ip18promax-27#same-fetch-post-headers",
+     "class": "fetch",
+     "method": "POST",
+     "calls": [
+      "Content-Type",
+      "Accept",
+      "X-Requested-With",
+      "X-Probe-A",
+      "X-Probe-B",
+      "Accept-API-Version"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-post-headers&tag=ip18promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "content-type",
+      "accept",
+      "x-requested-with",
+      "sec-fetch-site",
+      "x-probe-a",
+      "sec-fetch-mode",
+      "origin",
+      "x-probe-b",
+      "referer",
+      "user-agent",
+      "content-length",
+      "accept-api-version",
+      "sec-fetch-dest",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "accept",
+       "application/json"
+      ],
+      [
+       "x-requested-with",
+       "XMLHttpRequest"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "x-probe-a",
+       "a"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "x-probe-b",
+       "b"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip18promax-27"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-api-version",
+       "protocol=1.0,resource=2.1"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "unreached"
+    }
+   ]
+  },
+  {
+   "tag": "ip16promax-27",
+   "browserstack_session": "d9cb0d5d12fa5194b5a5baf4b7a7f9126251cf91",
+   "device": "iPhone 16 Pro Max",
+   "os_version": "27",
+   "started_unix": 1794921310,
+   "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "languages": [
+    "en-GB"
+   ],
+   "http2_akamai_fingerprint": "2:0;3:100;4:2097152;9:1|10420225|0|m,s,a,p",
+   "ja4": "t13d2013h2_a09f3c656075_7f0f34a4126d",
+   "peetprint_hash": "62b834de729e78a9f0ebd1dd099314a7",
+   "captures": [
+    {
+     "id": "ip16promax-27#nav-typed",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=typed&tag=ip16promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://appium.io/"
+      ],
+      [
+       "sec-fetch-site",
+       "cross-site"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip16promax-27#nav-click",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=click&tag=ip16promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=typed&tag=ip16promax-27"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip16promax-27#nav-script",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=script&tag=ip16promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=click&tag=ip16promax-27"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip16promax-27#nav-cross-click",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=cross-click&tag=ip16promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://example.com/"
+      ],
+      [
+       "sec-fetch-site",
+       "cross-site"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip16promax-27#same-fetch-get",
+     "class": "fetch",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-get&tag=ip16promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip16promax-27"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip16promax-27#same-fetch-get-headers",
+     "class": "fetch",
+     "method": "GET",
+     "calls": [
+      "X-Alpha",
+      "X-Beta"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-get-headers&tag=ip16promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "x-beta",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "x-alpha",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "x-beta",
+       "b"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "x-alpha",
+       "a"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip16promax-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "refused"
+    },
+    {
+     "id": "ip16promax-27#same-xhr-post",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post&tag=ip16promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "text/plain;charset=UTF-8"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip16promax-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "outcome"
+    },
+    {
+     "id": "ip16promax-27#same-xhr-post-json",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post-json&tag=ip16promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip16promax-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "outcome"
+    },
+    {
+     "id": "ip16promax-27#same-xhr-post-headers",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type",
+      "X-Probe-A",
+      "X-Probe-B"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post-headers&tag=ip16promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "x-probe-b",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "x-probe-a",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "x-probe-b",
+       "b"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "x-probe-a",
+       "a"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip16promax-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "unreached"
+    },
+    {
+     "id": "ip16promax-27#same-fetch-post-headers",
+     "class": "fetch",
+     "method": "POST",
+     "calls": [
+      "Content-Type",
+      "Accept",
+      "X-Requested-With",
+      "X-Probe-A",
+      "X-Probe-B",
+      "Accept-API-Version"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-post-headers&tag=ip16promax-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "content-type",
+      "accept",
+      "x-requested-with",
+      "sec-fetch-site",
+      "x-probe-a",
+      "sec-fetch-mode",
+      "origin",
+      "x-probe-b",
+      "referer",
+      "user-agent",
+      "content-length",
+      "accept-api-version",
+      "sec-fetch-dest",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "accept",
+       "application/json"
+      ],
+      [
+       "x-requested-with",
+       "XMLHttpRequest"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "x-probe-a",
+       "a"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "x-probe-b",
+       "b"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip16promax-27"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-api-version",
+       "protocol=1.0,resource=2.1"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "unreached"
+    }
+   ]
+  },
+  {
+   "tag": "ip15pro-27",
+   "browserstack_session": "fcc913cc4b18e4d516a9dcfe990dba1e255eabc9",
+   "device": "iPhone 15 Pro",
+   "os_version": "27",
+   "started_unix": 1794921349,
+   "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
+   "languages": [
+    "en-GB"
+   ],
+   "http2_akamai_fingerprint": "2:0;3:100;4:2097152;9:1|10420225|0|m,s,a,p",
+   "ja4": "t13d2013h2_a09f3c656075_7f0f34a4126d",
+   "peetprint_hash": "62b834de729e78a9f0ebd1dd099314a7",
+   "captures": [
+    {
+     "id": "ip15pro-27#nav-typed",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=typed&tag=ip15pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://appium.io/"
+      ],
+      [
+       "sec-fetch-site",
+       "cross-site"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip15pro-27#nav-click",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=click&tag=ip15pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=typed&tag=ip15pro-27"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip15pro-27#nav-script",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=script&tag=ip15pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=click&tag=ip15pro-27"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip15pro-27#nav-cross-click",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=cross-click&tag=ip15pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://example.com/"
+      ],
+      [
+       "sec-fetch-site",
+       "cross-site"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip15pro-27#same-fetch-get",
+     "class": "fetch",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-get&tag=ip15pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip15pro-27"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip15pro-27#same-fetch-get-headers",
+     "class": "fetch",
+     "method": "GET",
+     "calls": [
+      "X-Alpha",
+      "X-Beta"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-get-headers&tag=ip15pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "x-beta",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "x-alpha",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "x-beta",
+       "b"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "x-alpha",
+       "a"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip15pro-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "refused"
+    },
+    {
+     "id": "ip15pro-27#same-xhr-post",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post&tag=ip15pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "text/plain;charset=UTF-8"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip15pro-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "outcome"
+    },
+    {
+     "id": "ip15pro-27#same-xhr-post-json",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post-json&tag=ip15pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip15pro-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "outcome"
+    },
+    {
+     "id": "ip15pro-27#same-xhr-post-headers",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type",
+      "X-Probe-A",
+      "X-Probe-B"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post-headers&tag=ip15pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "x-probe-b",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "x-probe-a",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "x-probe-b",
+       "b"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "x-probe-a",
+       "a"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip15pro-27"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "unreached"
+    },
+    {
+     "id": "ip15pro-27#same-fetch-post-headers",
+     "class": "fetch",
+     "method": "POST",
+     "calls": [
+      "Content-Type",
+      "Accept",
+      "X-Requested-With",
+      "X-Probe-A",
+      "X-Probe-B",
+      "Accept-API-Version"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-post-headers&tag=ip15pro-27",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "content-type",
+      "accept",
+      "x-requested-with",
+      "sec-fetch-site",
+      "x-probe-a",
+      "sec-fetch-mode",
+      "origin",
+      "x-probe-b",
+      "referer",
+      "user-agent",
+      "content-length",
+      "accept-api-version",
+      "sec-fetch-dest",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "accept",
+       "application/json"
+      ],
+      [
+       "x-requested-with",
+       "XMLHttpRequest"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "x-probe-a",
+       "a"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "x-probe-b",
+       "b"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip15pro-27"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-api-version",
+       "protocol=1.0,resource=2.1"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "accept-language",
+       "en-GB,en-US;q=0.9,en;q=0.8"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "unreached"
+    }
+   ]
+  },
+  {
+   "tag": "ip17pro-26",
+   "browserstack_session": "be7e292ed80448f9d53692c05ea6e43e370792d4",
+   "device": "iPhone 17 Pro",
+   "os_version": "26",
+   "started_unix": 1794920878,
+   "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15E148 Safari/604.1",
+   "languages": [
+    "en-US"
+   ],
+   "http2_akamai_fingerprint": "2:0;3:100;4:2097152;9:1|10420225|0|m,s,a,p",
+   "ja4": "t13d2013h2_a09f3c656075_7f0f34a4126d",
+   "peetprint_hash": "62b834de729e78a9f0ebd1dd099314a7",
+   "captures": [
+    {
+     "id": "ip17pro-26#nav-typed",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=typed&tag=ip17pro-26",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://appium.io/"
+      ],
+      [
+       "sec-fetch-site",
+       "cross-site"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip17pro-26#nav-click",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=click&tag=ip17pro-26",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=typed&tag=ip17pro-26"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip17pro-26#nav-script",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=script&tag=ip17pro-26",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=click&tag=ip17pro-26"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip17pro-26#nav-cross-click",
+     "class": "navigation",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?nav=cross-click&tag=ip17pro-26",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "document"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      ],
+      [
+       "referer",
+       "https://example.com/"
+      ],
+      [
+       "sec-fetch-site",
+       "cross-site"
+      ],
+      [
+       "sec-fetch-mode",
+       "navigate"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=0, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip17pro-26#same-fetch-get",
+     "class": "fetch",
+     "method": "GET",
+     "calls": [],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-get&tag=ip17pro-26",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "sec-fetch-dest",
+      "user-agent",
+      "accept",
+      "referer",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip17pro-26"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "universal"
+    },
+    {
+     "id": "ip17pro-26#same-fetch-get-headers",
+     "class": "fetch",
+     "method": "GET",
+     "calls": [
+      "X-Alpha",
+      "X-Beta"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-get-headers&tag=ip17pro-26",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "x-beta",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "x-alpha",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "x-beta",
+       "b"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "x-alpha",
+       "a"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip17pro-26"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "refused"
+    },
+    {
+     "id": "ip17pro-26#same-xhr-post",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post&tag=ip17pro-26",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "text/plain;charset=UTF-8"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip17pro-26"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "outcome"
+    },
+    {
+     "id": "ip17pro-26#same-xhr-post-json",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post-json&tag=ip17pro-26",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip17pro-26"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "outcome"
+    },
+    {
+     "id": "ip17pro-26#same-xhr-post-headers",
+     "class": "xhr",
+     "method": "POST",
+     "calls": [
+      "Content-Type",
+      "X-Probe-A",
+      "X-Probe-B"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-xhr-post-headers&tag=ip17pro-26",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "accept",
+      "content-type",
+      "x-probe-b",
+      "origin",
+      "sec-fetch-site",
+      "sec-fetch-mode",
+      "x-probe-a",
+      "user-agent",
+      "referer",
+      "sec-fetch-dest",
+      "content-length",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "accept",
+       "*/*"
+      ],
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "x-probe-b",
+       "b"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "x-probe-a",
+       "a"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip17pro-26"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "unreached"
+    },
+    {
+     "id": "ip17pro-26#same-fetch-post-headers",
+     "class": "fetch",
+     "method": "POST",
+     "calls": [
+      "Content-Type",
+      "Accept",
+      "X-Requested-With",
+      "X-Probe-A",
+      "X-Probe-B",
+      "Accept-API-Version"
+     ],
+     "url": "https://tls.peet.ws/api/all?class=same-fetch-post-headers&tag=ip17pro-26",
+     "protocol": "HTTP2",
+     "pseudo": [
+      ":method",
+      ":scheme",
+      ":authority",
+      ":path"
+     ],
+     "order": [
+      "content-type",
+      "accept",
+      "x-requested-with",
+      "sec-fetch-site",
+      "x-probe-a",
+      "sec-fetch-mode",
+      "origin",
+      "x-probe-b",
+      "referer",
+      "user-agent",
+      "content-length",
+      "accept-api-version",
+      "sec-fetch-dest",
+      "accept-language",
+      "priority",
+      "accept-encoding"
+     ],
+     "fields": [
+      [
+       "content-type",
+       "application/json"
+      ],
+      [
+       "accept",
+       "application/json"
+      ],
+      [
+       "x-requested-with",
+       "XMLHttpRequest"
+      ],
+      [
+       "sec-fetch-site",
+       "same-origin"
+      ],
+      [
+       "x-probe-a",
+       "a"
+      ],
+      [
+       "sec-fetch-mode",
+       "cors"
+      ],
+      [
+       "origin",
+       "https://tls.peet.ws"
+      ],
+      [
+       "x-probe-b",
+       "b"
+      ],
+      [
+       "referer",
+       "https://tls.peet.ws/api/all?nav=script&tag=ip17pro-26"
+      ],
+      [
+       "user-agent",
+       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15E148 Safari/604.1"
+      ],
+      [
+       "content-length",
+       "7"
+      ],
+      [
+       "accept-api-version",
+       "protocol=1.0,resource=2.1"
+      ],
+      [
+       "sec-fetch-dest",
+       "empty"
+      ],
+      [
+       "accept-language",
+       "en-US,en;q=0.9"
+      ],
+      [
+       "priority",
+       "u=3, i"
+      ],
+      [
+       "accept-encoding",
+       "gzip, deflate, br, zstd"
+      ]
+     ],
+     "verdict": "unreached"
+    }
+   ]
+  }
+ ]
+}

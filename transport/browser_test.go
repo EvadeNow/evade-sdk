@@ -132,8 +132,8 @@ func TestSafariAcceptEncodingByRelease(t *testing.T) {
 	}{
 		{18, 0, "gzip, deflate, br"}, {18, 7, "gzip, deflate, br"}, {26, 0, "gzip, deflate, br"},
 		{26, 2, "gzip, deflate, br"}, {26, 5, "gzip, deflate, br, zstd"}, {26, 6, "gzip, deflate, br, zstd"},
-		{27, 0, "gzip, deflate, br, zstd"},
-		{17, 6, ""}, {26, 3, ""}, {26, 4, ""}, {27, 1, ""},
+		{27, 0, "gzip, deflate, br, zstd"}, {27, 2, "gzip, deflate, br, zstd"},
+		{17, 6, ""}, {26, 3, ""}, {26, 4, ""}, {27, 1, ""}, {27, 3, ""},
 	} {
 		got, err := SafariAcceptEncoding(c.major, c.minor)
 		if got != c.want || (err == nil) != (c.want != "") {

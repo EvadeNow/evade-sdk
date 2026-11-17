@@ -52,7 +52,15 @@ var law = &lawFile{
 		// sec-fetch-site, a cache-control request) and safari-a#247
 		// (sec-fetch-site before accept).
 		// Falsified by a capture whose dictionary these six names alone decide
-		// against this order.
+		// against this order. Same-origin requests do: every session of
+		// testdata/safari27_echo_witness.json (Safari 26.6.1, 27.0, 27.2) sends
+		// its same-origin XHR POST's origin before sec-fetch-site, an outcome
+		// the insertion law admits but this tie-break does not pick, and its
+		// same-origin page-header XHR and fetch POSTs in orders no admitted
+		// history reaches (the fetch POST's dictionary is safari27.0-b#35's,
+		// which a cross-site capture reproduces). The law takes no site input,
+		// so it holds for cross-origin fetch/XHR only; a same-origin one is
+		// open (TestSafariEchoWitnesses pins each verdict).
 		LoaderAdded: []string{"sec-fetch-site", "origin", "referer", "sec-fetch-mode", "sec-fetch-dest", "user-agent"},
 		// FormLoaderAdded is LoaderAdded's names in the tie-break a form
 		// submission keeps: its captures disagree on one identical
@@ -285,6 +293,16 @@ var law = &lawFile{
 						HAR:       "probe-safari27-15",
 						UserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1",
 					},
+					// Safari 27.2 (iPhone 18 Pro, BrowserStack): every class of testdata/safari27_echo_witness.json
+					// orders as on 27.0 and the 26.6.1 control.
+					{
+						HAR:       "ip18pro-27",
+						UserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1",
+					},
+					{
+						HAR:       "ip18pro-27-r2",
+						UserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1",
+					},
 				},
 				Inside:       []string{},
 				Tail:         []string{"accept-language", "priority", "accept-encoding", "cookie"},
@@ -296,7 +314,7 @@ var law = &lawFile{
 						HAR:        "probe-safari-16",
 						Entry:      19,
 						Dictionary: []string{"accept", "x-beta", "sec-fetch-site", "sec-fetch-mode", "x-alpha", "user-agent", "referer", "sec-fetch-dest"},
-						Reason:     "Safari 18.4-27.0 place this XHR's and fetch's page uncommons between their commons (every late iOS probe session, xhr-bare and fetch-bare); no history with WebKit's commons before its uncommons reaches it, and the law's one outcome is the law generation's order",
+						Reason:     "Safari 18.4-27.2 place this XHR's and fetch's page uncommons between their commons (every late iOS probe session, xhr-bare and fetch-bare; the 26.6.1-27.2 echo sessions' same-fetch-get-headers, testdata/safari27_echo_witness.json); no history with WebKit's commons before its uncommons reaches it, and the law's one outcome is the law generation's order",
 					},
 				},
 			},

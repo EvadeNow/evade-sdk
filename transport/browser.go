@@ -122,16 +122,18 @@ func iPhoneCriOSAgent(raw string) (agent useragent.Agent, ok bool, err error) {
 }
 
 // SafariAcceptEncoding is Safari's Accept-Encoding by its release major and
-// minor: zstd from 26.5 (the 26.5, 26.6 and 26.6.1 captures) and on 27.0
-// (the BrowserStack Safari 27.0 captures), none on 18.x, 26.0.1 and 26.2
-// (the 18.7.5, 26.0.1 and 26.2 captures). 18.x minors other than 18.7 are
-// taken as 18.7 (zstd arrived after 26.2); 26.3, 26.4, 27.1+ and pre-18
-// releases are unwitnessed and refused.
+// minor: zstd from 26.5 (the 26.5, 26.6 and 26.6.1 captures), on 27.0 (the
+// BrowserStack Safari 27.0 captures) and on 27.2 (two BrowserStack iPhone 18
+// Pro sessions, every navigation, fetch and XHR of
+// wireorder/testdata/safari27_echo_witness.json), none on 18.x, 26.0.1 and
+// 26.2 (the 18.7.5, 26.0.1 and 26.2 captures). 18.x minors other than 18.7
+// are taken as 18.7 (zstd arrived after 26.2); 26.3, 26.4, 27.1, 27.3+ and
+// pre-18 releases are unwitnessed and refused.
 func SafariAcceptEncoding(major, minor int) (string, error) {
 	switch {
 	case major == 18, major == 26 && minor <= 2:
 		return "gzip, deflate, br", nil
-	case major == 26 && minor >= 5, major == 27 && minor == 0:
+	case major == 26 && minor >= 5, major == 27 && (minor == 0 || minor == 2):
 		return "gzip, deflate, br, zstd", nil
 	}
 	return "", fmt.Errorf("transport: Safari %d.%d's Accept-Encoding is not witnessed", major, minor)
