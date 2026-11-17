@@ -2,15 +2,12 @@ package tlsprofile
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"os"
-	"path/filepath"
 	"reflect"
-	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -55,8 +52,8 @@ func assertRegistryProfile(t *testing.T, p Profile) {
 	}
 }
 
-// TestResolve covers verified releases the device fixtures do not state: the Records' releases inside a verified
-// span, an iPad User-Agent, and the patch level the resolver ignores.
+// TestResolve: every Chromium family on every OS takes chrome_<newest at most its Chromium major>, Safari (and
+// every iOS browser) safari_ios_<newest at most its major>, Firefox firefox_<newest at most its major>.
 func TestResolve(t *testing.T) {
 	r := newResolver(t)
 	tests := []struct {
@@ -65,31 +62,31 @@ func TestResolve(t *testing.T) {
 		want     string
 		behavior Behavior
 	}{
-		{
-			name: "windows chrome 156 inside 154-157",
-			ua:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
-			want: "chrome_154", behavior: blinkBehavior,
-		},
-		{
-			name: "macos safari 26.6.2, patch ignored",
-			ua:   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.2 Safari/605.1.15",
-			want: "safari_ios_26_0", behavior: safariBehavior,
-		},
-		{
-			name: "macos safari 27.0 inside 26.4-27.2",
-			ua:   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Safari/605.1.15",
-			want: "safari_ios_26_0", behavior: safariBehavior,
-		},
-		{
-			name: "ios safari 26.5 inside 26.4-27.2",
-			ua:   "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Mobile/15E148 Safari/604.1",
-			want: "safari_ios_26_0", behavior: safariBehavior,
-		},
-		{
-			name: "ipad user agent on iOS 18.5",
-			ua:   "Mozilla/5.0 (iPad; CPU OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1",
-			want: "safari_ios_18_5", behavior: safariBehavior,
-		},
+		{"windows chrome 157", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36", "chrome_154", blinkBehavior},
+		{"macos chrome 154", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36", "chrome_154", blinkBehavior},
+		{"linux chrome 160", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/160.0.0.0 Safari/537.36", "chrome_154", blinkBehavior},
+		{"chromeos chrome 156", "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36", "chrome_154", blinkBehavior},
+		{"android chrome 156", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36", "chrome_154", blinkBehavior},
+		{"windows edge 157", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0", "chrome_154", blinkBehavior},
+		{"opera on chromium 155", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 OPR/120.0.0.0", "chrome_154", blinkBehavior},
+		{"android webview 156", "Mozilla/5.0 (Linux; Android 13; SM-S918B Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/156.0.7103.60 Mobile Safari/537.36", "chrome_154", blinkBehavior},
+		{"samsung internet on chromium 154", "Mozilla/5.0 (Linux; Android 15; SM-S928B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/29.0 Chrome/154.0.0.0 Mobile Safari/537.36", "chrome_154", blinkBehavior},
+		{"chrome 151 takes chrome_150", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36", "chrome_150", blinkBehavior},
+		{"chrome 153 takes chrome_152", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36", "chrome_152", blinkBehavior},
+		{"macos safari 26.6.2", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.2 Safari/605.1.15", "safari_ios_26_0", safariBehavior},
+		{"ios safari 27.2", "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1", "safari_ios_26_0", safariBehavior},
+		{"ios safari 26.2", "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Mobile/15E148 Safari/604.1", "safari_ios_26_0", safariBehavior},
+		{"ipad safari 18.5", "Mozilla/5.0 (iPad; CPU OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1", "safari_ios_18_5", safariBehavior},
+		{"ios safari 18.0 takes 18.x's profile", "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1", "safari_ios_18_5", safariBehavior},
+		{"ios safari 18.7.5", "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.7.5 Mobile/15E148 Safari/604.1", "safari_ios_18_5", safariBehavior},
+		{"ios safari 17.6", "Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Mobile/15E148 Safari/604.1", "safari_ios_17_0", safariBehavior},
+		{"macintosh safari 16.0", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15", "safari_ios_16_0", safariBehavior},
+		{"chrome for iOS 26.6.1", "Mozilla/5.0 (iPhone; CPU iPhone OS 26_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/149.0.7827.137 Mobile/15E148 Safari/604.1", "safari_ios_26_0", safariBehavior},
+		{"firefox for iOS 18.3", "Mozilla/5.0 (iPhone; CPU iPhone OS 18_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/150.0 Mobile/15E148 Safari/605.1.15", "safari_ios_18_5", safariBehavior},
+		{"edge for iPad 17.5", "Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 EdgiOS/126.0.2592.80 Mobile/15E148 Safari/605.1.15", "safari_ios_17_0", safariBehavior},
+		{"windows firefox 160", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:160.0) Gecko/20100101 Firefox/160.0", "firefox_148", firefoxBehavior},
+		{"android firefox 150", "Mozilla/5.0 (Android 14; Mobile; rv:150.0) Gecko/150.0 Firefox/150.0", "firefox_148", firefoxBehavior},
+		{"linux firefox 140", "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0", "firefox_135", firefoxBehavior},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -112,167 +109,24 @@ func TestResolve(t *testing.T) {
 	}
 }
 
+// TestResolveNoProfile: a family on no modeled stack, or a release older than every profile of its stack.
 func TestResolveNoProfile(t *testing.T) {
 	r := newResolver(t)
-	const (
-		chromeSpan   = "chrome_154 for chrome on windows/macos 154.0-157.0"
-		safari26Span = "safari_ios_26_0 for safari-ios/safari-macos on ios/macos 26.4-27.2"
-		safari18Span = "safari_ios_18_5 for safari-ios on ios 18.4-18.6"
-	)
-	tests := []struct {
-		name         string
-		ua           string
-		family       useragent.Family
-		os           useragent.OS
-		major, minor int
-		nearest      string
-	}{
-		{
-			name:   "chrome 151 below the verified span",
-			ua:     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
-			family: useragent.FamilyChrome, os: useragent.OSWindows, major: 151, nearest: chromeSpan,
-		},
-		{
-			name:   "chrome 153 between refused 152 and verified 154",
-			ua:     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
-			family: useragent.FamilyChrome, os: useragent.OSWindows, major: 153, nearest: chromeSpan,
-		},
-		{
-			name:   "chrome 158 above the newest capture",
-			ua:     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36",
-			family: useragent.FamilyChrome, os: useragent.OSMacOS, major: 158, nearest: chromeSpan,
-		},
-		{
-			name:   "linux chrome 157 was never captured",
-			ua:     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
-			family: useragent.FamilyChrome, os: useragent.OSLinux, major: 157, nearest: chromeSpan,
-		},
-		{
-			name:   "android chrome 156 was never captured",
-			ua:     "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
-			family: useragent.FamilyChrome, os: useragent.OSAndroid, major: 156, nearest: chromeSpan,
-		},
-		{
-			name:   "opera reports the Chromium major it compared",
-			ua:     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 OPR/120.0.0.0",
-			family: useragent.FamilyOpera, os: useragent.OSWindows, major: 155,
-		},
-		{
-			name:   "android webview 156",
-			ua:     "Mozilla/5.0 (Linux; Android 13; SM-S918B Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/156.0.7103.60 Mobile Safari/537.36",
-			family: useragent.FamilyAndroidWebView, os: useragent.OSAndroid, major: 156,
-		},
-		{
-			name:   "ios 18.8 above the 18.7 hypothesis",
-			ua:     "Mozilla/5.0 (iPhone; CPU iPhone OS 18_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.8 Mobile/15E148 Safari/604.1",
-			family: useragent.FamilySafariIOS, os: useragent.OSIOS, major: 18, minor: 8, nearest: safari18Span,
-		},
-		{
-			name:   "ios 26.2 below the 26.4 capture",
-			ua:     "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Mobile/15E148 Safari/604.1",
-			family: useragent.FamilySafariIOS, os: useragent.OSIOS, major: 26, minor: 2, nearest: safari26Span,
-		},
-		{
-			name:   "macintosh safari 18.4 is a Mac or a desktop-mode iPad",
-			ua:     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15",
-			family: useragent.FamilySafariMacOS, os: useragent.OSMacOS, major: 18, minor: 4, nearest: safari26Span,
-		},
-		{
-			name:   "firefox on android",
-			ua:     "Mozilla/5.0 (Android 14; Mobile; rv:150.0) Gecko/150.0 Firefox/150.0",
-			family: useragent.FamilyFirefox, os: useragent.OSAndroid, major: 150,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			a, err := useragent.Parse(tt.ua)
-			if err != nil {
-				t.Fatalf("Parse: %v", err)
-			}
-			p, err := r.Resolve(a)
-			var noProfile *NoProfileError
-			if !errors.As(err, &noProfile) {
-				t.Fatalf("Resolve = %q, %v; want *NoProfileError", p.Name, err)
-			}
-			want := NoProfileError{Family: tt.family, OS: tt.os, Major: tt.major, Minor: tt.minor, Nearest: tt.nearest}
-			if *noProfile != want {
-				t.Fatalf("NoProfileError = %+v, want %+v", *noProfile, want)
-			}
-		})
-	}
-}
-
-func TestResolveUnknownFamily(t *testing.T) {
-	r := newResolver(t)
-	_, err := r.Resolve(useragent.Agent{Family: "netscape", OS: useragent.OSWindows, Major: 200, ChromiumMajor: 200})
-	var noProfile *NoProfileError
-	if !errors.As(err, &noProfile) || noProfile.Family != "netscape" {
-		t.Fatalf("Resolve(unknown family) error = %v, want *NoProfileError for netscape", err)
-	}
-}
-
-// TestVerifiedBoundsAreCaptured: both bounds of every verified span are a device fixture's release, so a span
-// widens only with a capture (TestResolveMatchesRealDevice checks each fixture's wire).
-func TestVerifiedBoundsAreCaptured(t *testing.T) {
-	files, err := filepath.Glob(filepath.Join("testdata", "*.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	type captured struct {
-		family useragent.Family
-		os     useragent.OS
-		at     release
-	}
-	var captures []captured
-	for _, file := range files {
-		data, err := os.ReadFile(file)
-		if err != nil {
-			t.Fatal(err)
-		}
-		var echo struct {
-			UserAgent string `json:"user_agent"`
-		}
-		if err := json.Unmarshal(data, &echo); err != nil {
-			t.Fatalf("%s: %v", file, err)
-		}
-		a, err := useragent.Parse(echo.UserAgent)
-		if err != nil {
-			continue // Chrome for iOS: transport.NewBrowser reads it as its iOS release's Safari
-		}
-		at := release{a.Major, a.Minor}
+	for _, a := range []useragent.Agent{
+		{Family: "netscape", OS: useragent.OSWindows, Major: 200},
+		{Family: useragent.FamilyChrome, OS: useragent.OSWindows, Major: 90, ChromiumMajor: 90},
+		{Family: useragent.FamilyEdge, OS: useragent.OSWindows, Major: 101, ChromiumMajor: 101},
+		{Family: useragent.FamilySafariIOS, OS: useragent.OSIOS, Major: 5, Minor: 1},
+		{Family: useragent.FamilyFirefox, OS: useragent.OSLinux, Major: 100},
+	} {
+		_, err := r.Resolve(a)
+		major := a.Major
 		if a.Family.Blink() {
-			at = release{a.ChromiumMajor, 0}
+			major = a.ChromiumMajor
 		}
-		captures = append(captures, captured{a.Family, a.OS, at})
-	}
-	for _, v := range verifiedProfiles() {
-		if v.hypothesis != "" {
-			continue // a hypothesis span is one no capture states
-		}
-		for _, bound := range []release{v.from, v.through} {
-			if !slices.ContainsFunc(captures, func(c captured) bool {
-				return c.at == bound && slices.Contains(v.families, c.family) && slices.Contains(v.oses, c.os)
-			}) {
-				t.Errorf("%s bound %d.%d has no device fixture", v.key, bound.major, bound.minor)
-			}
-		}
-	}
-}
-
-// TestResolveMarksTheIOS187Hypothesis: 18.4-18.6 are captured, 18.7 is HYPOTHESIS(ios_18_7_hello_equals_18_5).
-func TestResolveMarksTheIOS187Hypothesis(t *testing.T) {
-	r := newResolver(t)
-	for _, c := range []struct {
-		minor      int
-		hypothesis bool
-	}{{4, false}, {5, false}, {6, false}, {7, true}} {
-		p, err := r.Resolve(useragent.Agent{Family: useragent.FamilySafariIOS, OS: useragent.OSIOS, Major: 18, Minor: c.minor})
-		if err != nil {
-			t.Fatalf("18.%d: %v", c.minor, err)
-		}
-		marked := strings.HasPrefix(p.Hypothesis, "HYPOTHESIS(ios_18_7_hello_equals_18_5)")
-		if p.Name != "safari_ios_18_5" || marked != c.hypothesis || p.Verified == c.hypothesis {
-			t.Fatalf("18.%d = %q verified %t hypothesis %q", c.minor, p.Name, p.Verified, p.Hypothesis)
+		var noProfile *NoProfileError
+		if !errors.As(err, &noProfile) || *noProfile != (NoProfileError{Family: a.Family, OS: a.OS, Major: major}) {
+			t.Errorf("Resolve(%+v) error = %v, want *NoProfileError naming %s %d", a, err, a.Family, major)
 		}
 	}
 }

@@ -44,7 +44,7 @@ type Agent struct {
 	Raw           string
 	Family        Family
 	OS            OS
-	Major, Minor  int // of the browser's own token: Edg/, OPR/, Version/ (Safari), Chrome/, Firefox/
+	Major, Minor  int // of the browser's own token: Edg/, OPR/, Version/ (Safari), Chrome/, Firefox/; the iOS release for CriOS/, FxiOS/, EdgiOS/
 	ChromiumMajor int // Chrome/ major for Blink families, else 0; Blink TLS follows it
 	Mobile        bool
 }
@@ -69,7 +69,7 @@ var (
 	mobileRe = regexp.MustCompile(`\bMobile(?:[\s;)]|$)`)
 )
 
-// Third-party iOS browsers carry Safari's tokens but send their own headers.
+// Third-party iOS browsers carry Safari's tokens and run on the system WebKit, its network stack included.
 var thirdPartyIOS = [...]struct {
 	token, name string
 	browser     Browser
@@ -79,7 +79,9 @@ var thirdPartyIOS = [...]struct {
 	{"EdgiOS", "Edge for iOS", BrowserEdge},
 }
 
-// Parse never defaults a field: anything it cannot classify fails with *UnsupportedError naming the reason.
+// Parse never defaults a field: anything it cannot classify fails with *UnsupportedError naming the reason. Chrome,
+// Firefox and Edge for iOS (CriOS/, FxiOS/, EdgiOS/) parse as FamilySafariIOS at their iOS release: every iOS
+// browser fetches through the system WebKit, so it is that release's Safari with its own User-Agent (Raw).
 func Parse(ua string) (Agent, error) {
 	unsupported := func(reason string) (Agent, error) {
 		return Agent{}, &UnsupportedError{UserAgent: ua, Reason: reason}
@@ -88,11 +90,6 @@ func Parse(ua string) (Agent, error) {
 		return unsupported("empty User-Agent")
 	}
 	tokens := productTokens(ua)
-	for _, b := range thirdPartyIOS {
-		if has(tokens, b.token) {
-			return unsupported(fmt.Sprintf("%s (%s/) is not a supported browser", b.name, b.token))
-		}
-	}
 
 	os, osKnown := declaredOS(ua)
 	webView := strings.Contains(ua, "; wv)")
@@ -101,6 +98,21 @@ func Parse(ua string) (Agent, error) {
 		OS:  os,
 		// iPhone/iPod are phones even without the Mobile word; iPads stay non-mobile.
 		Mobile: mobileRe.MatchString(ua) || strings.Contains(ua, "iPhone") || strings.Contains(ua, "iPod"),
+	}
+	for _, b := range thirdPartyIOS {
+		if !has(tokens, b.token) {
+			continue
+		}
+		m := iosVersionRe.FindStringSubmatch(ua)
+		if os != OSIOS || m == nil {
+			return unsupported(fmt.Sprintf("%s (%s/) without an iOS device and its \"OS n_n\" release", b.name, b.token))
+		}
+		major, minor, err := atoiPair(ua, "iOS platform", m[1], m[2])
+		if err != nil {
+			return Agent{}, err
+		}
+		a.Family, a.Major, a.Minor = FamilySafariIOS, major, minor
+		return a, nil
 	}
 
 	var product string
@@ -185,23 +197,19 @@ const (
 	BrowserFirefox Browser = "firefox"
 )
 
-// Classify names ua's operating system and browser product. It places
-// everything Parse accepts plus the third-party iOS browsers Parse refuses
-// (CriOS/, FxiOS/, EdgiOS/); anything else fails with *UnsupportedError.
+// Classify names ua's operating system and browser product: what Parse
+// accepts, with the third-party iOS browsers (CriOS/, FxiOS/, EdgiOS/) named
+// as their own product; anything else fails with *UnsupportedError.
 func Classify(ua string) (OS, Browser, error) {
-	tokens := productTokens(ua)
-	for _, b := range thirdPartyIOS {
-		if !has(tokens, b.token) {
-			continue
-		}
-		if os, ok := declaredOS(ua); !ok || os != OSIOS {
-			return "", "", &UnsupportedError{UserAgent: ua, Reason: fmt.Sprintf("%s/ token without an iOS device", b.token)}
-		}
-		return OSIOS, b.browser, nil
-	}
 	a, err := Parse(ua)
 	if err != nil {
 		return "", "", err
+	}
+	tokens := productTokens(ua)
+	for _, b := range thirdPartyIOS {
+		if has(tokens, b.token) {
+			return a.OS, b.browser, nil
+		}
 	}
 	switch a.Family {
 	case FamilyChrome:

@@ -188,13 +188,13 @@ func TestOrderFailsClosed(t *testing.T) {
 			t.Errorf("Order(%s, %s) returned an order with its error", tc.want.Family, tc.class)
 		}
 	}
-	for _, r := range []OrderRequest{
-		{UserAgent: "", Class: ClassNavigation},
-		{UserAgent: criosUA, Class: ClassReload},
-	} {
-		if _, err := Order(r); !errors.As(err, new(*useragent.UnsupportedError)) {
-			t.Errorf("%q %s: %v, want useragent.UnsupportedError", r.UserAgent, r.Class, err)
-		}
+	if _, err := Order(OrderRequest{UserAgent: "", Class: ClassNavigation}); !errors.As(err, new(*useragent.UnsupportedError)) {
+		t.Errorf("empty User-Agent: %v, want useragent.UnsupportedError", err)
+	}
+	// Chrome for iOS parses as its release's Safari, but no captured Safari row orders a WKWebView.
+	want := NoOrderError{Family: useragent.FamilySafariIOS, Class: ClassReload}
+	if _, err := Order(OrderRequest{UserAgent: criosUA, Class: ClassReload}); !errors.As(err, new(*NoOrderError)) || *err.(*NoOrderError) != want {
+		t.Errorf("Chrome for iOS reload: %v, want %v", err, &want)
 	}
 }
 
@@ -414,7 +414,7 @@ func TestOrderUniversalFailsClosed(t *testing.T) {
 	cases = append(cases,
 		refusal{chromeUA, ClassReload, &NoLawError{Family: useragent.FamilyChrome, Class: ClassReload}, "transport: no wire-order law for chrome reload requests"},
 		refusal{safariUA, ClassReload, &NoLawError{Family: useragent.FamilySafariIOS, Class: ClassReload}, "transport: no wire-order law for safari-ios reload requests"},
-		refusal{criosUA, ClassReload, &NoLawError{Class: ClassReload}, "transport: no wire-order law for reload requests"},
+		refusal{criosUA, ClassReload, &NoLawError{Family: useragent.FamilySafariIOS, Class: ClassReload}, "transport: no wire-order law for safari-ios reload requests"},
 		refusal{firefoxUA, ClassNavigation, &NoOrderError{Family: useragent.FamilyFirefox}, "transport: no wire-order law or captured header order for firefox"},
 		refusal{edgeUA, ClassForm, &NoOrderError{Family: useragent.FamilyEdge}, "transport: no wire-order law or captured header order for edge"},
 		refusal{operaUA, ClassPreflight, &NoOrderError{Family: useragent.FamilyOpera}, "transport: no wire-order law or captured header order for opera"},

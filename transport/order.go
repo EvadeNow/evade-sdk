@@ -112,17 +112,13 @@ func (e *NoOrderError) Error() string {
 }
 
 // NoLawError reports a request OrderUniversal refuses because at most a captured row orders it (a reload, any
-// Android WebView request): a row is no law and states no pseudo-header order. Family is empty for a UA
-// useragent.Parse refuses (Chrome for iOS).
+// Android WebView request): a row is no law and states no pseudo-header order.
 type NoLawError struct {
 	Family useragent.Family
 	Class  RequestClass
 }
 
 func (e *NoLawError) Error() string {
-	if e.Family == "" {
-		return fmt.Sprintf("transport: no wire-order law for %s requests", e.Class)
-	}
 	return fmt.Sprintf("transport: no wire-order law for %s %s requests", e.Family, e.Class)
 }
 
@@ -134,7 +130,7 @@ func Order(r OrderRequest) ([]string, error) {
 		return captured(agent.Family, r.Class, androidWebViewOrder(r.Class))
 	}
 	engine := wireorder.EngineFromUserAgent(r.UserAgent)
-	if class, ok := r.Class.lawClass(); ok && strictLaw(class) && engine.Kind != wireorder.EngineUnknown && (parseErr == nil || engine.WebView) {
+	if class, ok := r.Class.lawClass(); ok && strictLaw(class) && engine.Kind != wireorder.EngineUnknown && parseErr == nil {
 		wire, err := wireorder.Order(r.law(engine, class, r.Pins))
 		if err != nil {
 			return nil, err
@@ -143,6 +139,11 @@ func Order(r OrderRequest) ([]string, error) {
 	}
 	if parseErr != nil {
 		return nil, parseErr
+	}
+	if engine.WebView {
+		// A third-party iOS browser parses as its release's Safari but orders headers unlike it
+		// (wireorder.Engine.WebView): no captured Safari row orders it.
+		return nil, &NoOrderError{Family: agent.Family, Class: r.Class}
 	}
 	switch agent.Family {
 	case useragent.FamilyChrome:
@@ -158,17 +159,17 @@ func Order(r OrderRequest) ([]string, error) {
 // without a law (Edge, Opera, Firefox) a NoOrderError, and the law's refusals, an unknown class's included, are final.
 func OrderUniversal(r OrderRequest) (wireorder.Wire, error) {
 	agent, err := useragent.Parse(r.UserAgent)
-	var engine wireorder.Engine
+	if err != nil {
+		return wireorder.Wire{}, err
+	}
+	engine := wireorder.EngineFromUserAgent(r.UserAgent)
 	switch {
-	case err != nil:
-		// Chrome for iOS, a WKWebView, is the one UA useragent.Parse refuses that the law orders; only the
-		// raw-UA engine reader places it.
-		if engine = wireorder.EngineFromUserAgent(r.UserAgent); !engine.WebView {
-			return wireorder.Wire{}, err
-		}
 	case agent.Family == useragent.FamilyAndroidWebView:
 		// Its Chrome/ token reads as Chromium, but WebView adds x-requested-with, which no law places.
 		return wireorder.Wire{}, &NoLawError{Family: agent.Family, Class: r.Class}
+	case engine.WebView:
+		// A third-party iOS browser (Chrome for iOS on WKWebView): the raw-UA engine reader places it at its iOS
+		// release, which useragent.Parse reports as its Safari family's.
 	default:
 		if engine, err = lawEngine(agent); err != nil {
 			return wireorder.Wire{}, err

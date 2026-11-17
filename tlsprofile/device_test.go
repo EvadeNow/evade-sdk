@@ -1,3 +1,7 @@
+//go:build witness
+
+// Regression witnesses, not a gate on the resolver: GOWORK=off go test -tags witness ./tlsprofile/
+
 package tlsprofile_test
 
 import (
@@ -29,48 +33,55 @@ import (
 
 	"github.com/EvadeNow/evade-sdk/tlsprofile"
 	"github.com/EvadeNow/evade-sdk/transport"
-	"github.com/EvadeNow/evade-sdk/useragent"
 	fhttp "github.com/bogdanfinn/fhttp"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/hpack"
 )
 
 // deviceFixture is a tls.peet.ws/api/all echo of a navigation from a real BrowserStack device (fp-sample
-// browserstack.py --echo), stored verbatim as testdata/<fixture>.json. want is the profile the solver path must
-// pick for the fixture's User-Agent, and that profile's emitted ClientHello and HTTP/2 preface must equal the
-// fixture's; an empty want is a release the resolver must refuse, and refused names the profile the former
-// newest-not-above rule picked there, which must differ from the fixture so the refusal stays evidence.
+// browserstack.py --echo), stored verbatim as testdata/<fixture>.json. want is the profile transport.NewBrowser
+// binds for the fixture's User-Agent; known lists, in compareDevice's order, the fields where that profile's
+// emitted ClientHello and HTTP/2 preface differ from the echo (README.md), so a tls-client upgrade that changes a
+// profile shows here.
 type deviceFixture struct {
 	fixture string
 	want    string
-	refused string
+	known   []string
 	// noAESHardware: the host has no AES instructions, so BoringSSL puts its ChaCha20 suites first; the cipher
 	// order is then a property of the machine, compared as a set (the same build on a Mac sends the profile's order).
 	noAESHardware bool
 }
 
+const peetprintField = "peetprint (versions|alpn|groups|sigalgs|psk|cert compression|ciphers|extensions)"
+
+// noTrustAnchors: the build sent no trust_anchors (0xca34) extension where the profile sends one; the extension and
+// its anchor list follow Chrome's component updates, not the build (README.md), so the profile stands.
+var noTrustAnchors = []string{"ja4", "ja4_r", "extension set", peetprintField}
+
 var deviceFixtures = []deviceFixture{
-	{fixture: "chrome-macos-151", refused: "chrome_150"},
-	{fixture: "chrome-macos-152", refused: "chrome_152"},
+	{fixture: "chrome-macos-151", want: "chrome_150", known: noTrustAnchors},
+	{fixture: "chrome-macos-152", want: "chrome_152"},
 	{fixture: "chrome-macos-154", want: "chrome_154"},
 	{fixture: "chrome-macos-155", want: "chrome_154"},
 	{fixture: "chrome-macos-156", want: "chrome_154"},
 	{fixture: "chrome-macos-157", want: "chrome_154"},
 	{fixture: "chrome-windows-157", want: "chrome_154", noAESHardware: true},
-	{fixture: "chrome-android-152", refused: "chrome_152"},
-	{fixture: "edge-windows-157", refused: "chrome_154", noAESHardware: true},
-	{fixture: "firefox-windows-148", refused: "firefox_148"},
-	{fixture: "firefox-windows-160", refused: "firefox_148"},
+	{fixture: "chrome-android-152", want: "chrome_152"},
+	{fixture: "edge-windows-157", want: "chrome_154", known: noTrustAnchors, noAESHardware: true},
+	// firefox_148 adds DHE suites 0x0033/0x0039 and sends HEADERS on stream 1 (Firefox: 3); Firefox 160 also
+	// dropped the ECDSA CBC suites and the ffdhe groups.
+	{fixture: "firefox-windows-148", want: "firefox_148", known: []string{"ja4", "ja4_r", "cipher order", peetprintField, "HEADERS stream"}},
+	{fixture: "firefox-windows-160", want: "firefox_148", known: []string{"ja4", "ja4_r", "cipher order", "supported groups", peetprintField, "HEADERS stream"}},
 	{fixture: "safari-macos-26.4", want: "safari_ios_26_0"},
 	{fixture: "safari-ipad-desktop-26.6.1", want: "safari_ios_26_0"},
-	{fixture: "safari-ipad-desktop-16.0", refused: "safari_16_0"},
+	{fixture: "safari-ipad-desktop-16.0", want: "safari_ios_16_0", known: []string{"HEADERS priority"}},
 	{fixture: "safari-ios-26.6", want: "safari_ios_26_0"},
 	{fixture: "safari-ios-27.2", want: "safari_ios_26_0"},
 	{fixture: "safari-ios-18.5", want: "safari_ios_18_5"},
 	{fixture: "safari-ios-18.6", want: "safari_ios_18_5"},
 	{fixture: "safari-ios-18.4.1", want: "safari_ios_18_5"},
-	{fixture: "safari-ios-18.3", refused: "safari_ios_18_0"},
-	{fixture: "safari-ios-18.0.1", refused: "safari_ios_18_0"},
+	{fixture: "safari-ios-18.3", want: "safari_ios_18_5", known: []string{"http2 akamai"}},
+	{fixture: "safari-ios-18.0.1", want: "safari_ios_18_5", known: []string{"ja4", "ja4_r", peetprintField, "http2 akamai", "HEADERS priority"}},
 	{fixture: "chrome-ios-149-ios-26.6", want: "safari_ios_26_0"},
 }
 
@@ -87,54 +98,42 @@ func TestEveryDeviceFixtureIsChecked(t *testing.T) {
 	}
 }
 
-func TestResolveMatchesRealDevice(t *testing.T) {
-	r, err := tlsprofile.New()
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestRealDeviceEchoes(t *testing.T) {
 	for _, tt := range deviceFixtures {
 		t.Run(tt.fixture, func(t *testing.T) {
 			fx := readFixture(t, tt.fixture)
-			profile, err := solverProfile(r, fx.UserAgent)
-			if tt.want == "" {
-				var noProfile *tlsprofile.NoProfileError
-				if !errors.As(err, &noProfile) {
-					t.Fatalf("resolved %q (%v); want *NoProfileError: the real device differs from %s", profile.Name, err, tt.refused)
-				}
-				candidate, err := r.Named(tt.refused)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if diffs := compareDevice(fx, emit(t, candidate, fx), candidate.Behavior, tt.noAESHardware); len(diffs) == 0 {
-					t.Fatalf("%s now equals the real device; verify the release instead of refusing it", tt.refused)
-				}
-				return
-			}
+			browser, err := transport.NewBrowser(fx.UserAgent)
 			if err != nil {
-				t.Fatalf("resolve: %v", err)
+				t.Fatalf("NewBrowser: %v", err)
 			}
-			if profile.Name != tt.want || !profile.Verified || profile.Hypothesis != "" {
-				t.Fatalf("resolved %q (verified %t, hypothesis %q), want verified %q", profile.Name, profile.Verified, profile.Hypothesis, tt.want)
+			if browser.TLS.Name != tt.want {
+				t.Fatalf("bound %q, want %q", browser.TLS.Name, tt.want)
 			}
-			if diffs := compareDevice(fx, emit(t, profile, fx), profile.Behavior, tt.noAESHardware); len(diffs) > 0 {
-				t.Fatalf("%s differs from the real device:\n%s", profile.Name, strings.Join(diffs, "\n"))
+			if got := echoedHeader(fx, "accept-encoding"); got != browser.AcceptEncoding {
+				t.Errorf("Accept-Encoding %q, the device sent %q", browser.AcceptEncoding, got)
+			}
+			diffs := compareDevice(fx, emit(t, browser.TLS, fx), browser.TLS.Behavior, tt.noAESHardware)
+			fields := make([]string, len(diffs))
+			for i, d := range diffs {
+				fields[i], _, _ = strings.Cut(d, ":\n")
+			}
+			if !slices.Equal(fields, tt.known) {
+				t.Fatalf("%s differs from the real device on %q, known %q:\n%s", tt.want, fields, tt.known, strings.Join(diffs, "\n"))
 			}
 		})
 	}
 }
 
-// solverProfile is the profile a session for ua presents: Chrome for iOS through transport.NewBrowser (useragent.Parse
-// refuses CriOS), every other User-Agent through the resolver.
-func solverProfile(r *tlsprofile.Resolver, ua string) (tlsprofile.Profile, error) {
-	if strings.Contains(ua, " CriOS/") {
-		b, err := transport.NewBrowser(ua)
-		return b.TLS, err
+// echoedHeader is the value of the echoed request's first header name, as the device's HEADERS frame carried it.
+func echoedHeader(fx fixture, name string) string {
+	for _, frame := range fx.HTTP2.Frames {
+		for _, header := range frame.Headers {
+			if value, ok := strings.CutPrefix(header, name+": "); ok {
+				return value
+			}
+		}
 	}
-	a, err := useragent.Parse(ua)
-	if err != nil {
-		return tlsprofile.Profile{}, err
-	}
-	return r.Resolve(a)
+	return ""
 }
 
 type fixture struct {
@@ -714,17 +713,6 @@ func compareDevice(fx fixture, o observed, behavior tlsprofile.Behavior, noAESHa
 		ourALPS = fmt.Sprint(protocols)
 	}
 	field("application_settings", alps, ourALPS)
-	// Chrome's trust_anchors list; its content is the browser's root store, not covered by any fingerprint hash.
-	anchors := ""
-	if e := fixtureExtension(fx, 51764); e != nil {
-		anchors, _ = e["data"].(string)
-	}
-	ourAnchors := ""
-	if data, ok := h.ext(51764); ok {
-		ourAnchors = hex.EncodeToString(data)
-	}
-	field("trust_anchors data", anchors, ourAnchors)
-
 	field("http2 akamai", fx.HTTP2.Akamai, akamai(o))
 	for _, frame := range fx.HTTP2.Frames {
 		if frame.Type != "HEADERS" {

@@ -136,6 +136,21 @@ func TestParseSupported(t *testing.T) {
 			ua:     "Mozilla/5.0 (Android 14; Tablet; rv:133.0) Gecko/133.0 Firefox/133.0",
 			family: FamilyFirefox, os: OSAndroid, major: 133,
 		},
+		{
+			name:   "chrome for ios is its iOS release's safari",
+			ua:     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/126.0.6478.153 Mobile/15E148 Safari/604.1",
+			family: FamilySafariIOS, os: OSIOS, major: 17, minor: 5, mobile: true,
+		},
+		{
+			name:   "firefox for ipad is its iOS release's safari",
+			ua:     "Mozilla/5.0 (iPad; CPU OS 18_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/127.0 Mobile/15E148 Safari/605.1.15",
+			family: FamilySafariIOS, os: OSIOS, major: 18, minor: 3,
+		},
+		{
+			name:   "edge for ios takes its iOS release over its Version/",
+			ua:     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 EdgiOS/126.2592.86 Mobile/15E148 Safari/605.1.15",
+			family: FamilySafariIOS, os: OSIOS, major: 17, minor: 5, mobile: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -161,19 +176,9 @@ func TestParseRejects(t *testing.T) {
 		reasonHas string
 	}{
 		{
-			name:      "chrome for ios",
-			ua:        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/126.0.6478.153 Mobile/15E148 Safari/604.1",
+			name:      "chrome for ios off an iOS device",
+			ua:        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/149.0.0.0 Safari/604.1",
 			reasonHas: "CriOS",
-		},
-		{
-			name:      "firefox for ios carries Version/ and Safari/",
-			ua:        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/127.0 Mobile/15E148 Safari/605.1.15",
-			reasonHas: "FxiOS",
-		},
-		{
-			name:      "edge for ios carries Version/ and Safari/",
-			ua:        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 EdgiOS/126.2592.86 Mobile/15E148 Safari/605.1.15",
-			reasonHas: "EdgiOS",
 		},
 		{name: "empty", ua: ""},
 		{name: "whitespace", ua: "   "},
@@ -244,8 +249,8 @@ func TestParseRejects(t *testing.T) {
 	}
 }
 
-// TestClassify: the third-party iOS browsers Parse refuses are their own
-// brand on iOS (EdgiOS beside Version/ is Edge, not Safari); everything
+// TestClassify: the third-party iOS browsers Parse reads as Safari are their
+// own brand on iOS (EdgiOS beside Version/ is Edge, not Safari); everything
 // else is Parse's family, both Safaris one browser.
 func TestClassify(t *testing.T) {
 	for _, tt := range []struct {

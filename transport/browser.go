@@ -3,8 +3,6 @@ package transport
 import (
 	"errors"
 	"fmt"
-	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/EvadeNow/evade-sdk/tlsprofile"
@@ -12,9 +10,14 @@ import (
 	fhttp "github.com/bogdanfinn/fhttp"
 )
 
-// ChromeAcceptEncoding is Chrome's Accept-Encoding on every request class
-// (the Windows/macOS Chrome 151-155 and Android Chrome 156 captures).
+// ChromeAcceptEncoding is Chromium's Accept-Encoding on every request class
+// from 123, which added zstd (the Windows/macOS Chrome 151-155 and Android
+// Chrome 156 captures).
 const ChromeAcceptEncoding = "gzip, deflate, br, zstd"
+
+// legacyAcceptEncoding is the Accept-Encoding of every modeled stack before
+// it added zstd.
+const legacyAcceptEncoding = "gzip, deflate, br"
 
 // defaultAcceptLanguage is the Accept-Language a session starts with; the
 // caller replaces it with the exit region's.
@@ -28,57 +31,24 @@ type Browser struct {
 	Agent          useragent.Agent
 	TLS            tlsprofile.Profile
 	AcceptLanguage string
-	// AcceptEncoding is the browser build's Accept-Encoding
-	// (SafariAcceptEncoding, ChromeAcceptEncoding).
+	// AcceptEncoding is the browser build's Accept-Encoding (acceptEncoding).
 	AcceptEncoding string
 	// ClientHints is the fingerprint's navigator.userAgentData; nil on
-	// engines without UA-CH (Safari). Chrome needs it (Complete).
+	// engines without UA-CH (Safari, Firefox). Chromium needs it (Complete).
 	ClientHints *ClientHints
 }
 
-// UnmodeledBrowserError is a User-Agent of a browser NewBrowser has no
-// witnessed model of.
-type UnmodeledBrowserError struct {
-	UserAgent string
-	Reason    string
-}
-
-func (e *UnmodeledBrowserError) Error() string {
-	return fmt.Sprintf("transport: browser %q is not modeled: %s", e.UserAgent, e.Reason)
-}
-
-// NewBrowser parses ua and binds the TLS profile tlsprofile selects for it.
-// Modeled browsers are the captured ones: iOS Safari, macOS Safari, Chrome
-// for iPhone, desktop Chrome on Windows/macOS, and mobile Chrome on Android.
-// Chrome further needs its fingerprint's ClientHints before use (Complete).
-//
-// Chrome for iOS on an iPhone runs as the iOS Safari of its iOS release:
-// every iOS browser fetches through the system WebKit, so its TLS profile
-// and Accept-Encoding are that release's Safari's, while Agent.Raw stays its
-// own User-Agent. Chrome for iOS 149 on iOS 26.6 sent Safari 26.6's
-// ClientHello and HTTP/2 preface (tlsprofile/testdata/chrome-ios-149-ios-26.6.json);
-// other iOS releases rest on HYPOTHESIS(ios_third_party_safari_tls). macOS
-// Safari takes its Version/ release's Safari Accept-Encoding
-// (HYPOTHESIS(webkit_macos_is_ios_late)).
+// NewBrowser parses ua and binds the TLS profile (tlsprofile.Resolver.Resolve)
+// and Accept-Encoding of its network stack: every Chromium family on every
+// OS, Safari on iPhone, iPad and Mac, and Firefox. Chrome, Edge and Firefox
+// for iOS bind as the Safari of their iOS release (useragent.Parse), keeping
+// their own User-Agent. Anything else fails with *useragent.UnsupportedError
+// or *tlsprofile.NoProfileError. Chromium further needs its fingerprint's
+// ClientHints before use (Complete).
 func NewBrowser(ua string) (Browser, error) {
-	raw := strings.TrimSpace(ua)
-	agent, criOS, err := iPhoneCriOSAgent(raw)
+	agent, err := useragent.Parse(strings.TrimSpace(ua))
 	if err != nil {
 		return Browser{}, err
-	}
-	if !criOS {
-		if agent, err = useragent.Parse(raw); err != nil {
-			return Browser{}, err
-		}
-	}
-	desktopChrome := agent.Family == useragent.FamilyChrome &&
-		(agent.OS == useragent.OSWindows || agent.OS == useragent.OSMacOS)
-	androidChrome := agent.Family == useragent.FamilyChrome && agent.OS == useragent.OSAndroid && agent.Mobile
-	safari := agent.Family == useragent.FamilySafariIOS || agent.Family == useragent.FamilySafariMacOS
-	if !safari && !desktopChrome && !androidChrome {
-		return Browser{}, &UnmodeledBrowserError{UserAgent: raw, Reason: fmt.Sprintf(
-			"%s on %s: only iOS Safari, macOS Safari, Chrome for iPhone, desktop Chrome on Windows or macOS, and mobile Chrome on Android are modeled",
-			agent.Family, agent.OS)}
 	}
 	resolver, err := tlsprofile.New()
 	if err != nil {
@@ -88,55 +58,30 @@ func NewBrowser(ua string) (Browser, error) {
 	if err != nil {
 		return Browser{}, err
 	}
-	acceptEncoding := ChromeAcceptEncoding
-	if safari {
-		if acceptEncoding, err = SafariAcceptEncoding(agent.Major, agent.Minor); err != nil {
-			return Browser{}, err
-		}
-	}
-	return Browser{Agent: agent, TLS: profile, AcceptLanguage: defaultAcceptLanguage, AcceptEncoding: acceptEncoding}, nil
+	return Browser{Agent: agent, TLS: profile, AcceptLanguage: defaultAcceptLanguage, AcceptEncoding: acceptEncoding(agent)}, nil
 }
 
-// iPhoneCriOS is Chrome for iOS on an iPhone, whose OS token carries the real
-// iOS release (Safari freezes it; CriOS does not).
-var iPhoneCriOS = regexp.MustCompile(
-	`^Mozilla/5\.0 \(iPhone; CPU iPhone OS (\d+)_(\d+)(?:_\d+)? like Mac OS X\) AppleWebKit/[0-9.]+ \(KHTML, like Gecko\) CriOS/[0-9.]+ Mobile/[0-9A-Za-z]+ Safari/[0-9.]+$`)
-
-// iPhoneCriOSAgent reads a Chrome for iOS User-Agent (ok) as the iOS Safari
-// agent of its iOS release, keeping the raw User-Agent (NewBrowser).
-// useragent.Parse refuses CriOS for every other SDK consumer.
-func iPhoneCriOSAgent(raw string) (agent useragent.Agent, ok bool, err error) {
-	if !strings.Contains(raw, " CriOS/") {
-		return useragent.Agent{}, false, nil
-	}
-	match := iPhoneCriOS.FindStringSubmatch(raw)
-	if match == nil {
-		return useragent.Agent{}, true, &UnmodeledBrowserError{UserAgent: raw, Reason: "Chrome for iOS is modeled only on iPhone, with its iOS version"}
-	}
-	major, majorErr := strconv.Atoi(match[1])
-	minor, minorErr := strconv.Atoi(match[2])
-	if majorErr != nil || minorErr != nil {
-		return useragent.Agent{}, true, &UnmodeledBrowserError{UserAgent: raw, Reason: "the iOS version does not parse"}
-	}
-	return useragent.Agent{Raw: raw, Family: useragent.FamilySafariIOS, OS: useragent.OSIOS, Major: major, Minor: minor, Mobile: true}, true, nil
-}
-
-// SafariAcceptEncoding is Safari's Accept-Encoding by its release major and
-// minor: zstd from 26.5 (the 26.5, 26.6 and 26.6.1 captures), on 27.0 (the
-// BrowserStack Safari 27.0 captures) and on 27.2 (two BrowserStack iPhone 18
-// Pro sessions, every navigation, fetch and XHR of
-// wireorder/testdata/safari27_echo_witness.json), none on 18.x, 26.0.1 and
-// 26.2 (the 18.7.5, 26.0.1 and 26.2 captures). 18.x minors other than 18.7
-// are taken as 18.7 (zstd arrived after 26.2); 26.3, 26.4, 27.1, 27.3+ and
-// pre-18 releases are unwitnessed and refused.
-func SafariAcceptEncoding(major, minor int) (string, error) {
+// acceptEncoding is the Accept-Encoding of a resolved agent's network stack:
+// zstd joins gzip, deflate and br from Safari 26.4 (WebKit, so every iOS
+// browser from iOS 26.4), Chromium 123 and Firefox 126. Safari's bound lies
+// between the iPhone Safari 26.2 capture (none, shape/hars) and the macOS
+// Safari 26.4 echo (zstd, tlsprofile/testdata); HYPOTHESIS(safari_26_3_no_zstd):
+// 26.3 sends none, falsified by one 26.3 capture carrying zstd
+// (tlsprofile/README.md).
+func acceptEncoding(a useragent.Agent) string {
+	var zstd bool
 	switch {
-	case major == 18, major == 26 && minor <= 2:
-		return "gzip, deflate, br", nil
-	case major == 26 && minor >= 5, major == 27 && (minor == 0 || minor == 2):
-		return "gzip, deflate, br, zstd", nil
+	case a.Family.Blink():
+		zstd = a.ChromiumMajor >= 123
+	case a.Family == useragent.FamilyFirefox:
+		zstd = a.Major >= 126
+	default: // Safari: tlsprofile refused every other family
+		zstd = a.Major > 26 || a.Major == 26 && a.Minor >= 4
 	}
-	return "", fmt.Errorf("transport: Safari %d.%d's Accept-Encoding is not witnessed", major, minor)
+	if zstd {
+		return ChromeAcceptEncoding
+	}
+	return legacyAcceptEncoding
 }
 
 // UserAgent is the User-Agent the browser sends.
@@ -149,14 +94,15 @@ func (b Browser) DesktopChrome() bool {
 }
 
 // Complete fails closed on a browser no request may leave with: no
-// User-Agent or Accept-Language, or Chrome without client hints (Chrome sends
-// sec-ch-ua* on every request; only its fingerprint states them).
+// User-Agent or Accept-Language, or Chromium without client hints (every
+// Chromium family sends sec-ch-ua* on every request; only its fingerprint
+// states them).
 func (b Browser) Complete() error {
 	if b.UserAgent() == "" || b.AcceptLanguage == "" {
 		return errors.New("transport: no browser is bound: it has no User-Agent or Accept-Language")
 	}
-	if b.Agent.Family == useragent.FamilyChrome && b.ClientHints == nil {
-		return fmt.Errorf("transport: Chrome %q has no client hints: take them from its fingerprint", b.UserAgent())
+	if b.Agent.Family.Blink() && b.ClientHints == nil {
+		return fmt.Errorf("transport: Chromium %q has no client hints: take them from its fingerprint", b.UserAgent())
 	}
 	return nil
 }

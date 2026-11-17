@@ -3,7 +3,6 @@ package transport
 import (
 	"errors"
 	"slices"
-	"strings"
 	"testing"
 
 	"github.com/EvadeNow/evade-sdk/tlsprofile"
@@ -39,11 +38,20 @@ func TestNewBrowserBindsTheModeledBrowsers(t *testing.T) {
 	}{
 		iosSafari185:  {useragent.FamilySafariIOS, "safari_ios_18_5", "gzip, deflate, br", false, false},
 		iosSafari2661: {useragent.FamilySafariIOS, "safari_ios_26_0", "gzip, deflate, br, zstd", false, false},
-		// One Safari 26 network stack on Mac and iPhone (tlsprofile/testdata/safari-macos-26.4.json); its
-		// release's Safari Accept-Encoding (HYPOTHESIS(webkit_macos_is_ios_late)).
+		// One Safari 26 network stack on Mac and iPhone (tlsprofile/testdata/safari-macos-26.4.json).
 		macSafari:     {useragent.FamilySafariMacOS, "safari_ios_26_0", "gzip, deflate, br, zstd", false, false},
 		windowsChrome: {useragent.FamilyChrome, "chrome_154", ChromeAcceptEncoding, true, true},
 		macChrome:     {useragent.FamilyChrome, "chrome_154", ChromeAcceptEncoding, true, true},
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36": {
+			useragent.FamilyChrome, "chrome_150", ChromeAcceptEncoding, true, true},
+		"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36": {
+			useragent.FamilyChrome, "chrome_154", ChromeAcceptEncoding, false, true},
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0": {
+			useragent.FamilyEdge, "chrome_154", ChromeAcceptEncoding, false, true},
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:160.0) Gecko/20100101 Firefox/160.0": {
+			useragent.FamilyFirefox, "firefox_148", "gzip, deflate, br, zstd", false, false},
+		"Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/150.0 Mobile/15E148 Safari/605.1.15": {
+			useragent.FamilySafariIOS, "safari_ios_26_0", "gzip, deflate, br, zstd", false, false},
 	} {
 		browser := mustBrowser(t, ua)
 		if browser.Agent.Family != want.family || browser.TLS.Name != want.tls ||
@@ -55,8 +63,8 @@ func TestNewBrowserBindsTheModeledBrowsers(t *testing.T) {
 		if browser.TLS.Behavior.RandomizeExtensionOrder && want.family == useragent.FamilySafariIOS {
 			t.Errorf("%q: iOS Safari's TLS profile randomizes its extension order", ua)
 		}
-		// Chrome sends sec-ch-ua* on every request: without its fingerprint's
-		// hints it is not complete.
+		// Chromium sends sec-ch-ua* on every request: without its
+		// fingerprint's hints it is not complete.
 		if (browser.Complete() == nil) == want.needsHints {
 			t.Errorf("%q Complete() = %v", ua, browser.Complete())
 		}
@@ -81,63 +89,46 @@ func TestCriOSRunsAsItsIOSReleaseSafari(t *testing.T) {
 
 func TestNewBrowserFailsClosed(t *testing.T) {
 	var unsupported *useragent.UnsupportedError
-	if _, err := NewBrowser("Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/150.0 Mobile/15E148 Safari/605.1.15"); !errors.As(err, &unsupported) {
-		t.Errorf("Firefox for iOS error = %v", err)
+	for name, ua := range map[string]string{
+		"no browser token":  "curl/8.10.1",
+		"CriOS off iOS":     "Mozilla/5.0 (Linux; Android 14) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/149.0.7827.137 Mobile Safari/604.1",
+		"empty User-Agent":  " ",
+		"Safari off Apple":  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15",
+		"headless Chromium": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+	} {
+		if _, err := NewBrowser(ua); !errors.As(err, &unsupported) {
+			t.Errorf("%s error = %v, want *useragent.UnsupportedError", name, err)
+		}
 	}
 	var noProfile *tlsprofile.NoProfileError
-	for name, ua := range map[string]string{
-		"Safari 5.1":                              "Mozilla/5.0 (iPhone; CPU iPhone OS 5_0 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A334 Safari/7534.48.3",
-		"Chrome 151, unlike chrome_150":           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
-		"Android Chrome 156, never captured":      "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
-		"iOS Safari 18.3, unlike safari_ios_18_0": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 Mobile/15E148 Safari/604.1",
-	} {
-		if _, err := NewBrowser(ua); !errors.As(err, &noProfile) {
-			t.Errorf("%s error = %v, want *tlsprofile.NoProfileError", name, err)
-		}
-	}
-	// iOS Safari 18.7 binds under HYPOTHESIS(ios_18_7_hello_equals_18_5), marked on its profile.
-	safari187 := mustBrowser(t, "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.7.5 Mobile/15E148 Safari/604.1")
-	if safari187.TLS.Name != "safari_ios_18_5" || safari187.TLS.Verified ||
-		!strings.HasPrefix(safari187.TLS.Hypothesis, "HYPOTHESIS(ios_18_7_hello_equals_18_5)") {
-		t.Errorf("iOS Safari 18.7.5 TLS = %q verified %t hypothesis %q", safari187.TLS.Name, safari187.TLS.Verified, safari187.TLS.Hypothesis)
-	}
-	// Chrome for iOS on an iOS release whose TLS is verified but whose Safari
-	// Accept-Encoding is unwitnessed stays refused.
-	if _, err := NewBrowser("Mozilla/5.0 (iPhone; CPU iPhone OS 26_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/149.0.7827.137 Mobile/15E148 Safari/604.1"); err == nil ||
-		!strings.Contains(err.Error(), "Safari 26.4's Accept-Encoding is not witnessed") {
-		t.Errorf("CriOS on iOS 26.4 error = %v", err)
-	}
-	for name, ua := range map[string]string{
-		"CriOS on iPad":   "Mozilla/5.0 (iPad; CPU OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/149.0.7827.137 Mobile/15E148 Safari/604.1",
-		"linux chrome":    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
-		"windows edge":    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
-		"windows firefox": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0",
-	} {
-		var unmodeled *UnmodeledBrowserError
-		if _, err := NewBrowser(ua); !errors.As(err, &unmodeled) || unmodeled.UserAgent != ua {
-			t.Errorf("%s error = %v, want *UnmodeledBrowserError", name, err)
-		}
+	if _, err := NewBrowser("Mozilla/5.0 (iPhone; CPU iPhone OS 5_0 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A334 Safari/7534.48.3"); !errors.As(err, &noProfile) {
+		t.Errorf("Safari 5.1 error = %v, want *tlsprofile.NoProfileError", err)
 	}
 	if err := (Browser{}).Complete(); err == nil {
 		t.Error("an unbound browser is complete")
 	}
 }
 
-// TestSafariAcceptEncodingByRelease: the captures' boundaries, and the
-// releases between them that no capture states.
-func TestSafariAcceptEncodingByRelease(t *testing.T) {
+// TestAcceptEncodingByRelease: zstd from Safari 26.4, Chromium 123 and Firefox 126.
+func TestAcceptEncodingByRelease(t *testing.T) {
+	const legacy, zstd = "gzip, deflate, br", "gzip, deflate, br, zstd"
 	for _, c := range []struct {
-		major, minor int
-		want         string
+		agent useragent.Agent
+		want  string
 	}{
-		{18, 0, "gzip, deflate, br"}, {18, 7, "gzip, deflate, br"}, {26, 0, "gzip, deflate, br"},
-		{26, 2, "gzip, deflate, br"}, {26, 5, "gzip, deflate, br, zstd"}, {26, 6, "gzip, deflate, br, zstd"},
-		{27, 0, "gzip, deflate, br, zstd"}, {27, 2, "gzip, deflate, br, zstd"},
-		{17, 6, ""}, {26, 3, ""}, {26, 4, ""}, {27, 1, ""}, {27, 3, ""},
+		{useragent.Agent{Family: useragent.FamilySafariIOS, Major: 17, Minor: 6}, legacy},
+		{useragent.Agent{Family: useragent.FamilySafariIOS, Major: 18, Minor: 7}, legacy},
+		{useragent.Agent{Family: useragent.FamilySafariIOS, Major: 26, Minor: 2}, legacy},
+		{useragent.Agent{Family: useragent.FamilySafariIOS, Major: 26, Minor: 3}, legacy},
+		{useragent.Agent{Family: useragent.FamilySafariMacOS, Major: 26, Minor: 4}, zstd},
+		{useragent.Agent{Family: useragent.FamilySafariIOS, Major: 27, Minor: 2}, zstd},
+		{useragent.Agent{Family: useragent.FamilyChrome, ChromiumMajor: 122}, legacy},
+		{useragent.Agent{Family: useragent.FamilyEdge, Major: 123, ChromiumMajor: 123}, zstd},
+		{useragent.Agent{Family: useragent.FamilyFirefox, Major: 125}, legacy},
+		{useragent.Agent{Family: useragent.FamilyFirefox, Major: 126}, zstd},
 	} {
-		got, err := SafariAcceptEncoding(c.major, c.minor)
-		if got != c.want || (err == nil) != (c.want != "") {
-			t.Errorf("Safari %d.%d = %q, %v; want %q", c.major, c.minor, got, err, c.want)
+		if got := acceptEncoding(c.agent); got != c.want {
+			t.Errorf("%s %d (Chromium %d) = %q, want %q", c.agent.Family, c.agent.Major, c.agent.ChromiumMajor, got, c.want)
 		}
 	}
 }
