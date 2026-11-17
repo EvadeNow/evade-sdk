@@ -55,10 +55,11 @@ func (e *UnmodeledBrowserError) Error() string {
 // Chrome for iOS on an iPhone runs as the iOS Safari of its iOS release:
 // every iOS browser fetches through the system WebKit, so its TLS profile
 // and Accept-Encoding are that release's Safari's, while Agent.Raw stays its
-// own User-Agent (HYPOTHESIS(ios_third_party_safari_tls), falsified by a
-// captured Chrome for iOS ClientHello whose bytes differ from the same iOS
-// release's Safari's). macOS Safari takes its Version/ release's Safari
-// Accept-Encoding (HYPOTHESIS(webkit_macos_is_ios_late)).
+// own User-Agent. Chrome for iOS 149 on iOS 26.6 sent Safari 26.6's
+// ClientHello and HTTP/2 preface (tlsprofile/testdata/chrome-ios-149-ios-26.6.json);
+// other iOS releases rest on HYPOTHESIS(ios_third_party_safari_tls). macOS
+// Safari takes its Version/ release's Safari Accept-Encoding
+// (HYPOTHESIS(webkit_macos_is_ios_late)).
 func NewBrowser(ua string) (Browser, error) {
 	raw := strings.TrimSpace(ua)
 	agent, criOS, err := iPhoneCriOSAgent(raw)

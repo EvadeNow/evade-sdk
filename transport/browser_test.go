@@ -12,12 +12,11 @@ import (
 )
 
 const (
-	iosSafari1875   = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.7.5 Mobile/15E148 Safari/604.1"
+	iosSafari185    = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
 	iosSafari2661   = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15E148 Safari/604.1"
 	iPhoneCriOS2661 = "Mozilla/5.0 (iPhone; CPU iPhone OS 26_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/149.0.7827.137 Mobile/15E148 Safari/604.1"
-	windowsChrome   = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36"
+	windowsChrome   = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36"
 	macChrome       = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36"
-	androidChrome   = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36"
 	macSafari       = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.2 Safari/605.1.15"
 )
 
@@ -38,17 +37,16 @@ func TestNewBrowserBindsTheModeledBrowsers(t *testing.T) {
 		desktopChrome  bool
 		needsHints     bool
 	}{
-		iosSafari1875: {useragent.FamilySafariIOS, "safari_ios_", "gzip, deflate, br", false, false},
-		iosSafari2661: {useragent.FamilySafariIOS, "safari_ios_", "gzip, deflate, br, zstd", false, false},
-		// HYPOTHESIS(webkit_macos_is_ios_late): its own TLS profile, its
-		// release's Safari Accept-Encoding.
-		macSafari:     {useragent.FamilySafariMacOS, "safari_", "gzip, deflate, br, zstd", false, false},
-		windowsChrome: {useragent.FamilyChrome, "chrome_", ChromeAcceptEncoding, true, true},
-		macChrome:     {useragent.FamilyChrome, "chrome_", ChromeAcceptEncoding, true, true},
-		androidChrome: {useragent.FamilyChrome, "chrome_154", ChromeAcceptEncoding, false, true},
+		iosSafari185:  {useragent.FamilySafariIOS, "safari_ios_18_5", "gzip, deflate, br", false, false},
+		iosSafari2661: {useragent.FamilySafariIOS, "safari_ios_26_0", "gzip, deflate, br, zstd", false, false},
+		// One Safari 26 network stack on Mac and iPhone (tlsprofile/testdata/safari-macos-26.4.json); its
+		// release's Safari Accept-Encoding (HYPOTHESIS(webkit_macos_is_ios_late)).
+		macSafari:     {useragent.FamilySafariMacOS, "safari_ios_26_0", "gzip, deflate, br, zstd", false, false},
+		windowsChrome: {useragent.FamilyChrome, "chrome_154", ChromeAcceptEncoding, true, true},
+		macChrome:     {useragent.FamilyChrome, "chrome_154", ChromeAcceptEncoding, true, true},
 	} {
 		browser := mustBrowser(t, ua)
-		if browser.Agent.Family != want.family || !strings.HasPrefix(browser.TLS.Name, want.tls) ||
+		if browser.Agent.Family != want.family || browser.TLS.Name != want.tls ||
 			browser.AcceptEncoding != want.acceptEncoding || browser.DesktopChrome() != want.desktopChrome ||
 			browser.UserAgent() != ua {
 			t.Errorf("%q = family %s tls %q accept-encoding %q desktop chrome %v", ua,
@@ -67,7 +65,7 @@ func TestNewBrowserBindsTheModeledBrowsers(t *testing.T) {
 
 // TestCriOSRunsAsItsIOSReleaseSafari: Chrome for iPhone (iOS 26.6.1)
 // presents its own User-Agent with the TLS profile and Accept-Encoding of
-// Safari 26.6.1 on the same iPhone (HYPOTHESIS(ios_third_party_safari_tls)).
+// Safari 26.6.1 on the same iPhone (tlsprofile/testdata/chrome-ios-149-ios-26.6.json).
 func TestCriOSRunsAsItsIOSReleaseSafari(t *testing.T) {
 	browser := mustBrowser(t, iPhoneCriOS2661)
 	safari := mustBrowser(t, iosSafari2661)
@@ -87,14 +85,27 @@ func TestNewBrowserFailsClosed(t *testing.T) {
 		t.Errorf("Firefox for iOS error = %v", err)
 	}
 	var noProfile *tlsprofile.NoProfileError
-	if _, err := NewBrowser("Mozilla/5.0 (iPhone; CPU iPhone OS 5_0 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A334 Safari/7534.48.3"); !errors.As(err, &noProfile) {
-		t.Errorf("Safari 5.1 error = %v", err)
+	for name, ua := range map[string]string{
+		"Safari 5.1":                              "Mozilla/5.0 (iPhone; CPU iPhone OS 5_0 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A334 Safari/7534.48.3",
+		"Chrome 151, unlike chrome_150":           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+		"Android Chrome 156, never captured":      "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
+		"iOS Safari 18.3, unlike safari_ios_18_0": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 Mobile/15E148 Safari/604.1",
+	} {
+		if _, err := NewBrowser(ua); !errors.As(err, &noProfile) {
+			t.Errorf("%s error = %v, want *tlsprofile.NoProfileError", name, err)
+		}
 	}
-	// Chrome for iOS on an iOS release whose Safari Accept-Encoding is
-	// unwitnessed stays refused.
-	if _, err := NewBrowser("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.0.0 Mobile/15E148 Safari/604.1"); err == nil ||
-		!strings.Contains(err.Error(), "Safari 17.0's Accept-Encoding is not witnessed") {
-		t.Errorf("CriOS on iOS 17.0 error = %v", err)
+	// iOS Safari 18.7 binds under HYPOTHESIS(ios_18_7_hello_equals_18_5), marked on its profile.
+	safari187 := mustBrowser(t, "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.7.5 Mobile/15E148 Safari/604.1")
+	if safari187.TLS.Name != "safari_ios_18_5" || safari187.TLS.Verified ||
+		!strings.HasPrefix(safari187.TLS.Hypothesis, "HYPOTHESIS(ios_18_7_hello_equals_18_5)") {
+		t.Errorf("iOS Safari 18.7.5 TLS = %q verified %t hypothesis %q", safari187.TLS.Name, safari187.TLS.Verified, safari187.TLS.Hypothesis)
+	}
+	// Chrome for iOS on an iOS release whose TLS is verified but whose Safari
+	// Accept-Encoding is unwitnessed stays refused.
+	if _, err := NewBrowser("Mozilla/5.0 (iPhone; CPU iPhone OS 26_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/149.0.7827.137 Mobile/15E148 Safari/604.1"); err == nil ||
+		!strings.Contains(err.Error(), "Safari 26.4's Accept-Encoding is not witnessed") {
+		t.Errorf("CriOS on iOS 26.4 error = %v", err)
 	}
 	for name, ua := range map[string]string{
 		"CriOS on iPad":   "Mozilla/5.0 (iPad; CPU OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/149.0.7827.137 Mobile/15E148 Safari/604.1",
