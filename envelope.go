@@ -56,6 +56,19 @@ const (
 	CodePicassoSelectionFailed     Code = "picasso_selection_failed"
 )
 
+// gman (reCAPTCHA v3 tasks) solve codes; invalid_request, solve_failed,
+// solve_timeout, solve_canceled and the auth/quota codes are shared.
+const (
+	CodeDeviceUnsupported  Code = "device_unsupported"  // no admitted Record for the userAgent on the running bundle
+	CodeSiteUnsupported    Code = "site_unsupported"    // the page has no mint laws (J page slots)
+	CodeGenerationFailed   Code = "generation_failed"   // the mint was refused by the decoder, or the reload token is SHORT
+	CodeProxyFailed        Code = "proxy_failed"        // the proxy or the network path through it failed
+	CodeProxyTimeout       Code = "proxy_timeout"       // the proxy or the target did not answer within the deadline
+	CodeTargetError        Code = "target_error"        // the page or a reCAPTCHA stage answered an error status
+	CodeStorageUnavailable Code = "storage_unavailable" // the Record store is unreachable
+	CodeDecodeFailed       Code = "decode_failed"       // gman /decode: the capture could not be decoded
+)
+
 // APIError is a non-2xx response. When the body is not an ErrorEnvelope,
 // Code is empty and Message holds the raw body. Attempts counts the requests
 // Call sent, so above 1 the 429/503 answers were already retried and
