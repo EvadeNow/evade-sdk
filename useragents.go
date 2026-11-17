@@ -81,11 +81,12 @@ func (m userAgentMatch) matches(os useragent.OS, browser useragent.Browser) bool
 // UserAgents lists the task solver's GET /user-agents: the exact
 // User-Agent values its /solve runs on, in the server's order. With
 // filters it keeps the values matching any one of them. task is the
-// solver's Task constant (shape.Task, datadome.Task, cloudflare.Task): it
-// routes the request on the hosted API, and a solver's own server ignores
-// it. DataDome's list is what a first tags or interstitial solve pins a
-// fingerprint for; a captcha solve further needs a capture of the page's
-// own Worker and renderer.
+// solver's Task constant (shape.Task, datadome.Task, cloudflare.Task,
+// akamai.Task): it routes the request on the hosted API, and a solver's
+// own server ignores it. DataDome's list is what a first tags or
+// interstitial solve pins a fingerprint for; a captcha solve further needs
+// a capture of the page's own Worker and renderer. Akamai's is the device
+// a new session binds; any other User-Agent is refused.
 //
 // An invalid filter fails before any request. While filtering, a listed
 // User-Agent useragent.Classify cannot place fails the call with its

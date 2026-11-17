@@ -25,12 +25,12 @@ type ErrorBody struct {
 type Code string
 
 const (
-	CodeMissingAPIKey     Code = "missing_api_key"    // shape, datadome
-	CodeInvalidAPIKey     Code = "invalid_api_key"    // shape, datadome
-	CodeInsufficientScope Code = "insufficient_scope" // shape, datadome
-	CodeRateLimited       Code = "rate_limited"       // shape, datadome; Retry-After is set
-	CodeQuotaExceeded     Code = "quota_exceeded"     // shape, datadome
-	CodeQuotaUnavailable  Code = "quota_unavailable"  // shape, datadome
+	CodeMissingAPIKey     Code = "missing_api_key"    // shape, datadome, akamai
+	CodeInvalidAPIKey     Code = "invalid_api_key"    // shape, datadome, akamai
+	CodeInsufficientScope Code = "insufficient_scope" // shape, datadome, akamai
+	CodeRateLimited       Code = "rate_limited"       // shape, datadome, akamai; Retry-After is set
+	CodeQuotaExceeded     Code = "quota_exceeded"     // shape, datadome, akamai
+	CodeQuotaUnavailable  Code = "quota_unavailable"  // shape, datadome, akamai
 	CodeUsageUnavailable  Code = "usage_unavailable"  // shape
 	CodeAuthUnavailable   Code = "auth_unavailable"   // cloudflare
 )

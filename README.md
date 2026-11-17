@@ -108,6 +108,49 @@ res, err := cloudflare.Solve(ctx, client, cloudflare.Request{
 // res.Token is the Turnstile response token.
 ```
 
+## Akamai
+
+`ua` must be the User-Agent `client.UserAgents(ctx, akamai.Task)` lists. The
+first sensor call opens a session:
+
+```go
+req := akamai.SensorRequest{
+	URL:       pageURL,
+	UA:        ua,
+	Abck:      abck,     // _abck cookie
+	BmSz:      bmSz,     // bm_sz cookie
+	ScriptID:  scriptID, // hex SHA-256 of sensorJS
+	ScriptURL: sensorURL,
+}
+sensor, err := akamai.SolveSensor(ctx, client, req)
+var apiErr *evade.APIError
+var body akamai.ErrorResponse
+if errors.As(err, &apiErr) && json.Unmarshal([]byte(apiErr.Message), &body) == nil &&
+	body.ErrorCode == "script_cache_miss" {
+	req.Script = sensorJS // the server lacks the script: resend its source
+	sensor, err = akamai.SolveSensor(ctx, client, req)
+}
+// POST {"sensor_data": sensor.SensorData} to sensorURL with sensor.ClientHints added.
+```
+
+Later sensor and SBSD calls pass `Session: sensor.Session`:
+
+```go
+sbsd, err := akamai.SolveSBSD(ctx, client, akamai.SBSDRequest{
+	URL:       pageURL,
+	UA:        ua,
+	Script:    sbsdJS,
+	ScriptURL: sbsdURL,
+	SBSDo:     bmSo, // bm_so cookie
+	Session:   sensor.Session,
+})
+// POST {"body": sbsd.Body} to sbsdURL without its query.
+```
+
+`/solve`'s own failures are not the shared error envelope: they return
+`*evade.APIError` with an empty `Code` and the `akamai.ErrorResponse` JSON in
+`Message`. Auth and quota refusals carry `Code` as for every solver.
+
 ## User-Agents
 
 Each solver lists the exact User-Agents its `/solve` runs on
@@ -117,6 +160,7 @@ Each solver lists the exact User-Agents its `/solve` runs on
 all, err := client.UserAgents(ctx, shape.Task)
 iphones, err := client.UserAgents(ctx, shape.Task, evade.IosSafari, evade.IosChrome)
 desktop, err := client.UserAgents(ctx, datadome.Task, "windows", "macos")
+akamaiUA, err := client.UserAgents(ctx, akamai.Task)
 ```
 
 Named filters cover the common platforms: `Ios`, `IosSafari`, `IosChrome`,
