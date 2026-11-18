@@ -742,8 +742,18 @@ func (law *lawFile) pageRequest(r *Request) ([]string, map[string]string, error)
 
 func (law *lawFile) chromiumWitnessed(r *Request, unwitnessed func(string, ...any) error) error {
 	c := &law.Chromium
-	if r.Engine.Major < c.Witnessed[0] || r.Engine.Major > c.Witnessed[1] {
-		return unwitnessed("Chromium majors %d-%d are witnessed", c.Witnessed[0], c.Witnessed[1])
+	ceiling := c.Witnessed[1]
+	// A form's own Majors table carries its per-major witnesses; a class with
+	// such a table is witnessed up to the table's top, not the global ceiling.
+	if r.Class == ClassForm {
+		for _, majors := range c.Form.Majors {
+			if r.Engine.Major >= majors.From && r.Engine.Major <= majors.To && majors.To > ceiling {
+				ceiling = majors.To
+			}
+		}
+	}
+	if r.Engine.Major < c.Witnessed[0] || r.Engine.Major > ceiling {
+		return unwitnessed("Chromium majors %d-%d are witnessed", c.Witnessed[0], ceiling)
 	}
 	for _, hint := range r.Added.ClientHints {
 		if !slices.Contains(c.BlinkSetOrder, hint) || hint == "user-agent" {

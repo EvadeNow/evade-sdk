@@ -28,11 +28,16 @@ var law = &lawFile{
 				{From: 141, To: 141, BrowserSet: []string{"origin", "content-type", "upgrade-insecure-requests", "user-agent", "accept"},
 					Witnesses: []string{"chrome141-a#372"}},
 				// Chrome 155 forms are witnessed only with an automation Accept-Language override (chrome155-a#275), whose accept-language precedes accept.
+				// Chrome 150-157 forms, including the real-Chrome EVA login form
+				// POST through a residential exit (recaptcha-v3-go
+				// research/captures/chrome-form-witness5 netlog stream 865, whose
+				// full order is identical to chrome151-b#54).
 				{From: 150, To: 157, BrowserSet: []string{"upgrade-insecure-requests", "content-type", "user-agent", "origin", "accept"},
-					Witnesses: []string{"chrome150-a#217", "chrome151-b#54", "chrome151-f#182", "chrome-a#188", "chrome154-a#174", "chrome-b#186"}},
+					Witnesses: []string{"chrome150-a#217", "chrome151-b#54", "chrome151-f#182", "chrome-a#188", "chrome154-a#174", "chrome-b#186", "chrome-form-witness5#865"}},
 			},
 		},
 		// Every captured Chrome 141-157 preflight (including morerewards_android.har e123/e129/e156/e159 and chrome157-m).
+
 		Preflight: []string{"accept", "access-control-request-method", "access-control-request-headers", "origin", "user-agent", "sec-fetch-mode", "sec-fetch-site", "sec-fetch-dest", "referer", "accept-encoding", "accept-language"},
 	},
 	WebKit: webkitLaw{
