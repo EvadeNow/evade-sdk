@@ -63,11 +63,19 @@ var law = &lawFile{
 		// open (TestSafariEchoWitnesses pins each verdict).
 		LoaderAdded: []string{"sec-fetch-site", "origin", "referer", "sec-fetch-mode", "sec-fetch-dest", "user-agent"},
 		// FormLoaderAdded is LoaderAdded's names in the tie-break a form
-		// submission keeps: its captures disagree on one identical
-		// dictionary (safari18.7-d#543 sends origin before sec-fetch-site,
-		// safari18.7-e#161 and safari18.7-f#136 the reverse), so no form
-		// order is claimed and the earlier one stays.
-		FormLoaderAdded: []string{"origin", "user-agent", "referer", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest"},
+		// submission keeps. HYPOTHESIS(webkit_form_site_first): a form
+		// sends sec-fetch-site before origin, the loader order. Witnessed
+		// 4:1 on one identical dictionary: safari18.7-e#161 and
+		// safari18.7-f#136 (auth.starbucks.com login forms, same-origin),
+		// hars/qantas-iphone-safari-26.6.1-20261118.har#49 and
+		// hars/qantas-iphone-chrome-157-20261118.har#427 (qantas booking
+		// forms, same-site, Safari 26.6.1 and Chrome for iOS 157) against
+		// safari18.7-d#543 (p-bandai.jp login_chk, origin first). Nothing in
+		// #543's request distinguishes it (a same-origin urlencoded login
+		// form POST like the Starbucks pair, the same names, mode, dest and
+		// enctype), so it stays unexplained. Falsified by a second WebKit
+		// form of this dictionary sending origin first.
+		FormLoaderAdded: []string{"sec-fetch-site", "origin", "referer", "sec-fetch-mode", "sec-fetch-dest", "user-agent"},
 		CFNetworkTail:   []string{"accept-language", "priority", "accept-encoding", "cookie"},
 		Unresolved:      []string{"authorization"},
 		Pseudo:          []string{":method", ":scheme", ":authority", ":path"},
