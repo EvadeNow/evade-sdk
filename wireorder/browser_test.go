@@ -114,7 +114,6 @@ func TestBrowserClassesFailClosed(t *testing.T) {
 			r.Engine = EngineFromUserAgent("Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0")
 		}),
 		"chromium 140":         nav(func(r *Request) { r.Engine.Major = 140 }),
-		"chromium 158":         script(func(r *Request) { r.Engine.Major = 158 }),
 		"POST navigation":      nav(func(r *Request) { r.Method = "POST" }),
 		"Accept-CH navigation": nav(func(r *Request) { r.Added.ClientHints = append(r.Added.ClientHints, "sec-ch-ua-model") }),
 		"storage-access nav":   nav(func(r *Request) { r.Added.StorageAccess = true }),
@@ -275,10 +274,10 @@ var universalWitnesses = []struct {
 			Added: Added{Origin: true, Referer: true, Priority: true, RequestHeaders: true}},
 		"accept access-control-request-method access-control-request-headers origin user-agent sec-fetch-mode sec-fetch-site sec-fetch-dest referer accept-encoding accept-language priority"},
 	// WebKit late and law generations.
-	{"safari18.7-d#543 (Safari 18.7.5 login form)", strictRefuses,
+	{"safari18.7-e#161 (Safari 18.7.5 login form; safari18.7-d#543 is the counterwitness, TestOrderUniversalWebKitFormIsItsXHRDictionary)", strictRefuses,
 		Request{Engine: safari187, Class: ClassForm, Method: "POST", HTTP2: true,
 			Added: Added{Origin: true, Body: true, Referer: true, Cookie: true, Priority: true}},
-		"accept content-type origin sec-fetch-site sec-fetch-mode user-agent referer sec-fetch-dest content-length accept-language priority accept-encoding cookie"},
+		"accept content-type sec-fetch-site origin sec-fetch-mode user-agent referer sec-fetch-dest content-length accept-language priority accept-encoding cookie"},
 	{"safari26.5-a#394 (Safari 26.5 preflight)", strictRefuses,
 		Request{Engine: Engine{Kind: WebKit, Major: 26, Minor: 5}, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
 			Added: Added{Origin: true, Referer: true, Priority: true, RequestHeaders: true}},
@@ -377,9 +376,10 @@ func TestOrderUniversalReproducesBrowserClassWitnesses(t *testing.T) {
 	}
 }
 
-// Two sites' Safari 18.7.5 login forms send one name set in two orders. Both are outcomes of the fetch/XHR law
-// over the form's content-type and the loader's names, so strict XHR Order is ambiguous on it; OrderUniversal
-// frames the form with the law's one canonical outcome, the first site's.
+// Three sites' WebKit forms send one name set in two orders. Both are outcomes of the fetch/XHR law over the
+// form's content-type and the loader's names, so strict XHR Order is ambiguous on it; OrderUniversal frames the
+// form site-first (HYPOTHESIS(webkit_form_site_first), law.go FormLoaderAdded): safari18.7-e#161,
+// safari18.7-f#136 and both iPhone qantas booking forms, against safari18.7-d#543's origin-first.
 func TestOrderUniversalWebKitFormIsItsXHRDictionary(t *testing.T) {
 	originFirst := strings.Fields("accept content-type origin sec-fetch-site sec-fetch-mode user-agent referer sec-fetch-dest content-length accept-language priority accept-encoding cookie")
 	siteFirst := strings.Fields("accept content-type sec-fetch-site origin sec-fetch-mode user-agent referer sec-fetch-dest content-length accept-language priority accept-encoding cookie")
@@ -400,13 +400,19 @@ func TestOrderUniversalWebKitFormIsItsXHRDictionary(t *testing.T) {
 	}
 	_, err = Order(form)
 	wantErr[*UnwitnessedError](t, err)
-	got, err := OrderUniversal(form)
-	if err != nil || !slices.Equal(got.Header, originFirst) {
-		t.Fatalf("universal form %v (%v), want the canonical outcome %v", got.Header, err, originFirst)
+	// hars/qantas-iphone-safari-26.6.1-20261118.har#49 (Safari 26.6.1) and
+	// hars/qantas-iphone-chrome-157-20261118.har#427 (Chrome for iOS 157 on iOS 26.6.2).
+	for name, engine := range map[string]Engine{
+		"safari18.7-e#161":         safari187,
+		"qantas Safari 26.6.1 #49": EngineFromUserAgent("Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.1 Mobile/15E148 Safari/604.1"),
+		"qantas CriOS 157 #427":    EngineFromUserAgent("Mozilla/5.0 (iPhone; CPU iPhone OS 26_6_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/157.0.8103.37 Mobile/15E148 Safari/604.1"),
+	} {
+		r := form
+		r.Engine = engine
+		if got, err := OrderUniversal(r); err != nil || !slices.Equal(got.Header, siteFirst) {
+			t.Errorf("%s: universal form %v (%v), want %v", name, got.Header, err, siteFirst)
+		}
 	}
-	// The form keeps its own tie-break (FormLoaderAdded); an XHR of the same
-	// names follows the loader's insertion order, sec-fetch-site before
-	// origin (HYPOTHESIS(webkit_loader_insertion_order)).
 	if asXHR, err := OrderUniversal(xhr); err != nil || !slices.Equal(asXHR.Header, siteFirst) {
 		t.Errorf("universal XHR of the form's names %v (%v), want the loader order's outcome %v", asXHR.Header, err, siteFirst)
 	}
@@ -513,7 +519,6 @@ func TestOrderUniversalBrowserClassesFailClosed(t *testing.T) {
 		}
 	}
 	unwitnessed := map[string]Request{
-		"chromium 158 form":             form(Engine{Kind: Chromium, Major: 158}, func(*Request) {}),
 		"chromium 140 preflight":        preflight(Engine{Kind: Chromium, Major: 140}, func(*Request) {}),
 		"chromium 140 no-cors":          get(Engine{Kind: Chromium, Major: 140}, ClassNoCORS, func(*Request) {}),
 		"storage-access preflight":      preflight(chrome151, func(r *Request) { r.Added.StorageAccess = true }),
@@ -530,6 +535,27 @@ func TestOrderUniversalBrowserClassesFailClosed(t *testing.T) {
 		if _, err := OrderUniversal(r); !errors.As(err, new(*UnwitnessedError)) {
 			t.Errorf("%s: want UnwitnessedError, got %v", name, err)
 		}
+	}
+	// HYPOTHESIS(chromium_wire_order_beyond_witnessed): Chrome 158 and later
+	// are ordered as 157, and ChromiumBeyondWitnessed flags them.
+	chrome157, chrome158 := Engine{Kind: Chromium, Major: 157}, Engine{Kind: Chromium, Major: 158}
+	for name, pair := range map[string][2]Request{
+		"form":       {form(chrome157, func(*Request) {}), form(chrome158, func(*Request) {})},
+		"preflight":  {preflight(chrome157, func(*Request) {}), preflight(chrome158, func(*Request) {})},
+		"navigation": {get(chrome157, ClassNavigation, func(r *Request) { r.Added.ClientHints = lowEntropyHints }), get(chrome158, ClassNavigation, func(r *Request) { r.Added.ClientHints = lowEntropyHints })},
+		"xhr":        {chromeXHR(157, "content-type"), chromeXHR(158, "content-type")},
+	} {
+		want, err := OrderUniversal(pair[0])
+		if err != nil {
+			t.Fatalf("Chrome 157 %s: %v", name, err)
+		}
+		got, err := OrderUniversal(pair[1])
+		if err != nil || !slices.Equal(got.Header, want.Header) || !slices.Equal(got.Pseudo, want.Pseudo) {
+			t.Errorf("Chrome 158 %s: %v (%v), want 157's %v", name, got, err, want)
+		}
+	}
+	if !ChromiumBeyondWitnessed(chrome158) || ChromiumBeyondWitnessed(chrome157) || ChromiumBeyondWitnessed(Engine{Kind: WebKit, Major: 200}) {
+		t.Error("ChromiumBeyondWitnessed flags exactly a Chromium major past 157")
 	}
 }
 

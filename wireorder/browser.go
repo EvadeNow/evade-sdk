@@ -251,22 +251,18 @@ func (law *lawFile) universalChromiumOrder(r *Request, unwitnessed func(string, 
 
 // browserSet is major's form BrowserSet. HYPOTHESIS(chromium-form-next-run): a major between two witnessed runs
 // (Chrome 142-149) sends the next later run's set, Chrome 150-155's origin after user-agent. Falsified by a
-// Chrome 142-149 form POST with origin before content-type, as Chrome 141's (chrome141-a#372).
+// Chrome 142-149 form POST with origin before content-type, as Chrome 141's (chrome141-a#372). A major past
+// every run sends the last run's set (HYPOTHESIS(chromium_wire_order_beyond_witnessed), ChromiumBeyondWitnessed).
 func (f *chromiumForm) browserSet(major int) []string {
-	var next *chromiumFormMajors
-	for i := range f.Majors {
-		m := &f.Majors[i]
-		if major >= m.From && major <= m.To {
-			return m.BrowserSet
-		}
-		if m.From > major && (next == nil || m.From < next.From) {
-			next = m
-		}
-	}
-	if next == nil {
+	if len(f.Majors) == 0 {
 		return nil
 	}
-	return next.BrowserSet
+	for i := range f.Majors {
+		if m := &f.Majors[i]; major <= m.To {
+			return m.BrowserSet
+		}
+	}
+	return f.Majors[len(f.Majors)-1].BrowserSet
 }
 
 // preflightSends: a preflight carries access-control-request-headers only for a request with a header that is

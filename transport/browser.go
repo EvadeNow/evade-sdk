@@ -19,10 +19,6 @@ const ChromeAcceptEncoding = "gzip, deflate, br, zstd"
 // it added zstd.
 const legacyAcceptEncoding = "gzip, deflate, br"
 
-// defaultAcceptLanguage is the Accept-Language a session starts with; the
-// caller replaces it with the exit region's.
-const defaultAcceptLanguage = "en-US,en;q=0.9"
-
 // Browser is one session's browser identity: its User-Agent, the TLS profile
 // that User-Agent selects, and the values it sends on every request. Keeping
 // them together keeps a request builder from pairing one browser's
@@ -43,7 +39,9 @@ type Browser struct {
 // OS, Safari on iPhone, iPad and Mac, and Firefox. Chrome, Edge and Firefox
 // for iOS bind as the Safari of their iOS release (useragent.Parse), keeping
 // their own User-Agent. Anything else fails with *useragent.UnsupportedError
-// or *tlsprofile.NoProfileError. Chromium further needs its fingerprint's
+// or *tlsprofile.NoProfileError. AcceptLanguage starts empty: the caller binds
+// its session's (the located exit's locale, or a stated header), and Complete
+// refuses the browser until it does. Chromium further needs its fingerprint's
 // ClientHints before use (Complete).
 func NewBrowser(ua string) (Browser, error) {
 	agent, err := useragent.Parse(strings.TrimSpace(ua))
@@ -58,7 +56,7 @@ func NewBrowser(ua string) (Browser, error) {
 	if err != nil {
 		return Browser{}, err
 	}
-	return Browser{Agent: agent, TLS: profile, AcceptLanguage: defaultAcceptLanguage, AcceptEncoding: acceptEncoding(agent)}, nil
+	return Browser{Agent: agent, TLS: profile, AcceptEncoding: acceptEncoding(agent)}, nil
 }
 
 // acceptEncoding is the Accept-Encoding of a resolved agent's network stack:

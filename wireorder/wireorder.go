@@ -740,20 +740,22 @@ func (law *lawFile) pageRequest(r *Request) ([]string, map[string]string, error)
 	return calls, shape, nil
 }
 
+// ChromiumBeyondWitnessed reports a Chromium engine past the last witnessed
+// major (law.Chromium.Witnessed[1]). The law orders it as that major under
+// HYPOTHESIS(chromium_wire_order_beyond_witnessed): a later Chrome keeps the
+// last witnessed major's order. Falsified by a Chrome 158+ HAR whose
+// navigation, form or subresource order differs from 157's. Callers surface
+// it as a warning, never silently.
+func ChromiumBeyondWitnessed(e Engine) bool {
+	return e.Kind == Chromium && e.Major > law.Chromium.Witnessed[1]
+}
+
+// chromiumWitnessed refuses majors before the first witnessed one only;
+// later majors pass under HYPOTHESIS(chromium_wire_order_beyond_witnessed).
 func (law *lawFile) chromiumWitnessed(r *Request, unwitnessed func(string, ...any) error) error {
 	c := &law.Chromium
-	ceiling := c.Witnessed[1]
-	// A form's own Majors table carries its per-major witnesses; a class with
-	// such a table is witnessed up to the table's top, not the global ceiling.
-	if r.Class == ClassForm {
-		for _, majors := range c.Form.Majors {
-			if r.Engine.Major >= majors.From && r.Engine.Major <= majors.To && majors.To > ceiling {
-				ceiling = majors.To
-			}
-		}
-	}
-	if r.Engine.Major < c.Witnessed[0] || r.Engine.Major > ceiling {
-		return unwitnessed("Chromium majors %d-%d are witnessed", c.Witnessed[0], ceiling)
+	if r.Engine.Major < c.Witnessed[0] {
+		return unwitnessed("Chromium majors %d on are witnessed", c.Witnessed[0])
 	}
 	for _, hint := range r.Added.ClientHints {
 		if !slices.Contains(c.BlinkSetOrder, hint) || hint == "user-agent" {

@@ -53,7 +53,7 @@ type Request struct {
 	FingerprintRecordID      string          `json:"fingerprint_record_id,omitempty"`
 	Locale                   string          `json:"locale,omitempty"`
 	AcceptLanguage           string          `json:"accept_language,omitempty"`
-	TimeZone                 string          `json:"time_zone,omitempty"` // IANA zone, e.g. America/New_York
+	TimeZone                 string          `json:"time_zone,omitempty"` // IANA zone of the proxy exit, e.g. America/New_York; required on a fresh solve
 	Cookies                  Cookies         `json:"cookies,omitempty"`
 	RequestTransport         HeaderTransport `json:"request_transport,omitempty"`
 	FetchLoaderThroughProxy  bool            `json:"fetch_loader_through_proxy,omitempty"` // session-opening request only
