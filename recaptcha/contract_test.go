@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -43,10 +44,10 @@ func TestRequestMatchesGolden(t *testing.T) {
 	}
 }
 
-const goldenResponse = `{"success":true,"task":"ReCaptchaV3EnterpriseTask","token":"03AFcWeA-token","score":null,"verification":null,"genMs":12.5}`
+const goldenResponse = `{"success":true,"task":"recaptcha","token":"03AFcWeA-token","score":null,"verification":null,"genMs":12.5}`
 
 func wantResponse() recaptcha.Response {
-	return recaptcha.Response{Success: true, Task: recaptcha.TaskV3Enterprise, Token: "03AFcWeA-token", GenMS: 12.5}
+	return recaptcha.Response{Success: true, Task: recaptcha.Task, Token: "03AFcWeA-token", GenMS: 12.5}
 }
 
 // score and verification are null on the wire and nil here: neither is
@@ -89,25 +90,37 @@ func server(t *testing.T, status int, header http.Header, body []byte) (*evade.C
 	return client, &line, &sent
 }
 
-// The task rides first on the wire; unknown response keys are tolerated.
+// The one task name rides first on the wire, the widget and surface as
+// fields after proxy (absent when unset); unknown response keys are
+// tolerated.
 func TestSolveSendsTaskAndToleratesUnknownResponseKeys(t *testing.T) {
-	for _, task := range []recaptcha.Task{recaptcha.TaskV3Enterprise, recaptcha.TaskV3, recaptcha.TaskV2InvisibleEnterprise, recaptcha.TaskV2Invisible} {
-		t.Run(string(task), func(t *testing.T) {
-			client, line, sent := server(t, http.StatusOK, nil, []byte(`{"stages":[{"name":"reload","status":200}],"success":true,"task":"`+string(task)+`","token":"03AFcWeA-token","score":null,"verification":null,"genMs":12.5}`))
-			got, err := recaptcha.Solve(context.Background(), client, task, checkoutRequest())
+	const proxyEnd = `"proxy":"http://user:pass@host:port"`
+	for _, test := range []struct {
+		name       string
+		version    string
+		enterprise *bool
+		fields     string
+	}{
+		{"v3 surface unstated", "", nil, ""},
+		{"v3 api2", recaptcha.VersionV3, new(false), `,"version":"v3","enterprise":false`},
+		{"v2-invisible enterprise", recaptcha.VersionV2Invisible, new(true), `,"version":"v2-invisible","enterprise":true`},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			client, line, sent := server(t, http.StatusOK, nil, []byte(`{"stages":[{"name":"reload","status":200}],"success":true,"task":"recaptcha","token":"03AFcWeA-token","score":null,"verification":null,"genMs":12.5}`))
+			request := checkoutRequest()
+			request.Version, request.Enterprise = test.version, test.enterprise
+			got, err := recaptcha.Solve(context.Background(), client, request)
 			if err != nil {
 				t.Fatalf("Solve: %v", err)
 			}
 			if *line != "POST /solve" {
 				t.Fatalf("request line = %s", *line)
 			}
-			want := []byte(`{"task":"` + string(task) + `",` + goldenRequest[1:])
+			want := []byte(`{"task":"recaptcha",` + strings.Replace(goldenRequest[1:], proxyEnd, proxyEnd+test.fields, 1))
 			if !bytes.Equal(*sent, want) {
 				t.Fatalf("wire body\n got %s\nwant %s", *sent, want)
 			}
-			wanted := wantResponse()
-			wanted.Task = task
-			if !reflect.DeepEqual(got, wanted) {
+			if !reflect.DeepEqual(got, wantResponse()) {
 				t.Fatalf("response = %+v", got)
 			}
 		})
@@ -135,7 +148,7 @@ func TestSolveFailuresReturnZeroAndAPIError(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			client, _, _ := server(t, test.status, test.header, []byte(test.body+"\n"))
-			got, err := recaptcha.Solve(context.Background(), client, recaptcha.TaskV3, checkoutRequest())
+			got, err := recaptcha.Solve(context.Background(), client, checkoutRequest())
 			var apiErr *evade.APIError
 			if !errors.As(err, &apiErr) || apiErr.Status != test.status || apiErr.Code != test.code || apiErr.Message == "" {
 				t.Fatalf("error = %v", err)

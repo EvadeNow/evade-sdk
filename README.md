@@ -153,33 +153,44 @@ sbsd, err := akamai.SolveSBSD(ctx, client, akamai.SBSDRequest{
 `*evade.APIError` with an empty `Code` and the `akamai.ErrorResponse` JSON in
 `Message`. Auth and quota refusals carry `Code` as for every solver.
 
-## reCAPTCHA v3 (botguard)
+## reCAPTCHA (task `recaptcha`)
 
 Synchronous: the server runs the whole reCAPTCHA flow (loader, release,
-anchor, reload, clr, bcn) over your proxy as `UserAgent` and answers the
-token; it never fetches your page — the token binds to `URL`'s origin and
-`Action`. `ua` must be a User-Agent `client.UserAgents(ctx, "botguard")` lists.
+anchor, reload, clr, bcn; for v2 invisible the bframe and userverify) over
+your proxy as `UserAgent` and answers the token; it never fetches your page —
+the token binds to `URL`'s origin and `Action`. `ua` must be a User-Agent
+`client.UserAgents(ctx, recaptcha.Task)` lists.
 
 ```go
-res, err := recaptcha.Solve(ctx, client, recaptcha.TaskV3Enterprise, recaptcha.Request{
-	URL:       "https://www.example.com/checkout", // the page the token is for
-	SiteKey:   "6Lc…",                             // the sitekey the page renders
-	Action:    "checkout",
-	UserAgent: ua,
-	Proxy:     "http://user:pass@host:port",
+res, err := recaptcha.Solve(ctx, client, recaptcha.Request{
+	URL:        "https://www.example.com/checkout", // the page the token is for
+	SiteKey:    "6Lc…",                             // the sitekey the page renders
+	Action:     "checkout",
+	UserAgent:  ua,
+	Proxy:      "http://user:pass@host:port",
+	Version:    recaptcha.VersionV3, // or recaptcha.VersionV2Invisible; empty is v3
+	Enterprise: new(true),           // the page loads enterprise.js (false: api.js)
 })
 // res.Token is the rresp token; res.Score and res.Verification are nil.
 ```
 
-`TaskV3Enterprise` is the enterprise surface (loader `enterprise.js`), `TaskV3`
-the api2 surface (loader `api.js`). The loader is fetched from www.google.com;
-`Host: "recaptcha.net"` selects the other API host (the site never observes
-which host served its widget; both issue the same token). `score` is never
-answered: it is not observable client-side (only the site's own siteverify
-call sees it). Refusals are `*evade.APIError` with `invalid_request` (a
-malformed field, an unknown host), `device_unsupported`, `site_unsupported`,
-`generation_failed` (decoder refusal or a SHORT token), `proxy_failed`,
-`proxy_timeout`, `target_error`, `solve_canceled` or `solve_failed`.
+There is one task name, `recaptcha`; the widget is `Version` (`v3` default,
+`v2-invisible`) and the surface — enterprise (loader `enterprise.js`) or api2
+(loader `api.js`) — is resolved by the server: the loader the page states
+when the page reaches the solver (the SDK request carries no page, so this
+rule applies to in-house callers only), else `Enterprise`, else a hypothesis:
+an `Action` means enterprise. api2 sites with an action exist, so set
+`Enterprise` whenever you know the page's loader. `v2-invisible` on api2 is
+refused `no_witness` (no capture of that pair yet). The loader is fetched from
+www.google.com; `Host: "recaptcha.net"` selects the other API host (the site
+never observes which host served its widget; both issue the same token).
+`score` is never answered: it is not observable client-side (only the site's
+own siteverify call sees it). Refusals are `*evade.APIError` with
+`invalid_request` (a malformed field, an unknown task, version or host, a
+non-boolean `enterprise`), `device_unsupported`, `site_unsupported`,
+`no_witness`, `generation_failed` (decoder refusal or a SHORT token),
+`proxy_failed`, `proxy_timeout`, `target_error`, `solve_canceled` or
+`solve_failed`.
 
 ## User-Agents
 

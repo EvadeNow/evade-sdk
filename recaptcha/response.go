@@ -2,7 +2,7 @@ package recaptcha
 
 type Response struct {
 	Success bool   `json:"success"`
-	Task    Task   `json:"task"`
+	Task    string `json:"task"` // Task
 	Token   string `json:"token"` // the reload's rresp token, for the page's form or API call
 	// Score is always nil: the score is not observable client-side, only
 	// the site's own server-side siteverify call sees it.
