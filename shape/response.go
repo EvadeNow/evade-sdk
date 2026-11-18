@@ -39,7 +39,8 @@ type Response struct {
 	OneTime         bool        `json:"one_time,omitempty"` // interstitial challenge; the session cannot be continued
 	FingerprintHash string      `json:"fingerprint_hash,omitempty"`
 	SolveID         string      `json:"solve_id,omitempty"` // identifies this solve to ReportOutcome
-	// Timing reports each generated or observed instant with its provenance.
+	// Timing reports each generated or observed instant with its
+	// provenance; present on a debug request (Request.Debug) only.
 	Timing *TimingContract `json:"timing,omitempty"`
 	// TargetDeviceInfo is the target's device_info capture the session
 	// record pairs with, on a fresh solve that asked for it
