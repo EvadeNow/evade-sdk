@@ -63,6 +63,12 @@ func TestNewBrowserBindsTheModeledBrowsers(t *testing.T) {
 		if browser.TLS.Behavior.RandomizeExtensionOrder && want.family == useragent.FamilySafariIOS {
 			t.Errorf("%q: iOS Safari's TLS profile randomizes its extension order", ua)
 		}
+		// NewBrowser binds no Accept-Language: an unbound browser is
+		// incomplete until the caller states its session's.
+		if browser.AcceptLanguage != "" || browser.Complete() == nil {
+			t.Errorf("%q: Accept-Language %q before the caller binds one (Complete %v)", ua, browser.AcceptLanguage, browser.Complete())
+		}
+		browser.AcceptLanguage = "en-GB,en;q=0.9"
 		// Chromium sends sec-ch-ua* on every request: without its
 		// fingerprint's hints it is not complete.
 		if (browser.Complete() == nil) == want.needsHints {
@@ -155,6 +161,7 @@ func TestAddClientHintsWritesOnlyLowEntropyHints(t *testing.T) {
 	if want := []string{"sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform"}; !slices.Equal(names, want) {
 		t.Fatalf("client hint headers = %q, want %q", names, want)
 	}
+	browser.AcceptLanguage = "en-GB,en;q=0.9"
 	if browser.Complete() != nil {
 		t.Fatalf("hinted desktop Chrome incomplete: %v", browser.Complete())
 	}

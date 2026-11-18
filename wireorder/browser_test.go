@@ -114,7 +114,6 @@ func TestBrowserClassesFailClosed(t *testing.T) {
 			r.Engine = EngineFromUserAgent("Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0")
 		}),
 		"chromium 140":         nav(func(r *Request) { r.Engine.Major = 140 }),
-		"chromium 158":         script(func(r *Request) { r.Engine.Major = 158 }),
 		"POST navigation":      nav(func(r *Request) { r.Method = "POST" }),
 		"Accept-CH navigation": nav(func(r *Request) { r.Added.ClientHints = append(r.Added.ClientHints, "sec-ch-ua-model") }),
 		"storage-access nav":   nav(func(r *Request) { r.Added.StorageAccess = true }),
@@ -513,7 +512,6 @@ func TestOrderUniversalBrowserClassesFailClosed(t *testing.T) {
 		}
 	}
 	unwitnessed := map[string]Request{
-		"chromium 158 form":             form(Engine{Kind: Chromium, Major: 158}, func(*Request) {}),
 		"chromium 140 preflight":        preflight(Engine{Kind: Chromium, Major: 140}, func(*Request) {}),
 		"chromium 140 no-cors":          get(Engine{Kind: Chromium, Major: 140}, ClassNoCORS, func(*Request) {}),
 		"storage-access preflight":      preflight(chrome151, func(r *Request) { r.Added.StorageAccess = true }),
@@ -530,6 +528,27 @@ func TestOrderUniversalBrowserClassesFailClosed(t *testing.T) {
 		if _, err := OrderUniversal(r); !errors.As(err, new(*UnwitnessedError)) {
 			t.Errorf("%s: want UnwitnessedError, got %v", name, err)
 		}
+	}
+	// HYPOTHESIS(chromium_wire_order_beyond_witnessed): Chrome 158 and later
+	// are ordered as 157, and ChromiumBeyondWitnessed flags them.
+	chrome157, chrome158 := Engine{Kind: Chromium, Major: 157}, Engine{Kind: Chromium, Major: 158}
+	for name, pair := range map[string][2]Request{
+		"form":       {form(chrome157, func(*Request) {}), form(chrome158, func(*Request) {})},
+		"preflight":  {preflight(chrome157, func(*Request) {}), preflight(chrome158, func(*Request) {})},
+		"navigation": {get(chrome157, ClassNavigation, func(r *Request) { r.Added.ClientHints = lowEntropyHints }), get(chrome158, ClassNavigation, func(r *Request) { r.Added.ClientHints = lowEntropyHints })},
+		"xhr":        {chromeXHR(157, "content-type"), chromeXHR(158, "content-type")},
+	} {
+		want, err := OrderUniversal(pair[0])
+		if err != nil {
+			t.Fatalf("Chrome 157 %s: %v", name, err)
+		}
+		got, err := OrderUniversal(pair[1])
+		if err != nil || !slices.Equal(got.Header, want.Header) || !slices.Equal(got.Pseudo, want.Pseudo) {
+			t.Errorf("Chrome 158 %s: %v (%v), want 157's %v", name, got, err, want)
+		}
+	}
+	if !ChromiumBeyondWitnessed(chrome158) || ChromiumBeyondWitnessed(chrome157) || ChromiumBeyondWitnessed(Engine{Kind: WebKit, Major: 200}) {
+		t.Error("ChromiumBeyondWitnessed flags exactly a Chromium major past 157")
 	}
 }
 
