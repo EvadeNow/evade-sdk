@@ -114,9 +114,9 @@ func TestRequestsMatchGolden(t *testing.T) {
 
 const (
 	hintsGolden             = `{"sec-ch-ua":"\"Chromium\";v=\"157\", \"Google Chrome\";v=\"157\"","sec-ch-ua-mobile":"?0","sec-ch-ua-full-version":"\"157.0.7390.55\"","sec-ch-ua-arch":"\"x86\"","sec-ch-ua-platform":"\"Windows\"","sec-ch-ua-platform-version":"\"19.0.0\"","sec-ch-ua-model":"\"\"","sec-ch-ua-bitness":"\"64\"","sec-ch-ua-wow64":"?0","sec-ch-ua-full-version-list":"\"Chromium\";v=\"157.0.7390.55\", \"Google Chrome\";v=\"157.0.7390.55\"","sec-ch-ua-form-factors":"\"Desktop\""}`
-	sensorResponseGolden    = `{"success":true,"sensor_data":"3;0;1;2048;3684534;abc","ua":"` + ua + `","session":"c2Vzc2lvbi10b2tlbg","language":"en-US,en;q=0.9","script_id":"8fc7ebcf46557fffda26f3b5f193a5193e78a848a1ab88a56b077d2ffebe9a4c","client_hints":` + hintsGolden + `,"telemetry":"a=0123456789ABCDEF0123456789ABCDEF&&&e=0123ABCD~YAAQ&&&sensor_data=MzswOzE=","paced_ms":412}`
-	sbsdResponseGolden      = `{"success":true,"body":"encrypted-fingerprint","session":"c2Vzc2lvbi10b2tlbg","script_id":"a7059f940c71ddc5bc19ac8957fd41de115456750dc6e329e22a13d389c93524","client_hints":` + hintsGolden + `}`
-	telemetryResponseGolden = `{"success":true,"body":"encrypted-telemetry","session":"c2Vzc2lvbi10b2tlbg","script_id":"a7059f940c71ddc5bc19ac8957fd41de115456750dc6e329e22a13d389c93524","client_hints":` + hintsGolden + `,"sbsd_post":"telemetry","ind":1,"wait_ms":0,"sbsd_trigger":"timer"}`
+	sensorResponseGolden    = `{"success":true,"sensor_data":"3;0;1;2048;3684534;abc","ua":"` + ua + `","session":"c2Vzc2lvbi10b2tlbg","language":"en-US,en;q=0.9","accept_encoding":"gzip, deflate, br, zstd","script_id":"8fc7ebcf46557fffda26f3b5f193a5193e78a848a1ab88a56b077d2ffebe9a4c","client_hints":` + hintsGolden + `,"telemetry":"a=0123456789ABCDEF0123456789ABCDEF&&&e=0123ABCD~YAAQ&&&sensor_data=MzswOzE=","paced_ms":412}`
+	sbsdResponseGolden      = `{"success":true,"body":"encrypted-fingerprint","session":"c2Vzc2lvbi10b2tlbg","script_id":"a7059f940c71ddc5bc19ac8957fd41de115456750dc6e329e22a13d389c93524","accept_encoding":"gzip, deflate, br, zstd","client_hints":` + hintsGolden + `}`
+	telemetryResponseGolden = `{"success":true,"body":"encrypted-telemetry","session":"c2Vzc2lvbi10b2tlbg","script_id":"a7059f940c71ddc5bc19ac8957fd41de115456750dc6e329e22a13d389c93524","accept_encoding":"gzip, deflate, br, zstd","client_hints":` + hintsGolden + `,"sbsd_post":"telemetry","ind":1,"wait_ms":0,"sbsd_trigger":"timer"}`
 	notDueGolden            = `{"success":false,"error_code":"sbsd_telemetry_not_due","message":"current-script telemetry input threshold is not met","stage":"telemetry","reason":"second_post_input"}`
 )
 
@@ -132,7 +132,8 @@ func wantHints() akamai.ClientHints {
 func wantSensor() akamai.SensorResponse {
 	return akamai.SensorResponse{
 		Success: true, SensorData: "3;0;1;2048;3684534;abc", UA: ua, Session: "c2Vzc2lvbi10b2tlbg",
-		Language: "en-US,en;q=0.9", ScriptID: "8fc7ebcf46557fffda26f3b5f193a5193e78a848a1ab88a56b077d2ffebe9a4c",
+		Language: "en-US,en;q=0.9", AcceptEncoding: "gzip, deflate, br, zstd",
+		ScriptID:    "8fc7ebcf46557fffda26f3b5f193a5193e78a848a1ab88a56b077d2ffebe9a4c",
 		ClientHints: wantHints(),
 		Telemetry:   "a=0123456789ABCDEF0123456789ABCDEF&&&e=0123ABCD~YAAQ&&&sensor_data=MzswOzE=", PacedMS: 412,
 	}
@@ -141,7 +142,8 @@ func wantSensor() akamai.SensorResponse {
 func wantSBSD() akamai.SBSDResponse {
 	return akamai.SBSDResponse{
 		Success: true, Body: "encrypted-fingerprint", Session: "c2Vzc2lvbi10b2tlbg",
-		ScriptID: "a7059f940c71ddc5bc19ac8957fd41de115456750dc6e329e22a13d389c93524", ClientHints: wantHints(),
+		ScriptID: "a7059f940c71ddc5bc19ac8957fd41de115456750dc6e329e22a13d389c93524", AcceptEncoding: "gzip, deflate, br, zstd",
+		ClientHints: wantHints(),
 	}
 }
 
@@ -149,8 +151,9 @@ func wantTelemetry() akamai.SBSDResponse {
 	var due int64
 	return akamai.SBSDResponse{
 		Success: true, Body: "encrypted-telemetry", Session: "c2Vzc2lvbi10b2tlbg",
-		ScriptID: "a7059f940c71ddc5bc19ac8957fd41de115456750dc6e329e22a13d389c93524", ClientHints: wantHints(),
-		SBSDPost: "telemetry", Index: 1, WaitMS: &due, Trigger: "timer",
+		ScriptID: "a7059f940c71ddc5bc19ac8957fd41de115456750dc6e329e22a13d389c93524", AcceptEncoding: "gzip, deflate, br, zstd",
+		ClientHints: wantHints(),
+		SBSDPost:    "telemetry", Index: 1, WaitMS: &due, Trigger: "timer",
 	}
 }
 

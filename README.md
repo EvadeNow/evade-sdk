@@ -35,7 +35,8 @@ res, err := shape.Solve(ctx, client, shape.Request{
 	TargetAPI:       "https://www.example.com/api/login",
 	TargetAPIMethod: "POST",
 })
-// Send your request to TargetAPI with res.Headers added.
+// Send your request to TargetAPI with res.Headers added: the generated headers,
+// then the device's Accept-Language, User-Agent, Accept-Encoding and UA-CH headers.
 ```
 
 Afterwards, tell the API whether the target accepted it:
@@ -130,7 +131,8 @@ if errors.As(err, &apiErr) && json.Unmarshal([]byte(apiErr.Message), &body) == n
 	req.Script = sensorJS // the server lacks the script: resend its source
 	sensor, err = akamai.SolveSensor(ctx, client, req)
 }
-// POST {"sensor_data": sensor.SensorData} to sensorURL with sensor.ClientHints added.
+// POST {"sensor_data": sensor.SensorData} to sensorURL with sensor.UA, sensor.Language,
+// sensor.AcceptEncoding and every non-empty sensor.ClientHints value added.
 ```
 
 Later sensor and SBSD calls pass `Session: sensor.Session`:

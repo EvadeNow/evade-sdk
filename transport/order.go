@@ -156,7 +156,7 @@ func Order(r OrderRequest) ([]string, error) {
 
 // OrderUniversal returns r's wire order from wireorder.OrderUniversal, header and pseudo-header order from one
 // law result. It serves no captured row: a reload or any Android WebView request is a NoLawError, a family
-// without a law (Edge, Opera, Firefox) a NoOrderError, and the law's refusals, an unknown class's included, are final.
+// without a law (Firefox) a NoOrderError, and the law's refusals, an unknown class's included, are final.
 func OrderUniversal(r OrderRequest) (wireorder.Wire, error) {
 	agent, err := useragent.Parse(r.UserAgent)
 	if err != nil {
@@ -187,17 +187,15 @@ func OrderUniversal(r OrderRequest) (wireorder.Wire, error) {
 	return wireorder.OrderUniversal(r.law(engine, class, pins))
 }
 
-// lawEngine is the engine the wire-order law orders a parsed agent's requests as: Chrome's Chromium major, Safari's
-// (iOS or macOS) WebKit Version/ release. Every other family is a NoOrderError.
+// lawEngine is the engine the wire-order law orders a parsed agent's requests as: every Chromium shell (Chrome,
+// Edge, Opera, Samsung Internet) at its Chromium major, since the network stack and header assembly are
+// Chromium's and the shell's own brands arrive through its client hints; Safari's (iOS or macOS) WebKit
+// Version/ release. Firefox is a NoOrderError: no Gecko law.
 func lawEngine(a useragent.Agent) (wireorder.Engine, error) {
-	switch a.Family {
-	case useragent.FamilyChrome:
-		if strings.Contains(a.Raw, "SamsungBrowser/") {
-			// useragent.Parse folds Samsung Internet into Chrome; the law has no witness of it.
-			return wireorder.Engine{}, &useragent.UnsupportedError{UserAgent: a.Raw, Reason: "Samsung Internet (SamsungBrowser/) has no wire-order law"}
-		}
+	switch {
+	case a.Family.Blink():
 		return wireorder.Engine{Kind: wireorder.Chromium, Major: a.ChromiumMajor}, nil
-	case useragent.FamilySafariIOS, useragent.FamilySafariMacOS:
+	case a.Family == useragent.FamilySafariIOS, a.Family == useragent.FamilySafariMacOS:
 		if !strings.Contains(a.Raw, "Version/") {
 			// useragent.Parse stands the iOS version in for a missing Version/; the law reads only Safari's release.
 			return wireorder.Engine{}, &NoOrderError{Family: a.Family}

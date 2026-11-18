@@ -398,7 +398,8 @@ func TestOrderUniversalIsTheLaw(t *testing.T) {
 	}
 }
 
-// OrderUniversal serves no captured row: a reload and every Android WebView request stay refused, as do lawless engines.
+// OrderUniversal serves no captured row: a reload and every Android WebView request stay refused, as does
+// Firefox (no Gecko law); Edge, Opera and Samsung Internet order as the Chromium they run on.
 func TestOrderUniversalFailsClosed(t *testing.T) {
 	type refusal struct {
 		ua    string
@@ -416,10 +417,7 @@ func TestOrderUniversalFailsClosed(t *testing.T) {
 		refusal{safariUA, ClassReload, &NoLawError{Family: useragent.FamilySafariIOS, Class: ClassReload}, "transport: no wire-order law for safari-ios reload requests"},
 		refusal{criosUA, ClassReload, &NoLawError{Family: useragent.FamilySafariIOS, Class: ClassReload}, "transport: no wire-order law for safari-ios reload requests"},
 		refusal{firefoxUA, ClassNavigation, &NoOrderError{Family: useragent.FamilyFirefox}, "transport: no wire-order law or captured header order for firefox"},
-		refusal{edgeUA, ClassForm, &NoOrderError{Family: useragent.FamilyEdge}, "transport: no wire-order law or captured header order for edge"},
-		refusal{operaUA, ClassPreflight, &NoOrderError{Family: useragent.FamilyOpera}, "transport: no wire-order law or captured header order for opera"},
-		refusal{edgeAndroidUA, ClassNavigation, &NoOrderError{Family: useragent.FamilyEdge}, "transport: no wire-order law or captured header order for edge"},
-		refusal{edgeAndroidUA, ClassReload, &NoOrderError{Family: useragent.FamilyEdge}, "transport: no wire-order law or captured header order for edge"},
+		refusal{edgeAndroidUA, ClassReload, &NoLawError{Family: useragent.FamilyEdge, Class: ClassReload}, "transport: no wire-order law for edge reload requests"},
 		refusal{noVersionUA, ClassNavigation, &NoOrderError{Family: useragent.FamilySafariIOS}, "transport: no wire-order law or captured header order for safari-ios"},
 	)
 	for _, tc := range cases {
@@ -434,8 +432,10 @@ func TestOrderUniversalFailsClosed(t *testing.T) {
 	if _, err := OrderUniversal(OrderRequest{Class: ClassNavigation, Method: "GET", HTTP2: true}); !errors.As(err, new(*useragent.UnsupportedError)) {
 		t.Errorf("empty User-Agent: %v, want useragent.UnsupportedError", err)
 	}
-	if _, err := OrderUniversal(OrderRequest{UserAgent: samsungUA, Class: ClassNavigation, Method: "GET", HTTP2: true}); !errors.As(err, new(*useragent.UnsupportedError)) {
-		t.Errorf("Samsung Internet (parsed as Chrome): %v, want useragent.UnsupportedError", err)
+	for _, ua := range []string{edgeUA, operaUA, samsungUA} {
+		if _, err := OrderUniversal(OrderRequest{UserAgent: ua, Class: ClassNavigation, Method: "GET", HTTP2: true}); errors.As(err, new(*NoOrderError)) || errors.As(err, new(*useragent.UnsupportedError)) {
+			t.Errorf("Chromium shell %q refused by family: %v", ua, err)
+		}
 	}
 }
 

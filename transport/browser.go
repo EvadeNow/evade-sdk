@@ -87,6 +87,50 @@ func acceptEncoding(a useragent.Agent) string {
 // UserAgent is the User-Agent the browser sends.
 func (b Browser) UserAgent() string { return b.Agent.Raw }
 
+// Document and image Accept values by engine: Chromium's by major
+// (image/jxl joined both at 155: shape BandaiJP3-2 e3, the Chrome 157
+// measurement-browser witness chromium157_navigation_accept_witness.json,
+// every qantas, qatar, flyingblue and evaair HAR navigation and image;
+// Chrome 154's canada_reg/chrome154 images carry none), WebKit's fixed
+// document string. Only Chromium 151-157 (and WebKit documents) are
+// witnessed; any other build is refused rather than guessed.
+const (
+	chromiumNavigationAccept    = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+	chromium155NavigationAccept = "text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+	webkitNavigationAccept      = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+	chromiumImageAccept         = "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+	chromium155ImageAccept      = "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+)
+
+// NavigationAccept is the Accept header of the browser build's document
+// navigations (top-level and iframe), a property of the engine release,
+// never of a fingerprint.
+func (b Browser) NavigationAccept() (string, error) {
+	a := b.Agent
+	switch {
+	case a.Family.Blink() && a.ChromiumMajor >= 151 && a.ChromiumMajor <= 154:
+		return chromiumNavigationAccept, nil
+	case a.Family.Blink() && a.ChromiumMajor >= 155 && a.ChromiumMajor <= 157:
+		return chromium155NavigationAccept, nil
+	case a.Family == useragent.FamilySafariIOS || a.Family == useragent.FamilySafariMacOS:
+		return webkitNavigationAccept, nil
+	}
+	return "", fmt.Errorf("transport: the navigation Accept of %q is witnessed by no capture (Chromium 151-157 and Safari are)", a.Raw)
+}
+
+// ImageAccept is the Accept header of the browser build's image fetches
+// (<img>, CSS backgrounds), a property of the engine release.
+func (b Browser) ImageAccept() (string, error) {
+	a := b.Agent
+	switch {
+	case a.Family.Blink() && a.ChromiumMajor >= 151 && a.ChromiumMajor <= 154:
+		return chromiumImageAccept, nil
+	case a.Family.Blink() && a.ChromiumMajor >= 155 && a.ChromiumMajor <= 157:
+		return chromium155ImageAccept, nil
+	}
+	return "", fmt.Errorf("transport: the image Accept of %q is witnessed by no capture (Chromium 151-157 is)", a.Raw)
+}
+
 // DesktopChrome reports the desktop Chrome model.
 func (b Browser) DesktopChrome() bool {
 	return b.Agent.Family == useragent.FamilyChrome &&

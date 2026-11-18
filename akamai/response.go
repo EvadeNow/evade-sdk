@@ -6,14 +6,22 @@ type SensorResponse struct {
 	UA         string `json:"ua"`
 	Session    string `json:"session"`
 	Language   string `json:"language"` // the device's Accept-Language header value
-	ScriptID   string `json:"script_id"`
-	// ClientHints are the device's header values; the caller's requests must carry them.
+	// AcceptEncoding is the device's Accept-Encoding header value, the
+	// one transport.NewBrowser binds for UA.
+	AcceptEncoding string `json:"accept_encoding"`
+	ScriptID       string `json:"script_id"`
+	// ClientHints are the device's UA-CH header values; the caller's
+	// requests must carry them.
 	ClientHints ClientHints `json:"client_hints"`
 	Telemetry   string      `json:"telemetry,omitempty"` // a=...&&&e=...&&&sensor_data=<base64>, when asked
 	PacedMS     int64       `json:"paced_ms,omitempty"`  // how long Pace held the post
 }
 
-// ClientHints are keyed by header name; each value is the header's own.
+// ClientHints are keyed by header name; each value is the header's own:
+// sec-ch-ua, -mobile, -platform, -platform-version, -arch, -bitness, -model,
+// -full-version-list and -wow64 byte-exact as Chrome sends them
+// (transport.ClientHints.Values), and -full-version and -form-factors.
+// Every value is empty on an engine without UA-CH, which sends none.
 type ClientHints struct {
 	UA              string `json:"sec-ch-ua"`
 	Mobile          string `json:"sec-ch-ua-mobile"`
@@ -29,11 +37,12 @@ type ClientHints struct {
 }
 
 type SBSDResponse struct {
-	Success     bool        `json:"success"`
-	Body        string      `json:"body"` // the encrypted SBSD post body
-	Session     string      `json:"session"`
-	ScriptID    string      `json:"script_id"`
-	ClientHints ClientHints `json:"client_hints"`
+	Success        bool        `json:"success"`
+	Body           string      `json:"body"` // the encrypted SBSD post body
+	Session        string      `json:"session"`
+	ScriptID       string      `json:"script_id"`
+	AcceptEncoding string      `json:"accept_encoding"` // as SensorResponse's
+	ClientHints    ClientHints `json:"client_hints"`
 	// SBSDPost, Index, WaitMS and Trigger are sent only by telemetry posts.
 	SBSDPost string `json:"sbsd_post,omitempty"`
 	Index    int64  `json:"ind,omitempty"`

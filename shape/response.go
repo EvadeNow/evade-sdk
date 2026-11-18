@@ -14,7 +14,12 @@ import (
 const WarningSendTooEarly = "send_too_early"
 
 type Response struct {
-	Success bool    `json:"success"`
+	Success bool `json:"success"`
+	// Headers are the protected request's generated headers followed by
+	// the drawn device's identity headers they do not already name:
+	// Accept-Language, User-Agent, Accept-Encoding, then every UA-CH header
+	// the device sends (transport.ClientHints.Values, Chrome's order; none
+	// on an engine without UA-CH). Send them as they are.
 	Headers Headers `json:"headers"`
 	// UserAgent is the exact User-Agent the protected request must carry.
 	UserAgent string  `json:"user_agent"`
