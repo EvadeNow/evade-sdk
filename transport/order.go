@@ -15,11 +15,10 @@ const (
 	ClassReload     RequestClass = "reload" // same-origin document reload carrying cookies; only captured rows order it
 	ClassXHR        RequestClass = "xhr"
 	ClassFetch      RequestClass = "fetch"
-	ClassScript     RequestClass = "script"    // classic <script src> subresource
-	ClassImage      RequestClass = "image"     // an <img> load: OrderUniversal frames it as a no-cors element load
-	ClassForm       RequestClass = "form"      // form POST submission: Order fails (no captured row), OrderUniversal frames it
-	ClassPreflight  RequestClass = "preflight" // the browser's CORS OPTIONS preflight
-	ClassNoCORS     RequestClass = "no-cors"   // element subresource GET (image, stylesheet, media); a page's no-cors fetch is ClassFetch
+	ClassScript     RequestClass = "script"  // classic <script src> subresource
+	ClassImage      RequestClass = "image"   // an <img> load: OrderUniversal frames it as a no-cors element load
+	ClassForm       RequestClass = "form"    // form POST submission: Order fails (no captured row), OrderUniversal frames it
+	ClassNoCORS     RequestClass = "no-cors" // element subresource GET (image, stylesheet, media); a page's no-cors fetch is ClassFetch
 )
 
 // lawClass maps c to its wire-order law class; a reload and an unknown class have none.
@@ -35,15 +34,13 @@ func (c RequestClass) lawClass() (wireorder.Class, bool) {
 		return wireorder.ClassFetch, true
 	case ClassForm:
 		return wireorder.ClassForm, true
-	case ClassPreflight:
-		return wireorder.ClassPreflight, true
 	case ClassNoCORS, ClassImage:
 		return wireorder.ClassNoCORS, true
 	}
 	return wireorder.ClassUnknown, false
 }
 
-// strictLaw reports whether strict wireorder.Order certifies c; it refuses form, preflight and no-cors, so Order
+// strictLaw reports whether strict wireorder.Order certifies c; it refuses form and no-cors, so Order
 // keeps serving those from captured rows or failing.
 func strictLaw(c wireorder.Class) bool {
 	switch c {

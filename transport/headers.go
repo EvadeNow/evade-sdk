@@ -106,7 +106,7 @@ func (e *WireOrderError) Error() string {
 // ApplyWireOrder sets req's HeaderOrderKey to w.Header and PHeaderOrderKey to w.Pseudo, leaving every header value
 // as it is, failing unless w.Header names each header req will send (one with a value; content-length when set
 // explicitly or written by fhttp) exactly once. An explicit content-length lets a wire carry one fhttp would not
-// write, as a WebKit preflight's "content-length: 0". An empty w.Pseudo (an HTTP/1.1 WebKit wire) is installed
+// write, as an empty body's "content-length: 0". An empty w.Pseudo (an HTTP/1.1 WebKit wire) is installed
 // empty: neither the TLS profile's nor the transport's pseudo order applies.
 func ApplyWireOrder(req *fhttp.Request, w wireorder.Wire) error {
 	listed := make(map[string]int, len(w.Header))

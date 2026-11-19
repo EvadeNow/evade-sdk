@@ -53,7 +53,7 @@ func (e Engine) String() string {
 	return fmt.Sprintf("%s/%d", e.Kind, e.Major)
 }
 
-// Class is a request's kind. Order refuses ClassForm, ClassPreflight and ClassNoCORS (no strict law);
+// Class is a request's kind. Order refuses ClassForm and ClassNoCORS (no strict law);
 // OrderUniversal frames every class but ClassUnknown.
 type Class uint8
 
@@ -65,8 +65,6 @@ const (
 	ClassNavigation
 	// ClassForm is a form's POST submission, a navigation whose headers the browser sets.
 	ClassForm
-	// ClassPreflight is the browser's CORS OPTIONS preflight; Method is "OPTIONS".
-	ClassPreflight
 	// ClassNoCORS is an element subresource GET (image, stylesheet, media); the browser sets every header.
 	// A page's fetch(…, {mode: "no-cors"}) carries page calls and is ClassFetch.
 	ClassNoCORS
@@ -84,8 +82,6 @@ func (c Class) String() string {
 		return "navigation"
 	case ClassForm:
 		return "form"
-	case ClassPreflight:
-		return "preflight"
 	case ClassNoCORS:
 		return "no-cors"
 	case ClassScript:
@@ -127,9 +123,6 @@ type Added struct {
 	// UpgradeInsecureRequests: a WebKit navigation carries upgrade-insecure-requests; only OrderUniversal reads it
 	// (every Chromium navigation and form carries it).
 	UpgradeInsecureRequests bool
-	// RequestHeaders: a preflight carries access-control-request-headers (its request sets a header that is not
-	// CORS-safelisted); only OrderUniversal reads it.
-	RequestHeaders bool
 }
 
 func (a *Added) present(name string) bool {
@@ -150,8 +143,6 @@ func (a *Added) present(name string) bool {
 		return a.FetchUser
 	case "upgrade-insecure-requests":
 		return a.UpgradeInsecureRequests
-	case "access-control-request-headers":
-		return a.RequestHeaders
 	case "user-agent", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest",
 		"accept-encoding", "accept-language":
 		return true
@@ -214,9 +205,6 @@ type chromiumLaw struct {
 	HintCounterwitnesses []HintCounterwitness
 	Navigation           chromiumNavigation
 	Form                 chromiumForm
-	// Preflight is the network service's CORS preflight: access-control-request-headers only with
-	// Added.RequestHeaders and referer only with Added.Referer; HTTP1Prefix before it, priority after it on HTTP/2.
-	Preflight []string
 }
 
 // HintCounterwitness is a capture whose Blink map the set order does not reproduce, blamed on hint Name.
@@ -262,7 +250,6 @@ type webkitLaw struct {
 	UnwitnessedClasses map[string]string
 	InsertedScript     webkitInsertedScript
 	BrowserLoad        webkitBrowserLoad
-	Preflight          webkitPreflight
 	Generations        []webkitGeneration
 }
 
@@ -274,13 +261,6 @@ type webkitBrowserLoad struct {
 	Insertion       []string
 	RedirectCarried []string
 	Reinserted      []string
-}
-
-// webkitPreflight: the preflight's names enter the CF dictionary in Insertion's order (access-control-request-headers
-// only with Added.RequestHeaders, referer only with Added.Referer); CFNetwork appends Tail before the generation's tail.
-type webkitPreflight struct {
-	Insertion []string
-	Tail      []string
 }
 
 // webkitGeneration: Inside are CFNetwork-tail names kept in the dictionary on these builds; Tail the rest, in wire order.
@@ -510,13 +490,11 @@ func Order(r Request) (Wire, error) {
 //
 // The classes strict Order refuses are framed by engine mechanism
 // (universalBrowserOrder): a Chromium form is the browser process's form
-// navigation list, a Chromium no-cors element load is a call-less Blink map,
-// a Chromium preflight is the network service's fixed sequence; a WebKit form
-// is the fetch/XHR CF dictionary of its content-type and the browser-owned
-// names, a WebKit navigation, script or no-cors element load is the
-// browser-owned GET insertion (a captured fixed order on early builds), and a
-// WebKit preflight is the preflight's network sequence, each with the build's
-// own generation's priority, Inside and Tail.
+// navigation list, a Chromium no-cors element load is a call-less Blink map;
+// a WebKit form is the fetch/XHR CF dictionary of its content-type and the
+// browser-owned names, and a WebKit navigation, script or no-cors element
+// load is the browser-owned GET insertion (a captured fixed order on early
+// builds), each with the build's own generation's priority, Inside and Tail.
 //
 // HYPOTHESIS(webkit-universal-order): for a WebKit fetch, XHR or form left
 // open by missing install/case evidence, insert the request's common and
@@ -542,7 +520,7 @@ func OrderUniversal(r Request) (Wire, error) {
 		return Wire{}, err
 	}
 	switch {
-	case r.Class == ClassForm || r.Class == ClassPreflight || r.Class == ClassNoCORS,
+	case r.Class == ClassForm || r.Class == ClassNoCORS,
 		r.Engine.Kind == WebKit && (r.Class == ClassNavigation || r.Class == ClassScript):
 		return law.universalBrowserOrder(&r)
 	case r.Engine.Kind != WebKit || r.Class != ClassXHR && r.Class != ClassFetch:

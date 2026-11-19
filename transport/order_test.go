@@ -174,7 +174,6 @@ func TestOrderFailsClosed(t *testing.T) {
 		{webViewUA, ClassImage, NoOrderError{Family: useragent.FamilyAndroidWebView, Class: ClassImage}, "transport: no wire-order law or captured header order for android-webview image requests"},
 		{safariUA, ClassImage, NoOrderError{Family: useragent.FamilySafariIOS, Class: ClassImage}, "transport: no wire-order law or captured header order for safari-ios image requests"},
 		{chromeUA, ClassForm, NoOrderError{Family: useragent.FamilyChrome, Class: ClassForm}, "transport: no wire-order law or captured header order for chrome form requests"},
-		{chromeUA, ClassPreflight, NoOrderError{Family: useragent.FamilyChrome, Class: ClassPreflight}, "transport: no wire-order law or captured header order for chrome preflight requests"},
 		{safariUA, ClassNoCORS, NoOrderError{Family: useragent.FamilySafariIOS, Class: ClassNoCORS}, "transport: no wire-order law or captured header order for safari-ios no-cors requests"},
 		{safariUA, ClassForm, NoOrderError{Family: useragent.FamilySafariIOS, Class: ClassForm}, "transport: no wire-order law or captured header order for safari-ios form requests"},
 	}
@@ -200,7 +199,7 @@ func TestOrderFailsClosed(t *testing.T) {
 
 func TestCapturedRowsAreLowercaseAndUnique(t *testing.T) {
 	rows := 0
-	for _, class := range []RequestClass{ClassNavigation, ClassReload, ClassXHR, ClassFetch, ClassScript, ClassImage, ClassForm, ClassPreflight, ClassNoCORS} {
+	for _, class := range []RequestClass{ClassNavigation, ClassReload, ClassXHR, ClassFetch, ClassScript, ClassImage, ClassForm, ClassNoCORS} {
 		for family, row := range map[useragent.Family][]string{
 			useragent.FamilyChrome:         chromeOrder(class),
 			useragent.FamilyAndroidWebView: androidWebViewOrder(class),
@@ -258,16 +257,6 @@ func TestOrderUniversalReproducesCaptures(t *testing.T) {
 			OrderRequest{UserAgent: safariUA, Class: ClassForm, Method: "POST", HTTP2: true,
 				Added: wireorder.Added{Origin: true, Body: true, Referer: true, Cookie: true, Priority: true}},
 			"accept content-type sec-fetch-site origin sec-fetch-mode user-agent referer sec-fetch-dest content-length accept-language priority accept-encoding cookie",
-			webkitPseudo},
-		{"Chrome 151 preflight",
-			OrderRequest{UserAgent: chrome151, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
-				Added: wireorder.Added{Origin: true, Referer: true, Priority: true, RequestHeaders: true}},
-			"accept access-control-request-method access-control-request-headers origin user-agent sec-fetch-mode sec-fetch-site sec-fetch-dest referer accept-encoding accept-language priority",
-			chromiumPseudo},
-		{"Safari 18.7 preflight without a referrer",
-			OrderRequest{UserAgent: safariUA, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
-				Added: wireorder.Added{Origin: true, Priority: true, RequestHeaders: true}},
-			"sec-fetch-site origin access-control-request-method access-control-request-headers sec-fetch-mode user-agent content-length sec-fetch-dest accept accept-language priority accept-encoding",
 			webkitPseudo},
 		{"Chrome 151 cross-site stylesheet (no-cors)",
 			OrderRequest{UserAgent: chrome151, Class: ClassNoCORS, Method: "GET", HTTP2: true,
@@ -334,8 +323,6 @@ func TestOrderUniversalIsTheLaw(t *testing.T) {
 		{"chrome form", OrderRequest{UserAgent: chromeUA, Class: ClassForm, Method: "POST", HTTP2: true,
 			Added: wireorder.Added{ClientHints: lowEntropyHints, Origin: true, Body: true, Referer: true, Cookie: true, Priority: true, FetchUser: true}},
 			chromium, wireorder.ClassForm},
-		{"chrome http/1.1 preflight", OrderRequest{UserAgent: chromeUA, Class: ClassPreflight, Method: "OPTIONS",
-			Added: wireorder.Added{Origin: true, Referer: true, RequestHeaders: true}}, chromium, wireorder.ClassPreflight},
 		{"chrome image", OrderRequest{UserAgent: chromeUA, Class: ClassImage, Method: "GET", HTTP2: true,
 			Added: wireorder.Added{ClientHints: lowEntropyHints, Referer: true, Priority: true}}, chromium, wireorder.ClassNoCORS},
 		{"safari navigation", OrderRequest{UserAgent: safariUA, Class: ClassNavigation, Method: "GET", HTTP2: true,
@@ -355,13 +342,8 @@ func TestOrderUniversalIsTheLaw(t *testing.T) {
 		// Refusals: a malformed request or class answers the law's own typed error.
 		{"GET form", OrderRequest{UserAgent: chromeUA, Class: ClassForm, Method: "GET", HTTP2: true,
 			Added: wireorder.Added{ClientHints: lowEntropyHints, Origin: true, Body: true}}, chromium, wireorder.ClassForm},
-		{"preflight with a cookie", OrderRequest{UserAgent: safariUA, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
-			Added: wireorder.Added{Origin: true, Cookie: true, RequestHeaders: true}}, safari, wireorder.ClassPreflight},
 		{"image with page calls", OrderRequest{UserAgent: chromeUA, Class: ClassImage, Method: "GET", HTTP2: true,
 			Calls: []string{"x-a"}, Added: wireorder.Added{ClientHints: lowEntropyHints}}, chromium, wireorder.ClassNoCORS},
-		{"xhr with access-control-request-headers", OrderRequest{UserAgent: chromeUA, Class: ClassXHR, Method: "POST", HTTP2: true,
-			Calls: []string{"content-type"}, Added: wireorder.Added{ClientHints: lowEntropyHints, Origin: true, Body: true, RequestHeaders: true}},
-			chromium, wireorder.ClassXHR},
 		{"unknown class", OrderRequest{UserAgent: chromeUA, Class: "beacon", Method: "POST", HTTP2: true,
 			Added: wireorder.Added{ClientHints: lowEntropyHints, Origin: true, Body: true}}, chromium, wireorder.ClassUnknown},
 		{"empty class", OrderRequest{UserAgent: safariUA, Method: "GET", HTTP2: true}, safari, wireorder.ClassUnknown},
@@ -385,9 +367,8 @@ func TestOrderUniversalIsTheLaw(t *testing.T) {
 		r      OrderRequest
 		target any
 	}{
-		"GET form":                 {OrderRequest{UserAgent: chromeUA, Class: ClassForm, Method: "GET", HTTP2: true, Added: wireorder.Added{Origin: true, Body: true}}, new(*wireorder.InputError)},
-		"preflight without origin": {OrderRequest{UserAgent: chromeUA, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true}, new(*wireorder.InputError)},
-		"unknown class":            {OrderRequest{UserAgent: chromeUA, Class: "beacon", Method: "GET", HTTP2: true}, new(*wireorder.UnwitnessedError)},
+		"GET form":      {OrderRequest{UserAgent: chromeUA, Class: ClassForm, Method: "GET", HTTP2: true, Added: wireorder.Added{Origin: true, Body: true}}, new(*wireorder.InputError)},
+		"unknown class": {OrderRequest{UserAgent: chromeUA, Class: "beacon", Method: "GET", HTTP2: true}, new(*wireorder.UnwitnessedError)},
 		"chrome 120 form": {OrderRequest{UserAgent: chrome120, Class: ClassForm, Method: "POST", HTTP2: true,
 			Added: wireorder.Added{ClientHints: lowEntropyHints, Origin: true, Body: true, FetchUser: true}}, new(*wireorder.UnwitnessedError)},
 	} {
@@ -408,7 +389,7 @@ func TestOrderUniversalFailsClosed(t *testing.T) {
 		text  string
 	}
 	var cases []refusal
-	for _, class := range []RequestClass{ClassNavigation, ClassReload, ClassXHR, ClassFetch, ClassScript, ClassImage, ClassForm, ClassPreflight, ClassNoCORS} {
+	for _, class := range []RequestClass{ClassNavigation, ClassReload, ClassXHR, ClassFetch, ClassScript, ClassImage, ClassForm, ClassNoCORS} {
 		cases = append(cases, refusal{webViewUA, class, &NoLawError{Family: useragent.FamilyAndroidWebView, Class: class},
 			"transport: no wire-order law for android-webview " + string(class) + " requests"})
 	}

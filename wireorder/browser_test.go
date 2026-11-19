@@ -239,19 +239,6 @@ var universalWitnesses = []struct {
 		Request{Engine: Engine{Kind: Chromium, Major: 141}, Class: ClassForm, Method: "POST", HTTP2: true,
 			Added: Added{ClientHints: lowEntropyHints, Origin: true, Body: true, Referer: true, Cookie: true, Priority: true, FetchUser: true}},
 		"content-length cache-control sec-ch-ua sec-ch-ua-mobile sec-ch-ua-platform origin content-type upgrade-insecure-requests user-agent accept sec-fetch-site sec-fetch-mode sec-fetch-user sec-fetch-dest referer accept-encoding accept-language cookie priority"},
-	// Chromium preflights: the network service's fixed sequence.
-	{"chrome151-a#265 (Chrome 151 preflight)", strictRefuses,
-		Request{Engine: chrome151, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
-			Added: Added{Origin: true, Referer: true, Priority: true, RequestHeaders: true}},
-		"accept access-control-request-method access-control-request-headers origin user-agent sec-fetch-mode sec-fetch-site sec-fetch-dest referer accept-encoding accept-language priority"},
-	{"chrome151-e#8 (Chrome 151 preflight without a referrer)", strictRefuses,
-		Request{Engine: chrome151, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
-			Added: Added{Origin: true, Priority: true, RequestHeaders: true}},
-		"accept access-control-request-method access-control-request-headers origin user-agent sec-fetch-mode sec-fetch-site sec-fetch-dest accept-encoding accept-language priority"},
-	{"chrome151-d#60 (Chrome 151 HTTP/1.1 preflight)", strictRefuses,
-		Request{Engine: chrome151, Class: ClassPreflight, Method: "OPTIONS",
-			Added: Added{Origin: true, Referer: true, RequestHeaders: true}},
-		"host connection accept access-control-request-method access-control-request-headers origin user-agent sec-fetch-mode sec-fetch-site sec-fetch-dest referer accept-encoding accept-language"},
 	// Chromium no-cors element loads: a call-less Blink map.
 	{"chrome151-a#120 image (Chrome 151 no-cors)", strictRefuses,
 		Request{Engine: chrome151, Class: ClassNoCORS, Method: "GET", HTTP2: true,
@@ -269,23 +256,11 @@ var universalWitnesses = []struct {
 		Request{Engine: Engine{Kind: Chromium, Major: 157}, Class: ClassNoCORS, Method: "GET", HTTP2: true,
 			Added: Added{ClientHints: lowEntropyHints, Referer: true, Priority: true}},
 		"sec-ch-ua-platform user-agent sec-ch-ua sec-ch-ua-mobile accept sec-fetch-site sec-fetch-mode sec-fetch-dest referer accept-encoding accept-language priority"},
-	{"chrome157-m#2283fb (httpbin.org Chrome 157 preflight, measurement browser)", strictRefuses,
-		Request{Engine: Engine{Kind: Chromium, Major: 157}, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
-			Added: Added{Origin: true, Referer: true, Priority: true, RequestHeaders: true}},
-		"accept access-control-request-method access-control-request-headers origin user-agent sec-fetch-mode sec-fetch-site sec-fetch-dest referer accept-encoding accept-language priority"},
 	// WebKit late and law generations.
 	{"safari18.7-e#161 (Safari 18.7.5 login form; safari18.7-d#543 is the counterwitness, TestOrderUniversalWebKitFormIsItsXHRDictionary)", strictRefuses,
 		Request{Engine: safari187, Class: ClassForm, Method: "POST", HTTP2: true,
 			Added: Added{Origin: true, Body: true, Referer: true, Cookie: true, Priority: true}},
 		"accept content-type sec-fetch-site origin sec-fetch-mode user-agent referer sec-fetch-dest content-length accept-language priority accept-encoding cookie"},
-	{"safari26.5-a#394 (Safari 26.5 preflight)", strictRefuses,
-		Request{Engine: Engine{Kind: WebKit, Major: 26, Minor: 5}, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
-			Added: Added{Origin: true, Referer: true, Priority: true, RequestHeaders: true}},
-		"origin sec-fetch-site access-control-request-method access-control-request-headers sec-fetch-mode user-agent referer sec-fetch-dest content-length accept accept-language priority accept-encoding"},
-	{"safari18.7-g#127 (Safari 18.7 preflight without a referrer)", strictRefuses,
-		Request{Engine: safari187, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true,
-			Added: Added{Origin: true, Priority: true, RequestHeaders: true}},
-		"sec-fetch-site origin access-control-request-method access-control-request-headers sec-fetch-mode user-agent content-length sec-fetch-dest accept accept-language priority accept-encoding"},
 	{"safari18.7-e#139 (Safari 18.7.5 parser script)", strictRefuses,
 		Request{Engine: safari187, Class: ClassScript, Method: "GET", HTTP2: true, Added: Added{Referer: true, Cookie: true, Priority: true}},
 		"sec-fetch-dest user-agent accept referer sec-fetch-site sec-fetch-mode accept-language priority accept-encoding cookie"},
@@ -474,11 +449,6 @@ func TestOrderUniversalBrowserClassesFailClosed(t *testing.T) {
 		mutate(&r)
 		return r
 	}
-	preflight := func(e Engine, mutate func(*Request)) Request {
-		r := Request{Engine: e, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true, Added: Added{Origin: true, Referer: true, Priority: true, RequestHeaders: true}}
-		mutate(&r)
-		return r
-	}
 	get := func(e Engine, class Class, mutate func(*Request)) Request {
 		r := Request{Engine: e, Class: class, Method: "GET", HTTP2: true, Added: Added{Referer: true, Priority: true}}
 		mutate(&r)
@@ -486,32 +456,22 @@ func TestOrderUniversalBrowserClassesFailClosed(t *testing.T) {
 	}
 	early := Engine{Kind: WebKit, Major: 18}
 	input := map[string]Request{
-		"GET form":                      form(chrome151, func(r *Request) { r.Method = "GET"; r.Added.Origin, r.Added.Body = false, false }),
-		"form without a body":           form(safari187, func(r *Request) { r.Added.Body = false }),
-		"form without origin":           form(chrome151, func(r *Request) { r.Added.Origin = false }),
-		"form with page calls":          form(safari187, func(r *Request) { r.Calls = []string{"content-type"} }),
-		"redirected form":               form(chrome151, func(r *Request) { r.Redirected = true }),
-		"webkit form sec-fetch-user":    form(safari187, func(r *Request) { r.Added.FetchUser = true }),
-		"POST preflight":                preflight(chrome151, func(r *Request) { r.Method = "POST" }),
-		"preflight without origin":      preflight(safari187, func(r *Request) { r.Added.Origin = false }),
-		"preflight with cookie":         preflight(chrome151, func(r *Request) { r.Added.Cookie = true }),
-		"preflight with a body":         preflight(safari187, func(r *Request) { r.Added.Body = true }),
-		"preflight with client hints":   preflight(chrome151, func(r *Request) { r.Added.ClientHints = lowEntropyHints }),
-		"preflight sec-fetch-user":      preflight(chrome151, func(r *Request) { r.Added.FetchUser = true }),
-		"preflight with page calls":     preflight(safari187, func(r *Request) { r.Calls = []string{"x-api-key"} }),
-		"early preflight with priority": preflight(early, func(*Request) {}),
-		"POST no-cors":                  get(chrome151, ClassNoCORS, func(r *Request) { r.Method = "POST"; r.Added.Origin, r.Added.Body = true, true }),
-		"no-cors with origin":           get(safari187, ClassNoCORS, func(r *Request) { r.Added.Origin = true }),
-		"no-cors sec-fetch-user":        get(chrome151, ClassNoCORS, func(r *Request) { r.Added.FetchUser = true }),
-		"no-cors with pins":             get(safari187, ClassNoCORS, func(r *Request) { r.Pins = []*Pin{testInstall} }),
-		"script upgrade-insecure":       get(safari187, ClassScript, func(r *Request) { r.Added.UpgradeInsecureRequests = true }),
-		"redirected script":             get(safari187, ClassScript, func(r *Request) { r.Redirected = true }),
-		"POST webkit navigation":        get(safari187, ClassNavigation, func(r *Request) { r.Method = "POST" }),
-		"webkit navigation fetch-user":  get(safari187, ClassNavigation, func(r *Request) { r.Added.FetchUser = true }),
-		"early navigation priority":     get(early, ClassNavigation, func(*Request) {}),
-		"navigation request headers":    get(safari187, ClassNavigation, func(r *Request) { r.Added.RequestHeaders = true }),
-		"xhr request headers":           func() Request { r := chromeXHR(151, "content-type"); r.Added.RequestHeaders = true; return r }(),
-		"xhr upgrade-insecure":          func() Request { r := safariShapeXHR(); r.Added.UpgradeInsecureRequests = true; return r }(),
+		"GET form":                     form(chrome151, func(r *Request) { r.Method = "GET"; r.Added.Origin, r.Added.Body = false, false }),
+		"form without a body":          form(safari187, func(r *Request) { r.Added.Body = false }),
+		"form without origin":          form(chrome151, func(r *Request) { r.Added.Origin = false }),
+		"form with page calls":         form(safari187, func(r *Request) { r.Calls = []string{"content-type"} }),
+		"redirected form":              form(chrome151, func(r *Request) { r.Redirected = true }),
+		"webkit form sec-fetch-user":   form(safari187, func(r *Request) { r.Added.FetchUser = true }),
+		"POST no-cors":                 get(chrome151, ClassNoCORS, func(r *Request) { r.Method = "POST"; r.Added.Origin, r.Added.Body = true, true }),
+		"no-cors with origin":          get(safari187, ClassNoCORS, func(r *Request) { r.Added.Origin = true }),
+		"no-cors sec-fetch-user":       get(chrome151, ClassNoCORS, func(r *Request) { r.Added.FetchUser = true }),
+		"no-cors with pins":            get(safari187, ClassNoCORS, func(r *Request) { r.Pins = []*Pin{testInstall} }),
+		"script upgrade-insecure":      get(safari187, ClassScript, func(r *Request) { r.Added.UpgradeInsecureRequests = true }),
+		"redirected script":            get(safari187, ClassScript, func(r *Request) { r.Redirected = true }),
+		"POST webkit navigation":       get(safari187, ClassNavigation, func(r *Request) { r.Method = "POST" }),
+		"webkit navigation fetch-user": get(safari187, ClassNavigation, func(r *Request) { r.Added.FetchUser = true }),
+		"early navigation priority":    get(early, ClassNavigation, func(*Request) {}),
+		"xhr upgrade-insecure":         func() Request { r := safariShapeXHR(); r.Added.UpgradeInsecureRequests = true; return r }(),
 	}
 	for name, r := range input {
 		if _, err := OrderUniversal(r); !errors.As(err, new(*InputError)) {
@@ -519,9 +479,7 @@ func TestOrderUniversalBrowserClassesFailClosed(t *testing.T) {
 		}
 	}
 	unwitnessed := map[string]Request{
-		"chromium 140 preflight":        preflight(Engine{Kind: Chromium, Major: 140}, func(*Request) {}),
 		"chromium 140 no-cors":          get(Engine{Kind: Chromium, Major: 140}, ClassNoCORS, func(*Request) {}),
-		"storage-access preflight":      preflight(chrome151, func(r *Request) { r.Added.StorageAccess = true }),
 		"webkit form upgrade-insecure":  form(safari187, func(r *Request) { r.Added.UpgradeInsecureRequests = true }),
 		"webkit navigation hints":       get(safari187, ClassNavigation, func(r *Request) { r.Added.ClientHints = lowEntropyHints }),
 		"webkit no-cors storage-access": get(safari187, ClassNoCORS, func(r *Request) { r.Added.StorageAccess = true }),
@@ -541,7 +499,6 @@ func TestOrderUniversalBrowserClassesFailClosed(t *testing.T) {
 	chrome157, chrome158 := Engine{Kind: Chromium, Major: 157}, Engine{Kind: Chromium, Major: 158}
 	for name, pair := range map[string][2]Request{
 		"form":       {form(chrome157, func(*Request) {}), form(chrome158, func(*Request) {})},
-		"preflight":  {preflight(chrome157, func(*Request) {}), preflight(chrome158, func(*Request) {})},
 		"navigation": {get(chrome157, ClassNavigation, func(r *Request) { r.Added.ClientHints = lowEntropyHints }), get(chrome158, ClassNavigation, func(r *Request) { r.Added.ClientHints = lowEntropyHints })},
 		"xhr":        {chromeXHR(157, "content-type"), chromeXHR(158, "content-type")},
 	} {
@@ -578,16 +535,6 @@ func TestOrderUniversalBrowserClassGenerations(t *testing.T) {
 	webview.Engine = Engine{Kind: WebKit, Major: 18, Minor: 5, WebView: true}
 	if got, err := OrderUniversal(webview); err != nil || !slices.Equal(got.Header, plain.Header) {
 		t.Errorf("early-webview navigation %v (%v), want cookie last as %v", got.Header, err, plain.Header)
-	}
-	pf := Request{Engine: early, Class: ClassPreflight, Method: "OPTIONS", HTTP2: true, Added: Added{Origin: true, Referer: true, RequestHeaders: true}}
-	got, err := OrderUniversal(pf)
-	if err != nil {
-		t.Fatal(err)
-	}
-	accept := slices.Index(got.Header, "accept")
-	if accept != len(got.Header)-1 || slices.Index(got.Header, "accept-language") > accept || slices.Index(got.Header, "accept-encoding") > accept ||
-		slices.Contains(got.Header, "priority") {
-		t.Errorf("early preflight %v: want accept-language and accept-encoding inside the dictionary, accept last, no priority", got.Header)
 	}
 	form := Request{Engine: early, Class: ClassForm, Method: "POST", HTTP2: true, Added: Added{Origin: true, Body: true, Referer: true, Cookie: true}}
 	if got, err := OrderUniversal(form); err != nil || got.Header[len(got.Header)-1] != "cookie" || slices.Contains(got.Header, "priority") {

@@ -123,17 +123,14 @@ func (c *chromiumLaw) navigationHints(r *Request, unwitnessed func(string, ...an
 
 // universalInputs refuses OrderUniversal's own inputs on a class that never carries them.
 func universalInputs(r *Request) error {
-	switch {
-	case r.Added.UpgradeInsecureRequests && r.Class != ClassNavigation && r.Class != ClassForm:
+	if r.Added.UpgradeInsecureRequests && r.Class != ClassNavigation && r.Class != ClassForm {
 		return &InputError{Field: "added.upgrade_insecure_requests", Detail: "only a navigation or form carries upgrade-insecure-requests"}
-	case r.Added.RequestHeaders && r.Class != ClassPreflight:
-		return &InputError{Field: "added.request_headers", Detail: "only a preflight carries access-control-request-headers"}
 	}
 	return nil
 }
 
-// universalBrowserOrder frames OrderUniversal's browser-owned requests: Chromium form, preflight and no-cors
-// element loads; WebKit form, preflight, navigation, script and no-cors element loads.
+// universalBrowserOrder frames OrderUniversal's browser-owned requests: Chromium form and no-cors element
+// loads; WebKit form, navigation, script and no-cors element loads.
 func (law *lawFile) universalBrowserOrder(r *Request) (Wire, error) {
 	unwitnessed := func(format string, args ...any) error {
 		return &UnwitnessedError{Engine: r.Engine, Class: r.Class, Reason: fmt.Sprintf(format, args...)}
@@ -167,15 +164,6 @@ func browserRequest(r *Request) error {
 		case !r.Added.Origin || !r.Added.Body:
 			return bad("added", "a form POST carries Origin and a body")
 		}
-	case ClassPreflight:
-		switch {
-		case method != "OPTIONS":
-			return bad("method", "%q: a preflight is OPTIONS", r.Method)
-		case !r.Added.Origin:
-			return bad("added.origin", "a preflight always carries Origin")
-		case r.Added.Body || r.Added.Cookie || len(r.Added.ClientHints) != 0:
-			return bad("added", "a preflight carries no body, cookie or client hints")
-		}
 	default:
 		switch {
 		case method != "GET":
@@ -193,9 +181,8 @@ func browserRequest(r *Request) error {
 	return nil
 }
 
-// universalChromiumOrder: a no-cors element load is a Blink subresource like a script; a preflight is the network
-// service's fixed sequence, without cookie, body or client hints; a form is the browser process's navigation list
-// with its body, cache-control, content-type and Origin.
+// universalChromiumOrder: a no-cors element load is a Blink subresource like a script; a form is the browser
+// process's navigation list with its body, cache-control, content-type and Origin.
 func (law *lawFile) universalChromiumOrder(r *Request, unwitnessed func(string, ...any) error) (Wire, error) {
 	if err := law.chromiumWitnessed(r, unwitnessed); err != nil {
 		return Wire{}, err
@@ -208,18 +195,6 @@ func (law *lawFile) universalChromiumOrder(r *Request, unwitnessed func(string, 
 	switch r.Class {
 	case ClassNoCORS:
 		out = chromiumOrder(c, r, nil)
-	case ClassPreflight:
-		if r.Added.StorageAccess {
-			return Wire{}, unwitnessed("no witnessed preflight carries sec-fetch-storage-access")
-		}
-		for _, name := range c.Preflight {
-			if preflightSends(&r.Added, name) {
-				out = append(out, name)
-			}
-		}
-		if r.HTTP2 && r.Added.Priority {
-			out = append(out, "priority")
-		}
 	case ClassForm:
 		hints, err := c.navigationHints(r, unwitnessed)
 		if err != nil {
@@ -265,20 +240,8 @@ func (f *chromiumForm) browserSet(major int) []string {
 	return f.Majors[len(f.Majors)-1].BrowserSet
 }
 
-// preflightSends: a preflight carries access-control-request-headers only for a request with a header that is
-// not CORS-safelisted and referer only with a referrer; every other name of a preflight sequence always.
-func preflightSends(a *Added, name string) bool {
-	switch name {
-	case "access-control-request-headers":
-		return a.RequestHeaders
-	case "referer":
-		return a.Referer
-	}
-	return true
-}
-
 // universalWebkitBrowserOrder frames a WebKit form as the fetch/XHR dictionary of its content-type (the
-// form's enctype) and the loader's names; a preflight and a browser-owned GET by their own sequences.
+// form's enctype) and the loader's names; a browser-owned GET by its own sequence.
 func (law *lawFile) universalWebkitBrowserOrder(r *Request, unwitnessed func(string, ...any) error) (Wire, error) {
 	w := &law.WebKit
 	if r.Added.FetchUser {
@@ -295,37 +258,8 @@ func (law *lawFile) universalWebkitBrowserOrder(r *Request, unwitnessed func(str
 		form := *r
 		form.Calls = []string{"content-type"}
 		return law.universalWebkitOrder(&form)
-	case ClassPreflight:
-		return w.preflightOrder(r, unwitnessed)
 	}
 	return w.browserGetOrder(r, unwitnessed)
-}
-
-// preflightOrder inserts the preflight's names into the CF dictionary in Preflight.Insertion's order (every
-// captured late Safari preflight). HYPOTHESIS(webkit-early-preflight): an early or early-webview build inserts
-// its Inside names after them and sends its own tail, as its fetch and XHR keep them; falsified by an early
-// preflight capture in another order.
-func (w *webkitLaw) preflightOrder(r *Request, unwitnessed func(string, ...any) error) (Wire, error) {
-	g, _ := w.universalGeneration(r.Engine)
-	if err := g.priority(r); err != nil {
-		return Wire{}, err
-	}
-	var names []string
-	for _, name := range w.Preflight.Insertion {
-		if preflightSends(&r.Added, name) {
-			names = append(names, name)
-		}
-	}
-	for _, name := range g.Inside {
-		if r.Added.present(name) {
-			names = append(names, name)
-		}
-	}
-	header, err := cfInsert(names)
-	if err != nil {
-		return Wire{}, unwitnessed("%v", err)
-	}
-	return w.wire(r, slices.Concat(header, w.Preflight.Tail, g.tail(r, nil))), nil
 }
 
 // browserGetOrder frames a navigation, script or no-cors element load. A generation with the script law

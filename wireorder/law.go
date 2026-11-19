@@ -36,9 +36,6 @@ var law = &lawFile{
 					Witnesses: []string{"chrome150-a#217", "chrome151-b#54", "chrome151-f#182", "chrome-a#188", "chrome154-a#174", "chrome-b#186", "chrome-form-witness5#865"}},
 			},
 		},
-		// Every captured Chrome 141-157 preflight (including morerewards_android.har e123/e129/e156/e159 and chrome157-m).
-
-		Preflight: []string{"accept", "access-control-request-method", "access-control-request-headers", "origin", "user-agent", "sec-fetch-mode", "sec-fetch-site", "sec-fetch-dest", "referer", "accept-encoding", "accept-language"},
 	},
 	WebKit: webkitLaw{
 		CommonHeaders: []string{"accept", "accept-charset", "accept-language", "accept-encoding", "accept-ranges", "access-control-allow-credentials", "access-control-allow-headers", "access-control-allow-methods", "access-control-allow-origin", "access-control-expose-headers", "access-control-max-age", "access-control-request-headers", "access-control-request-method", "age", "authorization", "cache-control", "clear-site-data", "connection", "content-disposition", "content-encoding", "content-language", "content-length", "content-location", "content-security-policy", "content-security-policy-report-only", "content-type", "content-range", "cookie", "cookie2", "cross-origin-embedder-policy", "cross-origin-embedder-policy-report-only", "cross-origin-opener-policy", "cross-origin-opener-policy-report-only", "cross-origin-resource-policy", "date", "dnt", "default-style", "document-isolation-policy", "etag", "expect", "expires", "host", "if-match", "if-modified-since", "if-none-match", "if-range", "if-unmodified-since", "integrity-policy", "integrity-policy-report-only", "keep-alive", "last-event-id", "last-modified", "link", "location", "origin", "origin-agent-cluster", "ping-from", "ping-to", "pragma", "proxy-authorization", "range", "referer", "referrer-policy", "refresh", "report-to", "reporting-endpoints", "sec-fetch-dest", "sec-fetch-mode", "sec-fetch-site", "sec-gpc", "sec-purpose", "sec-speculation-tags", "speculation-rules", "sec-websocket-accept", "sec-websocket-extensions", "sec-websocket-key", "sec-websocket-protocol", "sec-websocket-version", "server-timing", "service-worker", "service-worker-allowed", "service-worker-navigation-preload", "set-cookie", "set-cookie2", "sourcemap", "te", "timing-allow-origin", "trailer", "transfer-encoding", "upgrade", "upgrade-insecure-requests", "use-as-dictionary", "user-agent", "vary", "via", "x-content-type-options", "x-frame-options", "x-sourcemap", "x-xss-protection", "x-temp-tablet", "icy-metaint", "icy-metadata"},
@@ -117,10 +114,6 @@ var law = &lawFile{
 			Insertion:       []string{"accept", "upgrade-insecure-requests", "referer", "sec-fetch-dest", "sec-fetch-mode", "sec-fetch-site", "user-agent"},
 			RedirectCarried: []string{"accept-language", "priority"},
 			Reinserted:      []string{"sec-fetch-mode"},
-		},
-		Preflight: webkitPreflight{
-			Insertion: []string{"access-control-request-method", "access-control-request-headers", "origin", "user-agent", "referer", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest", "content-length"},
-			Tail:      []string{"accept"},
 		},
 		Generations: []webkitGeneration{
 			{

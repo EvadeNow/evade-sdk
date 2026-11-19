@@ -135,7 +135,7 @@ func TestWebKitFallsBackToLate(t *testing.T) {
 }
 
 func TestOrderRefusesClassesOutsideTheCertificate(t *testing.T) {
-	for _, class := range []Class{ClassUnknown, ClassNavigation, ClassForm, ClassPreflight, ClassNoCORS} {
+	for _, class := range []Class{ClassUnknown, ClassNavigation, ClassForm, ClassNoCORS} {
 		r := chromeXHR(151, "content-type")
 		r.Class = class
 		_, err := Order(r)
@@ -1056,11 +1056,6 @@ func TestUniversalLawDataIsWellFormed(t *testing.T) {
 			t.Errorf("re-inserted %s is no browser-owned GET name", n)
 		}
 	}
-	for _, n := range w.Preflight.Insertion {
-		if !slices.Contains(w.CommonHeaders, n) {
-			t.Errorf("preflight name %s is not a WebKit common header", n)
-		}
-	}
 	for _, g := range w.Generations {
 		if g.ScriptLaw == (len(g.BrowserGet) != 0) {
 			t.Errorf("generation %s: script law %v with captured browser-owned GET %v", g.Name, g.ScriptLaw, g.BrowserGet)
@@ -1092,7 +1087,7 @@ func TestUniversalLawDataIsWellFormed(t *testing.T) {
 // keeps its WebKit fetch/XHR refusals, and ignores the universal-only inputs.
 func TestStrictOrderKeepsItsRefusals(t *testing.T) {
 	for _, e := range []Engine{{Kind: Chromium, Major: 151}, {Kind: WebKit, Major: 18, Minor: 7}} {
-		for _, class := range []Class{ClassForm, ClassPreflight, ClassNoCORS} {
+		for _, class := range []Class{ClassForm, ClassNoCORS} {
 			_, err := Order(Request{Engine: e, Class: class, Method: "POST", HTTP2: true, Added: Added{Origin: true, Body: true}})
 			wantErr[*UnwitnessedError](t, err)
 		}
@@ -1113,7 +1108,7 @@ func TestStrictOrderKeepsItsRefusals(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		r.Added.UpgradeInsecureRequests, r.Added.RequestHeaders = true, true
+		r.Added.UpgradeInsecureRequests = true
 		if got, err := Order(r); err != nil || !reflect.DeepEqual(got, want) {
 			t.Errorf("%s %s with universal-only inputs: %v (%v), want %v", r.Engine, r.Class, got, err, want)
 		}
