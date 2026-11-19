@@ -23,8 +23,8 @@ func (law *lawFile) browserOrder(r *Request, unwitnessed func(string, ...any) er
 		return Wire{}, unwitnessed("only GET is witnessed (a POST navigation is a form)")
 	case len(r.Calls) != 0 || r.ShapePrefix != "" || len(r.Pins) != 0:
 		return Wire{}, &InputError{Field: "calls", Detail: "the browser sets every header of a " + r.Class.String() + "; the page sets none"}
-	case r.Added.Body || r.Added.Origin:
-		return Wire{}, &InputError{Field: "added", Detail: "a GET " + r.Class.String() + " carries no body and no Origin"}
+	case r.Added.Body || r.Added.Origin && !r.Module:
+		return Wire{}, &InputError{Field: "added", Detail: "a GET " + r.Class.String() + " carries no body, and Origin only as a module script (Request.Module)"}
 	case r.Class == ClassScript && (r.Redirected || r.Added.FetchUser):
 		return Wire{}, &InputError{Field: "redirected", Detail: "only a navigation hop follows a redirect or carries sec-fetch-user"}
 	}
@@ -121,12 +121,28 @@ func (c *chromiumLaw) navigationHints(r *Request, unwitnessed func(string, ...an
 	return hints, nil
 }
 
+// moduleInputs refuses Module outside a script GET, a module GET without Origin, and a WebKit module GET,
+// which no law orders (Request.Module).
+func moduleInputs(r *Request) error {
+	switch {
+	case !r.Module:
+		return nil
+	case r.Class != ClassScript:
+		return &InputError{Field: "module", Detail: "only a script GET is a module script, not a " + r.Class.String()}
+	case !r.Added.Origin:
+		return &InputError{Field: "added.origin", Detail: "a module script is a CORS-mode fetch and carries Origin"}
+	case r.Engine.Kind == WebKit:
+		return &UnwitnessedError{Engine: r.Engine, Class: r.Class, Reason: "module script: Chrome for iOS 26.6.2 (qantas-iphone-chrome-157-20261118#4) and Safari 26.6.1 (qantas-iphone-safari-26.6.1-20261118#76) place origin at different dictionary positions; no law decides it"}
+	}
+	return nil
+}
+
 // universalInputs refuses OrderUniversal's own inputs on a class that never carries them.
 func universalInputs(r *Request) error {
 	if r.Added.UpgradeInsecureRequests && r.Class != ClassNavigation && r.Class != ClassForm {
 		return &InputError{Field: "added.upgrade_insecure_requests", Detail: "only a navigation or form carries upgrade-insecure-requests"}
 	}
-	return nil
+	return moduleInputs(r)
 }
 
 // universalBrowserOrder frames OrderUniversal's browser-owned requests: Chromium form and no-cors element

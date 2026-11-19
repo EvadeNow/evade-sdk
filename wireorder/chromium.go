@@ -156,6 +156,10 @@ func chromiumOrder(law *chromiumLaw, r *Request, calls []string) []string {
 		page = blinkMap(calls)
 	}
 	adds := slices.Clone(page)
+	if r.Module {
+		// Blink sets a CORS-mode request's Origin itself (Request.Module).
+		adds = append(adds, "origin")
+	}
 	for _, name := range law.BlinkSetOrder {
 		if name == "user-agent" || slices.Contains(r.Added.ClientHints, name) {
 			adds = append(adds, name)
@@ -174,7 +178,7 @@ func chromiumOrder(law *chromiumLaw, r *Request, calls []string) []string {
 		out = append(out, "accept")
 	}
 	for _, name := range law.NetworkAfter {
-		if r.Added.present(name) {
+		if r.Added.present(name) && !slices.Contains(block, name) {
 			out = append(out, name)
 		}
 	}

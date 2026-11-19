@@ -45,6 +45,10 @@ var browserWitnesses = []struct {
 				"sec-ch-ua-platform-version", "sec-ch-ua-model", "sec-ch-ua-full-version-list", "sec-ch-ua-bitness", "sec-ch-ua-wow64"},
 				Referer: true, Cookie: true}},
 		"sec-ch-ua-full-version-list sec-ch-ua-platform sec-ch-ua sec-ch-ua-bitness sec-ch-ua-model sec-ch-ua-mobile sec-ch-ua-wow64 sec-ch-ua-arch user-agent sec-ch-ua-platform-version accept sec-fetch-site sec-fetch-mode sec-fetch-dest referer accept-encoding accept-language cookie"},
+	{"qantas-1#81 aem.js (Chrome 157 module script, CORS mode)",
+		Request{Engine: Engine{Kind: Chromium, Major: 157}, Class: ClassScript, Method: "GET", HTTP2: true, Module: true,
+			Added: Added{ClientHints: lowEntropyHints, Origin: true, Referer: true, Cookie: true, Priority: true}},
+		"origin sec-ch-ua-platform user-agent sec-ch-ua sec-ch-ua-mobile accept sec-fetch-site sec-fetch-mode sec-fetch-dest referer accept-encoding accept-language cookie priority"},
 }
 
 func TestBrowserClassesReproduceWitnesses(t *testing.T) {
@@ -126,6 +130,12 @@ func TestBrowserClassesFailClosed(t *testing.T) {
 			r.Added.ClientHints = nil
 			r.Inserted = true
 		}),
+		"webkit module": script(func(r *Request) {
+			r.Engine = Engine{Kind: WebKit, Major: 26, Minor: 6}
+			r.Added.ClientHints = nil
+			r.Module = true
+			r.Added.Origin = true
+		}),
 		"safari h1 inserted": script(func(r *Request) {
 			r.Engine = Engine{Kind: WebKit, Major: 18, Minor: 7}
 			r.Added.ClientHints = nil
@@ -153,6 +163,8 @@ func TestBrowserClassesFailClosed(t *testing.T) {
 	impossible := map[string]Request{
 		"script with calls":     script(func(r *Request) { r.Calls = []string{"x-a"} }),
 		"script with origin":    script(func(r *Request) { r.Added.Origin = true }),
+		"module without origin": script(func(r *Request) { r.Module = true }),
+		"module navigation":     nav(func(r *Request) { r.Module = true; r.Added.Origin = true }),
 		"navigation with body":  nav(func(r *Request) { r.Added.Body = true }),
 		"navigation with pins":  nav(func(r *Request) { r.Pins = []*Pin{testInstall} }),
 		"redirected script":     script(func(r *Request) { r.Redirected = true }),
@@ -584,10 +596,11 @@ func TestChromiumFormMajorsBetweenWitnessedRuns(t *testing.T) {
 	}
 }
 
-// A Chromium no-cors element load is the call-less Blink map a script is.
+// A Chromium no-cors element load is the call-less Blink map a classic (no-cors) script is; a module script is
+// CORS mode, not a no-cors load.
 func TestChromiumNoCORSIsTheScriptMap(t *testing.T) {
 	for _, w := range browserWitnesses {
-		if w.r.Class != ClassScript {
+		if w.r.Class != ClassScript || w.r.Module {
 			continue
 		}
 		script, err := Order(w.r)

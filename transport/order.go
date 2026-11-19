@@ -66,13 +66,14 @@ type OrderRequest struct {
 	Added      wireorder.Added // conditional headers the browser adds
 	Redirected bool            // navigation hop following a server redirect
 	Inserted   bool            // script element created by page JS, not the HTML parser
+	Module     bool            // <script type=module> GET: CORS mode, carries Origin (wireorder.Request.Module)
 }
 
 func (r *OrderRequest) law(engine wireorder.Engine, class wireorder.Class, pins []*wireorder.Pin) wireorder.Request {
 	return wireorder.Request{
 		Engine: engine, Class: class, Method: r.Method, HTTP2: r.HTTP2,
 		Calls: r.Calls, ShapePrefix: r.ShapePrefix, Pins: pins,
-		Added: r.Added, Redirected: r.Redirected, Inserted: r.Inserted,
+		Added: r.Added, Redirected: r.Redirected, Inserted: r.Inserted, Module: r.Module,
 	}
 }
 

@@ -106,6 +106,17 @@ type Request struct {
 	Redirected bool
 	// Inserted marks a script element page JavaScript inserted, not one the HTML parser requested.
 	Inserted bool
+	// Module marks a <script type=module> GET (ClassScript only). HTML fetches a module script in CORS mode
+	// (credentials same-origin) where a classic script is no-cors, so it carries Origin (Added.Origin must be
+	// set) and sec-fetch-mode cors. Chromium's Blink sets Origin on every CORS-mode request in its own header
+	// map (FetchParameters::SetCrossOriginAccessControl), same-origin GETs included, so origin joins the Blink
+	// block rather than the network service's run. Witnesses: akamai/hars/qantas-1/2/3 (Chrome 157 Windows):
+	// all 219 same-origin module GETs (73 each, first qantas-1#81 /scripts/aem.js) are exactly that order, and
+	// their 46 cross-site CORS-mode script GETs carry origin at the same place. WebKit module GETs are
+	// unwitnessed as a law: Chrome for iOS 26.6.2
+	// (qantas-iphone-chrome-157-20261118#4, 104 GETs) and Safari 26.6.1 (qantas-iphone-safari-26.6.1#76,
+	// 14 GETs) put origin at different dictionary positions.
+	Module bool
 }
 
 // Added are the browser's conditional headers; user-agent, sec-fetch-*, accept-encoding and accept-language are always added.
@@ -474,6 +485,9 @@ func (w *webkitLaw) checkPin(p *Pin, field string) error {
 }
 
 func Order(r Request) (Wire, error) {
+	if err := moduleInputs(&r); err != nil {
+		return Wire{}, err
+	}
 	return law.order(&r)
 }
 
