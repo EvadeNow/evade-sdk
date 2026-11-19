@@ -19,6 +19,11 @@ func mustTemplate(t *testing.T, raw string, v Vendor) *Template {
 	return tmpl
 }
 
+// socks5Vendor is an authenticated sticky SOCKS5 account: lowercase country, UDP relay.
+func socks5Vendor() Vendor {
+	return Vendor{Name: "socks5", Schemes: []string{"socks5"}, Sticky: true, Authenticated: true, SessionBytes: 5, RTC: RTCPolicySOCKS5UDP}
+}
+
 func TestAcquireExpandsPerVendor(t *testing.T) {
 	cases := []struct {
 		name        string
@@ -42,7 +47,7 @@ func TestAcquireExpandsPerVendor(t *testing.T) {
 		},
 		{
 			name:        "socks5 lowercases country and relays UDP",
-			vendor:      SOCKS5Residential(),
+			vendor:      socks5Vendor(),
 			template:    "socks5://user-cc-{CC}-sess-{SESSION}:pw@gw.example.net:7000",
 			country:     "DE",
 			sessionLen:  10,
@@ -51,12 +56,13 @@ func TestAcquireExpandsPerVendor(t *testing.T) {
 			wantRTC:     RTCPolicySOCKS5UDP,
 		},
 		{
-			name:        "infatica drops the baked-in pair and mints 24 chars",
-			vendor:      Infatica(),
-			template:    "http://account_c_AU_s_k3f9xq2mvb7twz1p_c_{CC}_s_{SESSION}_ttl_15m_rotm_0:pass@pool.infatica.io:10000",
+			name: "canonicalize runs before expansion",
+			vendor: Vendor{Name: "canonical", Schemes: []string{"http"}, Sticky: true, SessionBytes: 12, CountryUpper: true, RTC: RTCPolicyProxyOnly,
+				Canonicalize: func(raw string) (string, error) { return strings.Replace(raw, "_c_AU", "", 1), nil }},
+			template:    "http://account_c_AU_c_{CC}_s_{SESSION}:pass@pool.example.com:10000",
 			country:     "ca",
 			sessionLen:  24,
-			want:        "http://account_c_CA_s_%s_ttl_15m_rotm_0:pass@pool.infatica.io:10000",
+			want:        "http://account_c_CA_s_%s:pass@pool.example.com:10000",
 			wantCountry: "CA",
 			wantRTC:     RTCPolicyProxyOnly,
 		},
@@ -154,7 +160,7 @@ func TestAcquireEscapesPinnedSession(t *testing.T) {
 }
 
 func TestAcquireRejectsBadCountry(t *testing.T) {
-	tmpl := mustTemplate(t, "socks5://u-{CC}-{SESSION}:p@gw.example.net:7000", SOCKS5Residential())
+	tmpl := mustTemplate(t, "socks5://u-{CC}-{SESSION}:p@gw.example.net:7000", socks5Vendor())
 	for _, country := range []string{"", "U", "U1", "USA", "ü"} {
 		_, err := tmpl.Acquire(context.Background(), Request{Country: country})
 		if reqErr, ok := errors.AsType[*RequestError](err); !ok || reqErr.Field != "Country" {
@@ -249,13 +255,14 @@ func TestNewTemplateValidation(t *testing.T) {
 		{"evomi missing session", Evomi(), "http://u:p-{CC}@rp.evomi.com:1000", false},
 		{"evomi missing country", Evomi(), "http://u:p-{SESSION}@rp.evomi.com:1000", false},
 		{"evomi inconsistent session bytes", inconsistent, "http://u:p-{CC}-{SESSION}@rp.evomi.com:1000", false},
-		{"infatica foreign host", Infatica(), "http://a_c_{CC}_s_{SESSION}:p@pool.example.com:10000", false},
-		{"infatica without selector pair", Infatica(), "http://a-{CC}-{SESSION}:p@pool.infatica.io:10000", false},
-		{"socks5 authenticated", SOCKS5Residential(), "socks5://u-{CC}-{SESSION}:p@gw.example.net:7000", true},
-		{"socks5 http scheme", SOCKS5Residential(), "http://u-{CC}-{SESSION}:p@gw.example.net:7000", false},
-		{"socks5 no port", SOCKS5Residential(), "socks5://u-{CC}-{SESSION}:p@gw.example.net", false},
-		{"socks5 no password", SOCKS5Residential(), "socks5://u-{CC}-{SESSION}@gw.example.net:7000", false},
-		{"socks5 empty password", SOCKS5Residential(), "socks5://u-{CC}-{SESSION}:@gw.example.net:7000", false},
+		{"socks5 authenticated", socks5Vendor(), "socks5://u-{CC}-{SESSION}:p@gw.example.net:7000", true},
+		{"socks5 http scheme", socks5Vendor(), "http://u-{CC}-{SESSION}:p@gw.example.net:7000", false},
+		{"socks5 no port", socks5Vendor(), "socks5://u-{CC}-{SESSION}:p@gw.example.net", false},
+		{"socks5 no password", socks5Vendor(), "socks5://u-{CC}-{SESSION}@gw.example.net:7000", false},
+		{"socks5 empty password", socks5Vendor(), "socks5://u-{CC}-{SESSION}:@gw.example.net:7000", false},
+		{"canonicalize refusal", Vendor{Name: "canonical", RTC: RTCPolicyProxyOnly, Canonicalize: func(string) (string, error) {
+			return "", &TemplateError{Vendor: "canonical", Reason: "refused"}
+		}}, "http://proxy.example.com:8080", false},
 		{"generic socks5h", Generic(), "socks5h://proxy.example.com:1080", true},
 		{"generic ftp", Generic(), "ftp://proxy.example.com:21", false},
 		{"generic no scheme", Generic(), "proxy.example.com:8080", false},
@@ -272,45 +279,5 @@ func TestNewTemplateValidation(t *testing.T) {
 				t.Errorf("%s: err = %v, want *TemplateError", tc.name, err)
 			}
 		}
-	}
-}
-
-func TestCanonicalizeInfatica(t *testing.T) {
-	cases := []struct {
-		name, in, want string
-	}{
-		{
-			name: "exported credential with baked-in pair",
-			in:   "http://account_c_AU_s_k3f9xq2mvb7twz1p_c_{CC}_s_{SESSION}_ttl_15m_rotm_0:pass@pool.infatica.io:10000",
-			want: "http://account_c_{CC}_s_{SESSION}_ttl_15m_rotm_0:pass@pool.infatica.io:10000",
-		},
-		{
-			name: "already canonical",
-			in:   "http://account_c_{CC}_s_{SESSION}_ttl_15m:pass@pool.infatica.io:10000",
-			want: "http://account_c_{CC}_s_{SESSION}_ttl_15m:pass@pool.infatica.io:10000",
-		},
-		{
-			name: "lower-case concrete country is not a selector",
-			in:   "http://account_c_au_s_old_c_{CC}_s_{SESSION}:pass@pool.infatica.io:10000",
-			want: "http://account_c_au_s_old_c_{CC}_s_{SESSION}:pass@pool.infatica.io:10000",
-		},
-		{
-			name: "non-alphanumeric concrete session is kept",
-			in:   "http://account_c_AU_s_old-1_c_{CC}_s_{SESSION}:pass@pool.infatica.io:10000",
-			want: "http://account_c_AU_s_old-1_c_{CC}_s_{SESSION}:pass@pool.infatica.io:10000",
-		},
-	}
-	for _, tc := range cases {
-		got, err := CanonicalizeInfatica(tc.in)
-		if err != nil {
-			t.Errorf("%s: %v", tc.name, err)
-			continue
-		}
-		if got != tc.want {
-			t.Errorf("%s:\n got %q\nwant %q", tc.name, got, tc.want)
-		}
-	}
-	if _, err := CanonicalizeInfatica("http://account-{CC}-{SESSION}:pass@pool.infatica.io:10000"); err == nil {
-		t.Error("template without _c_{CC}_s_{SESSION} was accepted")
 	}
 }

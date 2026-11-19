@@ -1,7 +1,5 @@
 package proxy
 
-import "strings"
-
 // Vendor is a plain value: start from a constructor and override fields per account.
 type Vendor struct {
 	Name                   string
@@ -46,29 +44,6 @@ func Nyxon() Vendor {
 		RTC:          RTCPolicyProxyOnly,
 	}
 }
-func Infatica() Vendor {
-	return Vendor{
-		Name:         "infatica",
-		Schemes:      []string{"http"},
-		Hosts:        []string{"infatica.io"},
-		Sticky:       true,
-		SessionBytes: 12,
-		CountryUpper: true,
-		RTC:          RTCPolicyProxyOnly,
-		Canonicalize: CanonicalizeInfatica,
-	}
-}
-
-func SOCKS5Residential() Vendor {
-	return Vendor{
-		Name:          "socks5-residential",
-		Schemes:       []string{"socks5"},
-		Sticky:        true,
-		Authenticated: true,
-		SessionBytes:  5,
-		RTC:           RTCPolicySOCKS5UDP,
-	}
-}
 
 // Generic accepts any host; placeholders are optional and leases claim no UDP path.
 func Generic() Vendor {
@@ -79,35 +54,6 @@ func Generic() Vendor {
 		CountryUpper: true,
 		RTC:          RTCPolicyProxyOnly,
 	}
-}
-
-const infaticaSelector = "_c_{CC}_s_{SESSION}"
-
-// CanonicalizeInfatica drops a concrete _c_/_s_ pair baked in right before _c_{CC}_s_{SESSION}; Infatica rejects duplicate selectors.
-func CanonicalizeInfatica(template string) (string, error) {
-	// String work: net/url cannot parse the unescaped placeholders.
-	markerAt := strings.Index(template, infaticaSelector)
-	if markerAt < 0 {
-		return "", &TemplateError{Vendor: "infatica", Reason: "template must select country and session with " + infaticaSelector}
-	}
-	prefix := template[:markerAt]
-	lastSession := strings.LastIndex(prefix, "_s_")
-	if lastSession < 0 {
-		return template, nil
-	}
-	lastCountry := strings.LastIndex(prefix[:lastSession], "_c_")
-	if lastCountry < 0 || lastCountry+5 > len(prefix) {
-		return template, nil
-	}
-	code := prefix[lastCountry+3 : lastCountry+5]
-	if !upperLetter(code[0]) || !upperLetter(code[1]) {
-		return template, nil
-	}
-	concreteSession := prefix[lastSession+3:]
-	if concreteSession == "" || !alphanumeric(concreteSession) {
-		return template, nil
-	}
-	return prefix[:lastCountry] + template[markerAt:], nil
 }
 
 func upperLetter(c byte) bool { return c >= 'A' && c <= 'Z' }
