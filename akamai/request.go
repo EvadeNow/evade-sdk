@@ -7,13 +7,17 @@ type Mode string
 const (
 	ModeSensor Mode = "sensor"
 	ModeSBSD   Mode = "sbsd"
+	ModeOpen   Mode = "open"
 )
 
-// SensorRequest without Session opens a session. A session's first sensor
-// post needs ScriptID or Script. Session continues either mode's session:
-// URL and UA must match its opening values and ScriptURL its sensor
-// script's. AcceptLanguage, Language and Timezone are optional; each, when
-// set, must equal the device's own.
+// SensorRequest without Session opens a session; opening needs ExitCountry
+// and Timezone, the proxy exit's region (geo.Reader.Locate through the
+// proxy gives both), or the solve is refused exit_region_missing. A
+// session's first sensor post needs ScriptID or Script. Session continues either mode's
+// session: URL and UA must match its opening values and ScriptURL its
+// sensor script's; Language and Timezone, when set, must equal the
+// session's, and ExitCountry is not read. AcceptLanguage and Language are
+// optional: unset, the session's language follows the site and the exit.
 type SensorRequest struct {
 	URL  string `json:"url"`   // the page's absolute http(s) URL, no credentials or fragment
 	UA   string `json:"ua"`    // as GET /user-agents lists it
@@ -25,20 +29,17 @@ type SensorRequest struct {
 	ScriptID  string `json:"script_id,omitempty"`
 	Script    []byte `json:"script,omitempty"` // the sensor script source, at most 1 MiB
 	ScriptURL string `json:"script_url"`       // absolute http(s), as URL
-	// SBSDSource, PageLayout and PageClickTargets open a session only.
+	// SBSDSource is accepted only before the session's first sensor post.
 	SBSDSource     *SBSDSource `json:"sbsd_source,omitempty"`
-	PageLayout     *PageLayout `json:"page_layout,omitempty"`
 	AcceptLanguage string      `json:"accept_language,omitempty"`
-	Language       string      `json:"language,omitempty"` // navigator.language
-	Timezone       string      `json:"timezone,omitempty"` // IANA zone
+	Language       string      `json:"language,omitempty"`     // navigator.language
+	Timezone       string      `json:"timezone,omitempty"`     // IANA zone of the proxy exit
+	ExitCountry    string      `json:"exit_country,omitempty"` // ISO 3166-1 alpha-2 country of the proxy exit
 	Session        string      `json:"session,omitempty"`
 	// Pace: nil or true holds a continued post until 1s after the session's
 	// previous sensor post (SensorResponse.PacedMS); false never holds.
 	Pace      *bool `json:"pace,omitempty"`
 	Telemetry bool  `json:"telemetry,omitempty"` // asks for SensorResponse.Telemetry
-	// PageClickTargets are the page elements the input model clicks, in
-	// order; without them it never clicks.
-	PageClickTargets []PageClickTarget `json:"page_click_targets,omitempty"`
 }
 
 // SBSDSource stages the page's SBSD script before the first sensor post.
@@ -47,39 +48,29 @@ type SBSDSource struct {
 	Script    []byte `json:"script"` // at most 1 MiB
 }
 
-// PageLayout is the page document and, in document order, every stylesheet
-// linked before the sensor script, each followed by its @imports.
-type PageLayout struct {
-	Document    string       `json:"document"`
-	Stylesheets []Stylesheet `json:"stylesheets"`
+// OpenRequest without Session opens a session with no post: URL and UA are
+// required, the locale fields are as in SensorRequest (ExitCountry and
+// Timezone required), and no script rides it. With Session it stages a
+// script on that open session: Script (with its ScriptURL; ScriptID, when
+// set, must match it) or SBSDSource, at least one.
+type OpenRequest struct {
+	URL            string      `json:"url"`
+	UA             string      `json:"ua"`
+	ScriptID       string      `json:"script_id,omitempty"`
+	Script         []byte      `json:"script,omitempty"`
+	ScriptURL      string      `json:"script_url,omitempty"`
+	SBSDSource     *SBSDSource `json:"sbsd_source,omitempty"`
+	AcceptLanguage string      `json:"accept_language,omitempty"`
+	Language       string      `json:"language,omitempty"`
+	Timezone       string      `json:"timezone,omitempty"`
+	ExitCountry    string      `json:"exit_country,omitempty"`
+	Session        string      `json:"session,omitempty"`
 }
 
-type Stylesheet struct {
-	URL  string `json:"url"`
-	Text string `json:"text"`
-}
-
-// PageClickTarget: Name and ID are nil when the attribute is absent, "" when
-// it is empty; XPath is absolute (/html[1]/body[1]/...).
-type PageClickTarget struct {
-	Name  *string       `json:"name"`
-	ID    *string       `json:"id"`
-	XPath string        `json:"xpath"`
-	Box   *PageClickBox `json:"box"` // must lie inside the device's viewport
-}
-
-// PageClickBox is the element's border box in viewport CSS pixels.
-type PageClickBox struct {
-	Left   float64 `json:"left"`
-	Top    float64 `json:"top"`
-	Width  float64 `json:"width"`
-	Height float64 `json:"height"`
-}
-
-// SBSDRequest without Session opens a session. A session's first SBSD post
-// needs ScriptID or Script unless SensorRequest.SBSDSource staged it; later
-// posts may omit both while ScriptURL is unchanged. AcceptLanguage, Language
-// and Timezone are as in SensorRequest.
+// SBSDRequest without Session opens a session, its locale fields as in
+// SensorRequest (ExitCountry and Timezone required). A session's first SBSD
+// post needs ScriptID or Script unless SensorRequest.SBSDSource staged it;
+// later posts may omit both while ScriptURL is unchanged.
 type SBSDRequest struct {
 	URL       string `json:"url"` // absolute
 	UA        string `json:"ua"`
@@ -93,6 +84,7 @@ type SBSDRequest struct {
 	AcceptLanguage string `json:"accept_language,omitempty"`
 	Language       string `json:"language,omitempty"`
 	Timezone       string `json:"timezone,omitempty"`
+	ExitCountry    string `json:"exit_country,omitempty"`
 	// UUID pins the tab id on the session's first SBSD post (empty draws
 	// one); later posts must repeat or omit it.
 	UUID string `json:"uuid,omitempty"`

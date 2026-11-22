@@ -4,22 +4,18 @@ package shape
 
 type Request struct {
 	// SessionID continues a retained session; repeated session-fixed fields must match its opening values.
-	SessionID            string          `json:"session_id,omitempty"`
-	Proxy                string          `json:"proxy"`
-	TargetURL            string          `json:"target_url"`
-	ShapeJSURL           string          `json:"shape_js_url"`
-	TargetAPI            string          `json:"target_api"`
-	TargetAPIMethod      string          `json:"target_api_method"` // GET, POST or PUT
-	TargetAPIContentType string          `json:"target_api_content_type,omitempty"`
-	InteractionMode      InteractionMode `json:"interaction_mode,omitempty"`
+	SessionID       string `json:"session_id,omitempty"`
+	Proxy           string `json:"proxy"`
+	TargetURL       string `json:"target_url"`
+	ShapeJSURL      string `json:"shape_js_url"`
+	TargetAPI       string `json:"target_api"`
+	TargetAPIMethod string `json:"target_api_method"` // GET, POST or PUT
 	// InteractionBody is the protected request's exact body. The solver
 	// types each field the page's statement types in the shape of its value
 	// (never keeping the value). It is required for Target credential
 	// validation and any other solve following fresh user input.
-	InteractionBody      string               `json:"interaction_body,omitempty"`
-	AuxiliaryNetworkMode AuxiliaryNetworkMode `json:"auxiliary_network_mode,omitempty"`
-	Referer              string               `json:"referer,omitempty"`
-	ReferrerPolicy       string               `json:"referrer_policy,omitempty"`
+	InteractionBody string `json:"interaction_body,omitempty"`
+	Referer         string `json:"referer,omitempty"`
 	// PageHTML is the exact body the caller's browser received for TargetURL
 	// when that navigation was answered with a Shape interstitial (an inline
 	// VM and a replay script). The protected
@@ -40,7 +36,6 @@ type Request struct {
 	// LoaderRequestStartUnixMS is when the caller handed the LoaderSource GET
 	// to its HTTP client. With ChallengeReadyUnixMS it is a complete interval.
 	LoaderRequestStartUnixMS float64 `json:"loader_request_start_unix_ms,omitempty"`
-	ChallengeSource          string  `json:"challenge_source,omitempty"`
 	// NavigationStartUnixMS is when the caller began the top-level
 	// navigation. It requires DocumentRequestUnixMS.
 	NavigationStartUnixMS float64 `json:"navigation_start_unix_ms,omitempty"`
@@ -50,19 +45,15 @@ type Request struct {
 	// UA is an exact User-Agent or an OS selector (OSIOS, ...); empty selects the iOS pool.
 	UA string `json:"ua,omitempty"`
 	// FingerprintRecordID pins the solve to one stored device record; UA, when set, must name its User-Agent or OS.
-	FingerprintRecordID      string          `json:"fingerprint_record_id,omitempty"`
-	Locale                   string          `json:"locale,omitempty"`
-	AcceptLanguage           string          `json:"accept_language,omitempty"`
-	TimeZone                 string          `json:"time_zone,omitempty"` // IANA zone of the proxy exit, e.g. America/New_York; required on a fresh solve
-	Cookies                  Cookies         `json:"cookies,omitempty"`
-	RequestTransport         HeaderTransport `json:"request_transport,omitempty"`
-	FetchLoaderThroughProxy  bool            `json:"fetch_loader_through_proxy,omitempty"` // session-opening request only
-	RetainSession            bool            `json:"retain_session,omitempty"`
-	SkipZeronaught           *bool           `json:"skip_zeronaught,omitempty"`            // nil leaves the server default; never true on a retained Target authentication session
-	Debug                    bool            `json:"debug,omitempty"`                      // needs a debug- or internal-scope key
-	IncludeInteractionTiming bool            `json:"include_interaction_timing,omitempty"` // with Debug only
-	// PageProfile: empty infers it from TargetURL, "none" disables it; session-opening request only.
-	PageProfile string `json:"page_profile,omitempty"`
+	FingerprintRecordID string          `json:"fingerprint_record_id,omitempty"`
+	Locale              string          `json:"locale,omitempty"` // BCP 47 tag
+	AcceptLanguage      string          `json:"accept_language,omitempty"`
+	TimeZone            string          `json:"time_zone,omitempty"` // IANA zone of the proxy exit, e.g. America/New_York; required on a fresh solve
+	Cookies             Cookies         `json:"cookies,omitempty"`
+	RequestTransport    HeaderTransport `json:"request_transport,omitempty"`
+	RetainSession       bool            `json:"retain_session,omitempty"`
+	SkipZeronaught      *bool           `json:"skip_zeronaught,omitempty"` // nil leaves the server default; never true on a retained Target authentication session
+	Debug               bool            `json:"debug,omitempty"`           // needs a debug- or internal-scope key
 	// TargetDeviceInfo asks a fresh solve for the target's device_info
 	// capture its device record pairs with (Response.TargetDeviceInfo), so a
 	// caller sends the target's own fingerprint object from the same device
@@ -93,30 +84,14 @@ const (
 	OSLinux   = "linux"
 )
 
-// InteractionMode controls synthetic page input; empty behaves as InteractionModeAppend.
-type InteractionMode string
-
-const (
-	InteractionModeAppend   InteractionMode = "append"
-	InteractionModePreserve InteractionMode = "preserve"
-	// InteractionModeActivation is one tap or click with no text entry.
-	InteractionModeActivation InteractionMode = "activation"
-	// InteractionModeAutomatic is for requests the page issues on its own, without user input.
-	InteractionModeAutomatic InteractionMode = "automatic"
-)
-
-type AuxiliaryNetworkMode string
-
-// AuxiliaryNetworkPending holds page-owned responses until the protected request's headers are captured.
-const AuxiliaryNetworkPending AuxiliaryNetworkMode = "pending"
-
-// HeaderTransport must match the API the real page uses; empty means XMLHttpRequest.
+// HeaderTransport must match the API the real page uses; empty takes the
+// stored page's or contract's transport, else XMLHttpRequest. A navigation
+// ("direct") is refused (invalid_request).
 type HeaderTransport string
 
 const (
 	HeaderTransportXMLHttpRequest HeaderTransport = "xhr"
 	HeaderTransportFetch          HeaderTransport = "fetch"
-	HeaderTransportDirect         HeaderTransport = "direct"
 )
 
 // OutcomeReport tells the API whether the target accepted the request sent

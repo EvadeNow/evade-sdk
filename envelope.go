@@ -21,52 +21,59 @@ type ErrorBody struct {
 	ChallengeVariantID string `json:"challenge_variant_id,omitempty"` // shape only
 }
 
-// Code is ErrorBody.Code; each constant's comment names the targets that emit it.
+// Code is ErrorBody.Code. The catalog is the solvers' shared one (the
+// storage.ErrorCodes list, in its order: caller codes, then ours); each
+// constant's comment names the targets whose /solve, /user-agents or
+// /solve/outcome answer it today. "every target" is recaptcha, shape,
+// datadome, akamai and cloudflare. Akamai's own /solve failures are not
+// this envelope (see akamai.ErrorResponse); only its auth, quota and
+// /user-agents refusals are.
 type Code string
 
+// Caller codes: the request, the key, the session, the proxy or the target
+// site; the caller fixes or retries them away.
 const (
-	CodeMissingAPIKey     Code = "missing_api_key"    // shape, datadome, akamai
-	CodeInvalidAPIKey     Code = "invalid_api_key"    // shape, datadome, akamai
-	CodeInsufficientScope Code = "insufficient_scope" // shape, datadome, akamai
-	CodeRateLimited       Code = "rate_limited"       // shape, datadome, akamai; Retry-After is set
-	CodeQuotaExceeded     Code = "quota_exceeded"     // shape, datadome, akamai
-	CodeQuotaUnavailable  Code = "quota_unavailable"  // shape, datadome, akamai
-	CodeUsageUnavailable  Code = "usage_unavailable"  // shape
-	CodeAuthUnavailable   Code = "auth_unavailable"   // cloudflare
+	CodeInvalidRequest    Code = "invalid_request"    // recaptcha, shape, datadome, cloudflare
+	CodeMethodNotAllowed  Code = "method_not_allowed" // cloudflare
+	CodeMissingAPIKey     Code = "missing_api_key"    // every target
+	CodeInvalidAPIKey     Code = "invalid_api_key"    // every target
+	CodeInsufficientScope Code = "insufficient_scope" // every target
+	CodeQuotaExceeded     Code = "quota_exceeded"     // every target
+	CodeRateLimited       Code = "rate_limited"       // every target; Retry-After is set
+	CodeSessionExpired    Code = "session_expired"    // shape, datadome: the session is unknown, evicted or expired
+	CodeSessionBusy       Code = "session_busy"       // shape
+	CodeSendTooEarly      Code = "send_too_early"     // shape
+	CodeSendTooLate       Code = "send_too_late"      // shape
+	CodeProxyFailed       Code = "proxy_failed"       // recaptcha, shape, cloudflare
+	CodeProxyTimeout      Code = "proxy_timeout"      // recaptcha, shape, cloudflare
+	CodeTargetError       Code = "target_error"       // recaptcha, shape
+	CodeSolveCanceled     Code = "solve_canceled"     // recaptcha, shape, datadome, cloudflare
+	CodeSolveNotFound     Code = "solve_not_found"    // shape /solve/outcome
 )
 
+// Our codes: only a change to the solver, its data or its infrastructure
+// fixes them; the *_unavailable ones and challenge_rotating clear on retry.
 const (
-	CodeMethodNotAllowed   Code = "method_not_allowed"  // cloudflare
-	CodeSolverUnavailable  Code = "solver_unavailable"  // cloudflare
-	CodeInvalidRequest     Code = "invalid_request"     // shape, datadome, cloudflare
-	CodeBadRequest         Code = "bad_request"         // datadome
-	CodeSolveFailed        Code = "solve_failed"        // shape, cloudflare
-	CodeSolveTimeout       Code = "solve_timeout"       // shape, cloudflare
-	CodeSolveCanceled      Code = "solve_canceled"      // shape, cloudflare
-	CodeSessionUnavailable Code = "session_unavailable" // shape, datadome
+	CodeChallengeUnsupported Code = "challenge_unsupported" // shape, datadome, cloudflare
+	CodeChallengeRotating    Code = "challenge_rotating"    // datadome
+	CodeDeviceUnsupported    Code = "device_unsupported"    // recaptcha, shape, datadome, cloudflare
+	CodeSiteUnsupported      Code = "site_unsupported"      // recaptcha, shape, cloudflare
+	CodeGenerationFailed     Code = "generation_failed"     // recaptcha, shape, datadome, cloudflare
+	CodeSolveTimeout         Code = "solve_timeout"         // shape, datadome, cloudflare
+	CodeStorageUnavailable   Code = "storage_unavailable"   // every target
+	CodeAuthUnavailable      Code = "auth_unavailable"      // cloudflare
+	CodeQuotaUnavailable     Code = "quota_unavailable"     // every target
+	CodeUsageUnavailable     Code = "usage_unavailable"     // shape, datadome
+	CodeOutcomesUnavailable  Code = "outcomes_unavailable"  // shape /solve/outcome
+	CodeServerBusy           Code = "server_busy"           // in the catalog; no target answers it yet
+	CodeInternalError        Code = "internal_error"        // shape, datadome, cloudflare
 )
 
-// DataDome solve codes.
+// reCAPTCHA codes outside the shared catalog.
 const (
-	CodeInvalidSession             Code = "invalid_session"
-	CodeSessionFailed              Code = "session_failed"
-	CodeInterstitialFailed         Code = "interstitial_failed"
-	CodeCaptchaFailed              Code = "captcha_failed"
-	CodeFingerprintSelectionFailed Code = "fingerprint_selection_failed"
-	CodePicassoSelectionFailed     Code = "picasso_selection_failed"
-)
-
-// gman (reCAPTCHA v3 tasks) solve codes; invalid_request, solve_failed,
-// solve_timeout, solve_canceled and the auth/quota codes are shared.
-const (
-	CodeDeviceUnsupported  Code = "device_unsupported"  // no admitted Record for the userAgent on the running bundle
-	CodeSiteUnsupported    Code = "site_unsupported"    // the page has no mint laws (J page slots)
-	CodeGenerationFailed   Code = "generation_failed"   // the mint was refused by the decoder, or the reload token is SHORT
-	CodeProxyFailed        Code = "proxy_failed"        // the proxy or the network path through it failed
-	CodeProxyTimeout       Code = "proxy_timeout"       // the proxy or the target did not answer within the deadline
-	CodeTargetError        Code = "target_error"        // the page or a reCAPTCHA stage answered an error status
-	CodeStorageUnavailable Code = "storage_unavailable" // the Record store is unreachable
-	CodeDecodeFailed       Code = "decode_failed"       // gman /decode: the capture could not be decoded
+	CodeSolveFailed       Code = "solve_failed"       // recaptcha: a failure no other code classifies
+	CodeChallenged        Code = "challenged"         // recaptcha: the server demanded a challenge the flow has no solver for
+	CodeChallengeUnsolved Code = "challenge_unsolved" // recaptcha: the image challenge was not solved
 )
 
 // APIError is a non-2xx response. When the body is not an ErrorEnvelope,

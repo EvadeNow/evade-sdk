@@ -121,12 +121,12 @@ func TestSolveSendsTaskAndToleratesUnknownResponseKeys(t *testing.T) {
 }
 
 func TestSolveFailureReturnsZeroAndAPIError(t *testing.T) {
-	client, _, _ := server(t, http.StatusServiceUnavailable,
-		[]byte(`{"success":false,"error":{"code":"solver_unavailable","message":"Cloudflare solve flow is unavailable"}}`+"\n"))
+	client, _, _ := server(t, http.StatusInternalServerError,
+		[]byte(`{"success":false,"error":{"code":"internal_error","message":"Cloudflare solve flow is not configured"}}`+"\n"))
 	got, err := cloudflare.Solve(context.Background(), client, turnstileRequest())
 	var apiErr *evade.APIError
-	if !errors.As(err, &apiErr) || apiErr.Code != evade.CodeSolverUnavailable ||
-		apiErr.Message != "Cloudflare solve flow is unavailable" {
+	if !errors.As(err, &apiErr) || apiErr.Code != evade.CodeInternalError ||
+		apiErr.Message != "Cloudflare solve flow is not configured" {
 		t.Fatalf("error = %v", err)
 	}
 	if !reflect.DeepEqual(got, cloudflare.Response{}) {

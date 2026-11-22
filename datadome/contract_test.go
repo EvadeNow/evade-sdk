@@ -35,7 +35,7 @@ func tagsRequest() datadome.TagsRequest {
 			IP:             "203.0.113.9",
 		},
 		CID: "abc123", DDK: "0123456789ABCDEF0123456789ABCD", Referer: "https://www.example.test/",
-		TagsType: "le", Script: "if(dd&&dd.k<1){dd.init()}", HSV: 7, CorrelationID: &empty,
+		TagsType: "le", Script: "if(dd&&dd.k<1){dd.init()}", ScriptURL: "https://js.example.test/tags.js", HSV: 7, CorrelationID: &empty,
 		LocalStorageSession: true,
 	}
 }
@@ -61,7 +61,7 @@ func TestRequestsMatchGolden(t *testing.T) {
 		request any
 		want    string
 	}{
-		{"tags", tagsRequest(), `{"user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36","accept_language":"en-US,en;q=0.9","ip":"203.0.113.9","cid":"abc123","ddk":"0123456789ABCDEF0123456789ABCD","referer":"https://www.example.test/","tags_type":"le","script":"if(dd&&dd.k<1){dd.init()}","hsv":7,"correlation_id":"","local_storage_session":true}`},
+		{"tags", tagsRequest(), tagsGolden},
 		{"tags_continuation", datadome.TagsRequest{
 			Session: datadome.Session{SessionID: "s"}, TagsType: "ch",
 		}, `{"session_id":"s","cid":"","ddk":"","referer":"","tags_type":"ch","script":"","hsv":null,"local_storage_session":false}`},
@@ -77,16 +77,30 @@ func TestRequestsMatchGolden(t *testing.T) {
 	}
 }
 
+// tagsGolden is tagsRequest's wire form.
+const tagsGolden = `{"user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36","accept_language":"en-US,en;q=0.9","ip":"203.0.113.9","cid":"abc123","ddk":"0123456789ABCDEF0123456789ABCD","referer":"https://www.example.test/","tags_type":"le","script":"if(dd&&dd.k<1){dd.init()}","script_url":"https://js.example.test/tags.js","hsv":7,"correlation_id":"","local_storage_session":true}`
+
+// Response goldens: every solve answers its session (addSolveSessionResponse
+// in datadome/sessions.go), the opening one with its client hints;
+// interstitial and captcha add solve_warnings when there are any.
+const (
+	tagsResponseGolden         = `{"client_hints":{"architecture":"x86","bitness":"64","mobile":false,"model":"","platform":"Windows","platformVersion":"19.0.0","uaFullVersion":"151.0.7103.114","wow64":true},"device_memory":8,"expires_in_seconds":600,"payload":"jsData=%7B%7D&eventCounters=%5B%5D&cid=abc123","session_id":"b3f1c2d4e5a6978812345678"}`
+	interstitialResponseGolden = `{"headers":{"sec-ch-device-memory":"8","sec-ch-ua-arch":"\"x86\"","sec-ch-ua-mobile":"?0","sec-ch-ua-model":"\"\"","sec-ch-ua-platform":"\"Windows\""},"payload":"cid=abc123&icid=xyz&ccid=&dm=cd&hash=8E2F","session_id":"s","solve_warnings":["HYPOTHESIS(pvl2_stated_order)"]}`
+	captchaResponseGolden      = `{"headers":{},"payload":"https://geo.captcha-delivery.com/captcha/check?cid=abc123&icid=xyz","session_id":"missing"}`
+)
+
 func wantTags() datadome.TagsResponse {
 	return datadome.TagsResponse{
-		Payload:          "jsData=%7B%7D&eventCounters=%5B%5D&cid=abc123",
-		SessionID:        "b3f1c2d4e5a6978812345678",
-		ExpiresInSeconds: 600,
-		ClientHints: &datadome.ClientHints{
-			Architecture: "x86", Bitness: "64", Mobile: false, Model: "", Platform: "Windows",
-			PlatformVersion: "19.0.0", UAFullVersion: "151.0.7103.114", Wow64: true,
+		Payload: "jsData=%7B%7D&eventCounters=%5B%5D&cid=abc123",
+		SessionResponse: datadome.SessionResponse{
+			SessionID:        "b3f1c2d4e5a6978812345678",
+			ExpiresInSeconds: 600,
+			ClientHints: &datadome.ClientHints{
+				Architecture: "x86", Bitness: "64", Mobile: false, Model: "", Platform: "Windows",
+				PlatformVersion: "19.0.0", UAFullVersion: "151.0.7103.114", Wow64: true,
+			},
+			DeviceMemory: 8,
 		},
-		DeviceMemory: 8,
 	}
 }
 
@@ -97,13 +111,16 @@ func wantInterstitial() datadome.InterstitialResponse {
 			"sec-ch-device-memory": "8", "sec-ch-ua-arch": `"x86"`, "sec-ch-ua-mobile": "?0",
 			"sec-ch-ua-model": `""`, "sec-ch-ua-platform": `"Windows"`,
 		},
+		SessionResponse: datadome.SessionResponse{SessionID: "s"},
+		SolveWarnings:   []string{"HYPOTHESIS(pvl2_stated_order)"},
 	}
 }
 
 func wantCaptcha() datadome.CaptchaResponse {
 	return datadome.CaptchaResponse{
-		Payload: "https://geo.captcha-delivery.com/captcha/check?cid=abc123&icid=xyz",
-		Headers: map[string]string{},
+		Payload:         "https://geo.captcha-delivery.com/captcha/check?cid=abc123&icid=xyz",
+		Headers:         map[string]string{},
+		SessionResponse: datadome.SessionResponse{SessionID: "missing"},
 	}
 }
 
@@ -116,9 +133,9 @@ func TestResponseGoldensDecodeEveryField(t *testing.T) {
 		body      string
 		got, want any
 	}{
-		{"tags", `{"client_hints":{"architecture":"x86","bitness":"64","mobile":false,"model":"","platform":"Windows","platformVersion":"19.0.0","uaFullVersion":"151.0.7103.114","wow64":true},"device_memory":8,"expires_in_seconds":600,"payload":"jsData=%7B%7D&eventCounters=%5B%5D&cid=abc123","session_id":"b3f1c2d4e5a6978812345678"}`, &tags, wantTags()},
-		{"interstitial", `{"headers":{"sec-ch-device-memory":"8","sec-ch-ua-arch":"\"x86\"","sec-ch-ua-mobile":"?0","sec-ch-ua-model":"\"\"","sec-ch-ua-platform":"\"Windows\""},"payload":"cid=abc123&icid=xyz&ccid=&dm=cd&hash=8E2F"}`, &interstitial, wantInterstitial()},
-		{"captcha", `{"headers":{},"payload":"https://geo.captcha-delivery.com/captcha/check?cid=abc123&icid=xyz"}`, &captcha, wantCaptcha()},
+		{"tags", tagsResponseGolden, &tags, wantTags()},
+		{"interstitial", interstitialResponseGolden, &interstitial, wantInterstitial()},
+		{"captcha", captchaResponseGolden, &captcha, wantCaptcha()},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -164,12 +181,12 @@ func TestSolveStagesSendTaskAndModeAndDecode(t *testing.T) {
 		solve    func(*evade.Client) (any, error)
 		want     any
 	}{
-		{datadome.ModeTags, `{"user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36","accept_language":"en-US,en;q=0.9","ip":"203.0.113.9","cid":"abc123","ddk":"0123456789ABCDEF0123456789ABCD","referer":"https://www.example.test/","tags_type":"le","script":"if(dd&&dd.k<1){dd.init()}","hsv":7,"correlation_id":"","local_storage_session":true}`, `{"client_hints":{"architecture":"x86","bitness":"64","mobile":false,"model":"","platform":"Windows","platformVersion":"19.0.0","uaFullVersion":"151.0.7103.114","wow64":true},"device_memory":8,"expires_in_seconds":600,"payload":"jsData=%7B%7D&eventCounters=%5B%5D&cid=abc123","session_id":"b3f1c2d4e5a6978812345678"}`,
+		{datadome.ModeTags, tagsGolden, tagsResponseGolden,
 			func(c *evade.Client) (any, error) { return datadome.SolveTags(ctx, c, tagsRequest()) }, wantTags()},
-		{datadome.ModeInterstitial, `{"session_id":"s","device_link":"https://example.test/interstitial/","html":"page","script":"external interstitial script"}`, `{"headers":{"sec-ch-device-memory":"8","sec-ch-ua-arch":"\"x86\"","sec-ch-ua-mobile":"?0","sec-ch-ua-model":"\"\"","sec-ch-ua-platform":"\"Windows\""},"payload":"cid=abc123&icid=xyz&ccid=&dm=cd&hash=8E2F"}`,
+		{datadome.ModeInterstitial, `{"session_id":"s","device_link":"https://example.test/interstitial/","html":"page","script":"external interstitial script"}`, interstitialResponseGolden,
 			func(c *evade.Client) (any, error) { return datadome.SolveInterstitial(ctx, c, interstitialRequest()) },
 			wantInterstitial()},
-		{datadome.ModeCaptcha, `{"session_id":"missing","page":"page","script":"external bundle","document_url":"https://challenge.example/captcha/","parent_url":"https://example.test/"}`, `{"headers":{},"payload":"https://geo.captcha-delivery.com/captcha/check?cid=abc123&icid=xyz"}`,
+		{datadome.ModeCaptcha, `{"session_id":"missing","page":"page","script":"external bundle","document_url":"https://challenge.example/captcha/","parent_url":"https://example.test/"}`, captchaResponseGolden,
 			func(c *evade.Client) (any, error) { return datadome.SolveCaptcha(ctx, c, captchaRequest()) }, wantCaptcha()},
 	}
 	for _, test := range tests {
@@ -194,11 +211,11 @@ func TestSolveStagesSendTaskAndModeAndDecode(t *testing.T) {
 }
 
 func TestSolveFailureReturnsZeroAndAPIError(t *testing.T) {
-	client, _, _ := solveServer(t, http.StatusBadRequest,
-		[]byte(`{"error":{"code":"captcha_failed","message":"bundle has no PVL2 worker"},"success":false}`))
+	client, _, _ := solveServer(t, http.StatusUnprocessableEntity,
+		[]byte(`{"error":{"code":"challenge_unsupported","message":"bundle has no PVL2 worker"},"success":false}`))
 	got, err := datadome.SolveCaptcha(context.Background(), client, captchaRequest())
 	var apiErr *evade.APIError
-	if !errors.As(err, &apiErr) || apiErr.Code != evade.CodeCaptchaFailed || apiErr.Message != "bundle has no PVL2 worker" {
+	if !errors.As(err, &apiErr) || apiErr.Code != evade.CodeChallengeUnsupported || apiErr.Message != "bundle has no PVL2 worker" {
 		t.Fatalf("error = %v", err)
 	}
 	if !reflect.DeepEqual(got, datadome.CaptchaResponse{}) {

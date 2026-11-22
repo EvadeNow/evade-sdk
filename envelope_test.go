@@ -21,8 +21,8 @@ func TestAPIErrorFromEachTargetEnvelope(t *testing.T) {
 	}{
 		{
 			target: "shape", status: http.StatusInternalServerError,
-			body: `{"success":false,"error":{"code":"solve_failed","message":"The challenge could not be solved. The failure was logged for us to look into.","challenge_variant_id":"variant-7f3a"}}`,
-			want: APIError{Status: 500, Code: CodeSolveFailed,
+			body: `{"success":false,"error":{"code":"internal_error","message":"The challenge could not be solved. The failure was logged for us to look into.","challenge_variant_id":"variant-7f3a"}}`,
+			want: APIError{Status: 500, Code: CodeInternalError,
 				Message:            "The challenge could not be solved. The failure was logged for us to look into.",
 				ChallengeVariantID: "variant-7f3a"},
 		},
@@ -33,8 +33,8 @@ func TestAPIErrorFromEachTargetEnvelope(t *testing.T) {
 		},
 		{
 			target: "datadome", status: http.StatusBadRequest,
-			body: `{"error":{"code":"invalid_session","message":"session_id is unknown or expired"},"success":false}`,
-			want: APIError{Status: 400, Code: CodeInvalidSession, Message: "session_id is unknown or expired"},
+			body: `{"error":{"code":"session_expired","message":"session_id is unknown or expired"},"success":false}`,
+			want: APIError{Status: 400, Code: CodeSessionExpired, Message: "session_id is unknown or expired"},
 		},
 		{
 			target: "datadome-rate-limited", status: http.StatusTooManyRequests,

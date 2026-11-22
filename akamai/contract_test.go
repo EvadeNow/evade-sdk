@@ -30,7 +30,7 @@ func encode(t *testing.T, v any) []byte {
 const ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36"
 
 func sensorRequest() akamai.SensorRequest {
-	name, empty, pace := "search", "", false
+	pace := false
 	return akamai.SensorRequest{
 		URL: "https://www.example.com/booking?from=SYD&to=MEL", UA: ua,
 		Abck: "0123456789ABCDEF0123456789ABCDEF~-1~YAAQ~-1~-1~-1", BmSz: "0123ABCD~YAAQ",
@@ -40,17 +40,8 @@ func sensorRequest() akamai.SensorRequest {
 		SBSDSource: &akamai.SBSDSource{
 			ScriptURL: "https://www.example.com/.well-known/sbsd/x1", Script: []byte("sbsd.init();"),
 		},
-		PageLayout: &akamai.PageLayout{
-			Document:    "<!doctype html><link rel=stylesheet href=/a.css><script src=/aB3/cD4></script>",
-			Stylesheets: []akamai.Stylesheet{{URL: "https://www.example.com/a.css", Text: "body>div{display:none}"}},
-		},
-		AcceptLanguage: "en-US,en;q=0.9", Language: "en-US", Timezone: "Australia/Sydney",
+		AcceptLanguage: "en-US,en;q=0.9", Language: "en-US", Timezone: "Australia/Sydney", ExitCountry: "AU",
 		Pace: &pace, Telemetry: true,
-		PageClickTargets: []akamai.PageClickTarget{
-			{Name: &name, ID: &empty, XPath: "/html[1]/body[1]/form[1]/button[1]",
-				Box: &akamai.PageClickBox{Left: 12, Top: 340.5, Width: 96, Height: 40}},
-			{XPath: "/html[1]/body[1]/div[2]"},
-		},
 	}
 }
 
@@ -60,7 +51,7 @@ func sbsdRequest() akamai.SBSDRequest {
 		ScriptID:  "a7059f940c71ddc5bc19ac8957fd41de115456750dc6e329e22a13d389c93524",
 		Script:    []byte("sbsd.init();"),
 		ScriptURL: "https://www.example.com/.well-known/sbsd/x1?v=2", SBSDo: "0A1B2C~-1~",
-		AcceptLanguage: "en-US,en;q=0.9", Language: "en-US", Timezone: "Australia/Sydney", UUID: "tab-0123",
+		AcceptLanguage: "en-US,en;q=0.9", Language: "en-US", Timezone: "Australia/Sydney", ExitCountry: "AU", UUID: "tab-0123",
 		PageResources: &akamai.PageResources{
 			PageURL: "https://www.example.com/booking?from=SYD&to=MEL",
 			DOM: []akamai.ResourceURL{
@@ -84,9 +75,10 @@ func telemetryRequest() akamai.SBSDRequest {
 // Goldens: script bytes travel base64, HTML and & unescaped, ResourceURL
 // keys as the server's Kind and URL.
 const (
-	sensorGolden    = `{"url":"https://www.example.com/booking?from=SYD&to=MEL","ua":"` + ua + `","abck":"0123456789ABCDEF0123456789ABCDEF~-1~YAAQ~-1~-1~-1","bm_sz":"0123ABCD~YAAQ","script_id":"8fc7ebcf46557fffda26f3b5f193a5193e78a848a1ab88a56b077d2ffebe9a4c","script":"Ym1hay5zZW5zb3IoKTs=","script_url":"https://www.example.com/aB3/cD4","sbsd_source":{"script_url":"https://www.example.com/.well-known/sbsd/x1","script":"c2JzZC5pbml0KCk7"},"page_layout":{"document":"<!doctype html><link rel=stylesheet href=/a.css><script src=/aB3/cD4></script>","stylesheets":[{"url":"https://www.example.com/a.css","text":"body>div{display:none}"}]},"accept_language":"en-US,en;q=0.9","language":"en-US","timezone":"Australia/Sydney","pace":false,"telemetry":true,"page_click_targets":[{"name":"search","id":"","xpath":"/html[1]/body[1]/form[1]/button[1]","box":{"left":12,"top":340.5,"width":96,"height":40}},{"name":null,"id":null,"xpath":"/html[1]/body[1]/div[2]","box":null}]}`
-	sbsdGolden      = `{"url":"https://www.example.com/booking?from=SYD&to=MEL","ua":"` + ua + `","script_id":"a7059f940c71ddc5bc19ac8957fd41de115456750dc6e329e22a13d389c93524","script":"c2JzZC5pbml0KCk7","script_url":"https://www.example.com/.well-known/sbsd/x1?v=2","sbsd_o":"0A1B2C~-1~","accept_language":"en-US,en;q=0.9","language":"en-US","timezone":"Australia/Sydney","uuid":"tab-0123","page_resources":{"page_url":"https://www.example.com/booking?from=SYD&to=MEL","dom":[{"Kind":"link","URL":"https://www.example.com/a.css"},{"Kind":"script","URL":"https://www.example.com/aB3/cD4"}],"performance":[]}}`
+	sensorGolden    = `{"url":"https://www.example.com/booking?from=SYD&to=MEL","ua":"` + ua + `","abck":"0123456789ABCDEF0123456789ABCDEF~-1~YAAQ~-1~-1~-1","bm_sz":"0123ABCD~YAAQ","script_id":"8fc7ebcf46557fffda26f3b5f193a5193e78a848a1ab88a56b077d2ffebe9a4c","script":"Ym1hay5zZW5zb3IoKTs=","script_url":"https://www.example.com/aB3/cD4","sbsd_source":{"script_url":"https://www.example.com/.well-known/sbsd/x1","script":"c2JzZC5pbml0KCk7"},"accept_language":"en-US,en;q=0.9","language":"en-US","timezone":"Australia/Sydney","exit_country":"AU","pace":false,"telemetry":true}`
+	sbsdGolden      = `{"url":"https://www.example.com/booking?from=SYD&to=MEL","ua":"` + ua + `","script_id":"a7059f940c71ddc5bc19ac8957fd41de115456750dc6e329e22a13d389c93524","script":"c2JzZC5pbml0KCk7","script_url":"https://www.example.com/.well-known/sbsd/x1?v=2","sbsd_o":"0A1B2C~-1~","accept_language":"en-US,en;q=0.9","language":"en-US","timezone":"Australia/Sydney","exit_country":"AU","uuid":"tab-0123","page_resources":{"page_url":"https://www.example.com/booking?from=SYD&to=MEL","dom":[{"Kind":"link","URL":"https://www.example.com/a.css"},{"Kind":"script","URL":"https://www.example.com/aB3/cD4"}],"performance":[]}}`
 	telemetryGolden = `{"url":"https://www.example.com/booking?from=SYD&to=MEL","ua":"` + ua + `","script_url":"https://www.example.com/.well-known/sbsd/x1?v=2","sbsd_o":"0A1B2C~-1~","session":"c2Vzc2lvbi10b2tlbg","sbsd_post":"telemetry","pace":true}`
+	openGolden      = `{"url":"https://www.example.com/booking?from=SYD&to=MEL","ua":"` + ua + `","language":"en-US","timezone":"Australia/Sydney","exit_country":"AU"}`
 )
 
 func TestRequestsMatchGolden(t *testing.T) {
@@ -102,6 +94,7 @@ func TestRequestsMatchGolden(t *testing.T) {
 		}, `{"url":"https://www.example.com/booking","ua":"` + ua + `","abck":"abck","bm_sz":"bmsz","script_url":"https://www.example.com/aB3/cD4","session":"c2Vzc2lvbi10b2tlbg"}`},
 		{"sbsd", sbsdRequest(), sbsdGolden},
 		{"sbsd_telemetry", telemetryRequest(), telemetryGolden},
+		{"open", openRequest(), openGolden},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -115,8 +108,9 @@ func TestRequestsMatchGolden(t *testing.T) {
 const (
 	hintsGolden             = `{"sec-ch-ua":"\"Chromium\";v=\"157\", \"Google Chrome\";v=\"157\"","sec-ch-ua-mobile":"?0","sec-ch-ua-full-version":"\"157.0.7390.55\"","sec-ch-ua-arch":"\"x86\"","sec-ch-ua-platform":"\"Windows\"","sec-ch-ua-platform-version":"\"19.0.0\"","sec-ch-ua-model":"\"\"","sec-ch-ua-bitness":"\"64\"","sec-ch-ua-wow64":"?0","sec-ch-ua-full-version-list":"\"Chromium\";v=\"157.0.7390.55\", \"Google Chrome\";v=\"157.0.7390.55\"","sec-ch-ua-form-factors":"\"Desktop\""}`
 	sensorResponseGolden    = `{"success":true,"sensor_data":"3;0;1;2048;3684534;abc","ua":"` + ua + `","session":"c2Vzc2lvbi10b2tlbg","language":"en-US,en;q=0.9","accept_encoding":"gzip, deflate, br, zstd","script_id":"8fc7ebcf46557fffda26f3b5f193a5193e78a848a1ab88a56b077d2ffebe9a4c","client_hints":` + hintsGolden + `,"telemetry":"a=0123456789ABCDEF0123456789ABCDEF&&&e=0123ABCD~YAAQ&&&sensor_data=MzswOzE=","paced_ms":412}`
-	sbsdResponseGolden      = `{"success":true,"body":"encrypted-fingerprint","session":"c2Vzc2lvbi10b2tlbg","script_id":"a7059f940c71ddc5bc19ac8957fd41de115456750dc6e329e22a13d389c93524","accept_encoding":"gzip, deflate, br, zstd","client_hints":` + hintsGolden + `}`
+	sbsdResponseGolden      = `{"success":true,"body":"encrypted-fingerprint","session":"c2Vzc2lvbi10b2tlbg","script_id":"a7059f940c71ddc5bc19ac8957fd41de115456750dc6e329e22a13d389c93524","accept_encoding":"gzip, deflate, br, zstd","client_hints":` + hintsGolden + `,"fingerprint_ms":1840}`
 	telemetryResponseGolden = `{"success":true,"body":"encrypted-telemetry","session":"c2Vzc2lvbi10b2tlbg","script_id":"a7059f940c71ddc5bc19ac8957fd41de115456750dc6e329e22a13d389c93524","accept_encoding":"gzip, deflate, br, zstd","client_hints":` + hintsGolden + `,"sbsd_post":"telemetry","ind":1,"wait_ms":0,"sbsd_trigger":"timer"}`
+	openResponseGolden      = `{"success":true,"session":"c2Vzc2lvbi10b2tlbg"}`
 	notDueGolden            = `{"success":false,"error_code":"sbsd_telemetry_not_due","message":"current-script telemetry input threshold is not met","stage":"telemetry","reason":"second_post_input"}`
 )
 
@@ -140,11 +134,23 @@ func wantSensor() akamai.SensorResponse {
 }
 
 func wantSBSD() akamai.SBSDResponse {
+	fingerprint := int64(1840)
 	return akamai.SBSDResponse{
 		Success: true, Body: "encrypted-fingerprint", Session: "c2Vzc2lvbi10b2tlbg",
 		ScriptID: "a7059f940c71ddc5bc19ac8957fd41de115456750dc6e329e22a13d389c93524", AcceptEncoding: "gzip, deflate, br, zstd",
-		ClientHints: wantHints(),
+		ClientHints: wantHints(), FingerprintMS: &fingerprint,
 	}
+}
+
+func openRequest() akamai.OpenRequest {
+	return akamai.OpenRequest{
+		URL: "https://www.example.com/booking?from=SYD&to=MEL", UA: ua,
+		Language: "en-US", Timezone: "Australia/Sydney", ExitCountry: "AU",
+	}
+}
+
+func wantOpen() akamai.OpenResponse {
+	return akamai.OpenResponse{Success: true, Session: "c2Vzc2lvbi10b2tlbg"}
 }
 
 func wantTelemetry() akamai.SBSDResponse {
@@ -163,6 +169,7 @@ func TestResponseGoldensDecodeEveryField(t *testing.T) {
 	var sensor akamai.SensorResponse
 	var sbsd, telemetry akamai.SBSDResponse
 	var failure akamai.ErrorResponse
+	var open akamai.OpenResponse
 	tests := []struct {
 		name      string
 		body      string
@@ -171,6 +178,7 @@ func TestResponseGoldensDecodeEveryField(t *testing.T) {
 		{"sensor", sensorResponseGolden, &sensor, wantSensor()},
 		{"sbsd", sbsdResponseGolden, &sbsd, wantSBSD()},
 		{"sbsd_telemetry", telemetryResponseGolden, &telemetry, wantTelemetry()},
+		{"open", openResponseGolden, &open, wantOpen()},
 		{"error", notDueGolden, &failure, akamai.ErrorResponse{
 			ErrorCode: "sbsd_telemetry_not_due", Message: "current-script telemetry input threshold is not met",
 			Stage: "telemetry", Reason: "second_post_input",
@@ -218,21 +226,24 @@ func TestSolveModesSendTaskAndModeAndDecode(t *testing.T) {
 	tests := []struct {
 		name     string
 		mode     akamai.Mode
+		status   int
 		request  string
 		response string
 		solve    func(*evade.Client) (any, error)
 		want     any
 	}{
-		{"sensor", akamai.ModeSensor, sensorGolden, sensorResponseGolden,
+		{"sensor", akamai.ModeSensor, http.StatusOK, sensorGolden, sensorResponseGolden,
 			func(c *evade.Client) (any, error) { return akamai.SolveSensor(ctx, c, sensorRequest()) }, wantSensor()},
-		{"sbsd", akamai.ModeSBSD, sbsdGolden, sbsdResponseGolden,
+		{"sbsd", akamai.ModeSBSD, http.StatusOK, sbsdGolden, sbsdResponseGolden,
 			func(c *evade.Client) (any, error) { return akamai.SolveSBSD(ctx, c, sbsdRequest()) }, wantSBSD()},
-		{"sbsd_telemetry", akamai.ModeSBSD, telemetryGolden, telemetryResponseGolden,
+		{"sbsd_telemetry", akamai.ModeSBSD, http.StatusOK, telemetryGolden, telemetryResponseGolden,
 			func(c *evade.Client) (any, error) { return akamai.SolveSBSD(ctx, c, telemetryRequest()) }, wantTelemetry()},
+		{"open", akamai.ModeOpen, http.StatusCreated, openGolden, openResponseGolden,
+			func(c *evade.Client) (any, error) { return akamai.Open(ctx, c, openRequest()) }, wantOpen()},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			client, sent, line := solveServer(t, http.StatusOK, withUnknownKey(test.response))
+			client, sent, line := solveServer(t, test.status, withUnknownKey(test.response))
 			got, err := test.solve(client)
 			if err != nil {
 				t.Fatalf("solve: %v", err)

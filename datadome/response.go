@@ -1,12 +1,18 @@
 package datadome
 
-type TagsResponse struct {
-	Payload   string `json:"payload"` // form body for DataDome's /js/ endpoint
-	SessionID string `json:"session_id"`
-	// ExpiresInSeconds, ClientHints and DeviceMemory are sent only by the session-opening solve.
+// SessionResponse is the session every solve answers: SessionID always,
+// ExpiresInSeconds, ClientHints and DeviceMemory only when the solve
+// opened the session.
+type SessionResponse struct {
+	SessionID        string       `json:"session_id"`
 	ExpiresInSeconds int64        `json:"expires_in_seconds,omitempty"`
 	ClientHints      *ClientHints `json:"client_hints,omitempty"`
 	DeviceMemory     int          `json:"device_memory,omitempty"` // -1 when the browser does not expose it
+}
+
+type TagsResponse struct {
+	Payload string `json:"payload"` // form body for DataDome's /js/ endpoint
+	SessionResponse
 }
 
 // ClientHints are the pinned fingerprint's UA client hints; the caller's requests must match them.
@@ -25,9 +31,15 @@ type InterstitialResponse struct {
 	Payload string `json:"payload"` // form body for the device-check endpoint
 	// Headers are the sec-ch-* headers the submission must carry; empty for Safari and Firefox.
 	Headers map[string]string `json:"headers"`
+	SessionResponse
+	// SolveWarnings are the payload's stated hypotheses, for grading
+	// against the target's verdict; absent when there are none.
+	SolveWarnings []string `json:"solve_warnings,omitempty"`
 }
 
 type CaptchaResponse struct {
 	Payload string            `json:"payload"` // captcha check URL to request
 	Headers map[string]string `json:"headers"` // as InterstitialResponse.Headers
+	SessionResponse
+	SolveWarnings []string `json:"solve_warnings,omitempty"` // as InterstitialResponse.SolveWarnings
 }

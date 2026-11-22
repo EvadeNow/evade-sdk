@@ -126,16 +126,20 @@ res, err := cloudflare.Solve(ctx, client, cloudflare.Request{
 ## Akamai
 
 `ua` must be the User-Agent `client.UserAgents(ctx, akamai.Task)` lists. The
-first sensor call opens a session:
+first sensor call opens a session; opening needs the proxy exit's country and
+IANA zone (`geo.Reader.Locate` through the proxy gives both), or it is refused
+`exit_region_missing`:
 
 ```go
 req := akamai.SensorRequest{
-	URL:       pageURL,
-	UA:        ua,
-	Abck:      abck,     // _abck cookie
-	BmSz:      bmSz,     // bm_sz cookie
-	ScriptID:  scriptID, // hex SHA-256 of sensorJS
-	ScriptURL: sensorURL,
+	URL:         pageURL,
+	UA:          ua,
+	Abck:        abck,     // _abck cookie
+	BmSz:        bmSz,     // bm_sz cookie
+	ScriptID:    scriptID, // hex SHA-256 of sensorJS
+	ScriptURL:   sensorURL,
+	ExitCountry: exit.CountryCode,
+	Timezone:    exit.TimeZone,
 }
 sensor, err := akamai.SolveSensor(ctx, client, req)
 var apiErr *evade.APIError
@@ -163,6 +167,10 @@ sbsd, err := akamai.SolveSBSD(ctx, client, akamai.SBSDRequest{
 // POST {"body": sbsd.Body} to sbsdURL without its query.
 ```
 
+`akamai.Open` opens a session without a post (URL, UA and the exit region),
+or, with `Session`, stages a sensor script or `SBSDSource` on it; it answers
+201 and is not billed.
+
 `/solve`'s own failures are not the shared error envelope: they return
 `*evade.APIError` with an empty `Code` and the `akamai.ErrorResponse` JSON in
 `Message`. Auth and quota refusals carry `Code` as for every solver.
@@ -170,10 +178,13 @@ sbsd, err := akamai.SolveSBSD(ctx, client, akamai.SBSDRequest{
 ## reCAPTCHA (task `recaptcha`)
 
 Synchronous: the server runs the whole reCAPTCHA flow (loader, release,
-anchor, reload, clr, bcn; for v2 invisible the bframe and userverify) over
-your proxy as `UserAgent` and answers the token; it never fetches your page —
-the token binds to `URL`'s origin and `Action`. `ua` must be a User-Agent
-`client.UserAgents(ctx, recaptcha.Task)` lists.
+anchor, reload, clr, bcn; for v2 invisible the bframe and userverify, an
+image challenge solved server-side) over your proxy as `UserAgent` and
+answers the token; it never fetches your page — the token binds to `URL`'s
+origin and `Action`. `ua` must be a User-Agent
+`client.UserAgents(ctx, recaptcha.Task)` lists. `Proxy` is
+`scheme://user:pass@host:port` (http, https, socks4, socks4a, socks5,
+socks5h) or `host:port:user:pass`.
 
 ```go
 res, err := recaptcha.Solve(ctx, client, recaptcha.Request{
@@ -185,26 +196,30 @@ res, err := recaptcha.Solve(ctx, client, recaptcha.Request{
 	Version:    recaptcha.VersionV3, // or recaptcha.VersionV2Invisible; empty is v3
 	Enterprise: new(true),           // the page loads enterprise.js (false: api.js)
 })
-// res.Token is the rresp token; res.Score and res.Verification are nil.
+// res.Token is the token; res.Score is nil; res.Verification is nil unless
+// an image challenge was solved (res.Verification.Challenge says how).
 ```
 
 There is one task name, `recaptcha`; the widget is `Version` (`v3` default,
-`v2-invisible`) and the surface — enterprise (loader `enterprise.js`) or api2
+`v2-invisible`, `v2-checkbox`; the checkbox is witnessed only on the
+www.google.com/sorry first-party page, which `Solve` does not run, so it fails
+`solve_failed`) and the surface — enterprise (loader `enterprise.js`) or api2
 (loader `api.js`) — is resolved by the server: the loader the page states
-when the page reaches the solver (the SDK request carries no page, so this
-rule applies to in-house callers only), else `Enterprise`, else a hypothesis:
-an `Action` means enterprise. api2 sites with an action exist, so set
-`Enterprise` whenever you know the page's loader. `v2-invisible` on api2 is
-refused `no_witness` (no capture of that pair yet). The loader is fetched from
-www.google.com; `Host: "recaptcha.net"` selects the other API host (the site
-never observes which host served its widget; both issue the same token).
-`score` is never answered: it is not observable client-side (only the site's
-own siteverify call sees it). Refusals are `*evade.APIError` with
-`invalid_request` (a malformed field, an unknown task, version or host, a
-non-boolean `enterprise`), `device_unsupported`, `site_unsupported`,
-`no_witness`, `generation_failed` (decoder refusal or a SHORT token),
-`proxy_failed`, `proxy_timeout`, `target_error`, `solve_canceled` or
-`solve_failed`.
+when `PageHTML` or `PageScripts` carry it, else `Enterprise`, else a
+hypothesis: an `Action` means enterprise. api2 sites with an action exist, so
+set `Enterprise` whenever you know the page's loader. The optional page facts
+(`PageHTML`, `PageScripts`, `Referrer`, `Popup`, `PageNavigationMS`) describe
+the page the token is minted for. The loader is fetched from www.google.com;
+`Host: "recaptcha.net"` selects the other API host (the site never observes
+which host served its widget; both issue the same token). `score` is never
+answered: it is not observable client-side (only the site's own siteverify
+call sees it). `ProfileID` names the stored device profile the solve ran as.
+Refusals are `*evade.APIError` with `invalid_request` (a malformed field, an
+unknown task, version or host, a non-boolean `enterprise`),
+`device_unsupported`, `site_unsupported`, `generation_failed` (decoder
+refusal or a SHORT token), `challenged`, `challenge_unsolved`,
+`storage_unavailable`, `proxy_failed`, `proxy_timeout`, `target_error`,
+`solve_canceled` or `solve_failed`.
 
 ## User-Agents
 

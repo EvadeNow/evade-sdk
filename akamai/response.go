@@ -48,6 +48,17 @@ type SBSDResponse struct {
 	Index    int64  `json:"ind,omitempty"`
 	WaitMS   *int64 `json:"wait_ms,omitempty"`      // ms until the next telemetry post is due; 0 after the last
 	Trigger  string `json:"sbsd_trigger,omitempty"` // "click" or "timer"
+	// FingerprintMS is sent only by fingerprint posts: the browser's SBSD
+	// fingerprint stage in ms; send the post no earlier than this after the
+	// SBSD script loaded.
+	FingerprintMS *int64 `json:"fingerprint_ms,omitempty"`
+}
+
+// OpenResponse answers Open (201): the opened session, or the one a
+// staging Open named.
+type OpenResponse struct {
+	Success bool   `json:"success"`
+	Session string `json:"session"`
 }
 
 // ErrorResponse is the body of /solve's own failures. It is not the shared

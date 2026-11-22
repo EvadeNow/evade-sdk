@@ -25,7 +25,10 @@ type TagsRequest struct {
 	Referer  string `json:"referer"`
 	TagsType string `json:"tags_type"`
 	Script   string `json:"script"`
-	HSV      any    `json:"hsv"` // window._hsv (string or number); nil sends null
+	// ScriptURL is the tags.js URL the page loaded; on Safari iOS the
+	// startup stack is derived from it, else the stored one is sent as is.
+	ScriptURL string `json:"script_url,omitempty"`
+	HSV       any    `json:"hsv"` // window._hsv (string or number); nil sends null
 	// CorrelationID: nil if the page callback had not run, "" if it published null, else the cookie.
 	CorrelationID *string `json:"correlation_id,omitempty"`
 	// LocalStorageSession: localStorage holds the DataDome session item and sessionByHeader is off.

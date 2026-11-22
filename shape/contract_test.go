@@ -37,17 +37,12 @@ func fullRequest() shape.Request {
 		ShapeJSURL:               "https://www.example.com/assets/scripts/common.js",
 		TargetAPI:                "https://www.example.com/api/booking/v1/shopping",
 		TargetAPIMethod:          "POST",
-		TargetAPIContentType:     "application/json",
-		InteractionMode:          shape.InteractionModeActivation,
 		InteractionBody:          `{"origin":"AAA"}`,
-		AuxiliaryNetworkMode:     shape.AuxiliaryNetworkPending,
 		Referer:                  "https://www.example.com/",
-		ReferrerPolicy:           "strict-origin-when-cross-origin",
 		PageHTML:                 "<html><head><title>Fares & Deals</title></head></html>",
 		LoaderSource:             "exact session loader",
 		ChallengeReadyUnixMS:     1767225599500.5,
 		LoaderRequestStartUnixMS: 1767225599000.25,
-		ChallengeSource:          "exact interstitial challenge",
 		NavigationStartUnixMS:    1767225598000.25,
 		DocumentRequestUnixMS:    1767225599021.25,
 		UA:                       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151.0.0.0 Safari/537.36",
@@ -57,19 +52,16 @@ func fullRequest() shape.Request {
 		TimeZone:                 "America/New_York",
 		Cookies:                  shape.Cookies{{Name: "z_session", Value: "opaque-browser-cookie"}, {Name: "authenticated_session", Value: "first-party"}},
 		RequestTransport:         shape.HeaderTransportFetch,
-		FetchLoaderThroughProxy:  true,
 		RetainSession:            true,
 		SkipZeronaught:           &skip,
 		Debug:                    true,
-		IncludeInteractionTiming: true,
-		PageProfile:              "none",
 		TargetDeviceInfo:         true,
 	}
 }
 
 // fullRequestGolden is fullRequest's wire form: cookies keep the browser's
 // order, not encoding/json's sorted map order.
-const fullRequestGolden = `{"session_id":"0123456789abcdef0123456789abcdef","proxy":"http://username:password@127.0.0.1:8080","target_url":"https://www.example.com/booking/select.html","shape_js_url":"https://www.example.com/assets/scripts/common.js","target_api":"https://www.example.com/api/booking/v1/shopping","target_api_method":"POST","target_api_content_type":"application/json","interaction_mode":"activation","interaction_body":"{\"origin\":\"AAA\"}","auxiliary_network_mode":"pending","referer":"https://www.example.com/","referrer_policy":"strict-origin-when-cross-origin","page_html":"<html><head><title>Fares & Deals</title></head></html>","loader_source":"exact session loader","challenge_ready_unix_ms":1767225599500.5,"loader_request_start_unix_ms":1767225599000.25,"challenge_source":"exact interstitial challenge","navigation_start_unix_ms":1767225598000.25,"document_request_unix_ms":1767225599021.25,"ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151.0.0.0 Safari/537.36","fingerprint_record_id":"rec-0123","locale":"en-US","accept_language":"en-US,en;q=0.9","time_zone":"America/New_York","cookies":{"z_session":"opaque-browser-cookie","authenticated_session":"first-party"},"request_transport":"fetch","fetch_loader_through_proxy":true,"retain_session":true,"skip_zeronaught":false,"debug":true,"include_interaction_timing":true,"page_profile":"none","target_device_info":true}`
+const fullRequestGolden = `{"session_id":"0123456789abcdef0123456789abcdef","proxy":"http://username:password@127.0.0.1:8080","target_url":"https://www.example.com/booking/select.html","shape_js_url":"https://www.example.com/assets/scripts/common.js","target_api":"https://www.example.com/api/booking/v1/shopping","target_api_method":"POST","interaction_body":"{\"origin\":\"AAA\"}","referer":"https://www.example.com/","page_html":"<html><head><title>Fares & Deals</title></head></html>","loader_source":"exact session loader","challenge_ready_unix_ms":1767225599500.5,"loader_request_start_unix_ms":1767225599000.25,"navigation_start_unix_ms":1767225598000.25,"document_request_unix_ms":1767225599021.25,"ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151.0.0.0 Safari/537.36","fingerprint_record_id":"rec-0123","locale":"en-US","accept_language":"en-US,en;q=0.9","time_zone":"America/New_York","cookies":{"z_session":"opaque-browser-cookie","authenticated_session":"first-party"},"request_transport":"fetch","retain_session":true,"skip_zeronaught":false,"debug":true,"target_device_info":true}`
 
 func TestRequestMatchesGolden(t *testing.T) {
 	tests := []struct {
@@ -83,12 +75,11 @@ func TestRequestMatchesGolden(t *testing.T) {
 			TargetURL:       "https://www.example.com/booking/select.html",
 			ShapeJSURL:      "https://www.example.com/assets/scripts/common.js",
 			LoaderSource:    "exact session loader",
-			ChallengeSource: "exact interstitial challenge",
 			TargetAPI:       "https://www.example.com/api/booking/v1/shopping",
 			TargetAPIMethod: "POST",
 			Referer:         "https://www.example.com/",
 			UA:              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151.0.0.0 Safari/537.36",
-		}, `{"proxy":"http://username:password@127.0.0.1:8080","target_url":"https://www.example.com/booking/select.html","shape_js_url":"https://www.example.com/assets/scripts/common.js","target_api":"https://www.example.com/api/booking/v1/shopping","target_api_method":"POST","referer":"https://www.example.com/","loader_source":"exact session loader","challenge_source":"exact interstitial challenge","ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151.0.0.0 Safari/537.36"}`},
+		}, `{"proxy":"http://username:password@127.0.0.1:8080","target_url":"https://www.example.com/booking/select.html","shape_js_url":"https://www.example.com/assets/scripts/common.js","target_api":"https://www.example.com/api/booking/v1/shopping","target_api_method":"POST","referer":"https://www.example.com/","loader_source":"exact session loader","ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151.0.0.0 Safari/537.36"}`},
 		{"empty", shape.Request{}, `{"proxy":"","target_url":"","shape_js_url":"","target_api":"","target_api_method":""}`},
 	}
 	for _, test := range tests {
@@ -291,7 +282,6 @@ func TestSolveRefusesSourcesJSONCannotCarry(t *testing.T) {
 	}{
 		{"page_html", shape.Request{PageHTML: shiftJIS}},
 		{"loader_source", shape.Request{LoaderSource: shiftJIS}},
-		{"challenge_source", shape.Request{ChallengeSource: shiftJIS}},
 	} {
 		got, err := shape.Solve(context.Background(), client, test.request)
 		var refused *shape.NotUTF8Error
@@ -307,7 +297,7 @@ func TestSolveRefusesSourcesJSONCannotCarry(t *testing.T) {
 func TestSolveFailureReturnsZeroAndAPIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = io.WriteString(w, `{"success":false,"error":{"code":"solve_failed","message":"failed","challenge_variant_id":"v1"}}`)
+		_, _ = io.WriteString(w, `{"success":false,"error":{"code":"internal_error","message":"failed","challenge_variant_id":"v1"}}`)
 	}))
 	defer server.Close()
 	client, err := evade.NewClient(evade.Config{BaseURL: server.URL})
@@ -316,7 +306,7 @@ func TestSolveFailureReturnsZeroAndAPIError(t *testing.T) {
 	}
 	got, err := shape.Solve(context.Background(), client, shape.Request{})
 	var apiErr *evade.APIError
-	if !errors.As(err, &apiErr) || apiErr.Code != evade.CodeSolveFailed || apiErr.ChallengeVariantID != "v1" {
+	if !errors.As(err, &apiErr) || apiErr.Code != evade.CodeInternalError || apiErr.ChallengeVariantID != "v1" {
 		t.Fatalf("error = %v", err)
 	}
 	if !reflect.DeepEqual(got, shape.Response{}) {
@@ -330,7 +320,7 @@ func TestSolveFailureReturnsZeroAndAPIError(t *testing.T) {
 func TestSolveFailureIsThePublicError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		_, _ = io.WriteString(w, `{"success":false,"solve_id":"0199e2a4-5b1c-7d3e-8f40-1a2b3c4d5e6f","error":{"code":"solve_failed","message":"generate: law_unresolved","challenge_variant_id":"challenge-7f3a"},`+
+		_, _ = io.WriteString(w, `{"success":false,"solve_id":"0199e2a4-5b1c-7d3e-8f40-1a2b3c4d5e6f","error":{"code":"generation_failed","message":"generate: law_unresolved","challenge_variant_id":"challenge-7f3a"},`+
 			`"debug":{"stage":"generate","reason":"law_unresolved","detail":"no law for the slot"}}`)
 	}))
 	defer server.Close()
@@ -340,56 +330,12 @@ func TestSolveFailureIsThePublicError(t *testing.T) {
 	}
 	_, err = shape.Solve(context.Background(), client, shape.Request{Debug: true})
 	var apiErr *evade.APIError
-	if !errors.As(err, &apiErr) || apiErr.Code != evade.CodeSolveFailed || apiErr.Message != "generate: law_unresolved" ||
+	if !errors.As(err, &apiErr) || apiErr.Code != evade.CodeGenerationFailed || apiErr.Message != "generate: law_unresolved" ||
 		apiErr.ChallengeVariantID != "challenge-7f3a" {
-		t.Fatalf("error = %#v, want the public solve_failed error", err)
+		t.Fatalf("error = %#v, want the public generation_failed error", err)
 	}
-	if text := err.Error(); text != "evade: 422 solve_failed: generate: law_unresolved" {
+	if text := err.Error(); text != "evade: 422 generation_failed: generate: law_unresolved" {
 		t.Fatalf("Error() = %q", text)
-	}
-}
-
-func TestCloseSession(t *testing.T) {
-	tests := []struct {
-		name   string
-		status int
-		body   string
-		code   evade.Code
-	}{
-		{"closed", http.StatusNoContent, "", ""},
-		{"lifecycle unavailable", http.StatusServiceUnavailable,
-			`{"success":false,"error":{"code":"session_unavailable","message":"solve session lifecycle is unavailable"}}`,
-			evade.CodeSessionUnavailable},
-		{"unexpected 200", http.StatusOK, `{}`, ""},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			var method, rawPath string
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				method, rawPath = r.Method, r.URL.EscapedPath()
-				w.WriteHeader(test.status)
-				_, _ = io.WriteString(w, test.body)
-			}))
-			defer server.Close()
-			client, err := evade.NewClient(evade.Config{BaseURL: server.URL})
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = shape.CloseSession(context.Background(), client, "a/b c")
-			if method != http.MethodDelete || rawPath != "/solve/session/a%2Fb%20c" {
-				t.Fatalf("request line = %s %s", method, rawPath)
-			}
-			if test.status == http.StatusNoContent {
-				if err != nil {
-					t.Fatal(err)
-				}
-				return
-			}
-			var apiErr *evade.APIError
-			if !errors.As(err, &apiErr) || apiErr.Status != test.status || apiErr.Code != test.code {
-				t.Fatalf("error = %#v, want *APIError status %d code %q", err, test.status, test.code)
-			}
-		})
 	}
 }
 

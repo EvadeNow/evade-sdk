@@ -21,9 +21,14 @@ type (
 		Mode Mode   `json:"mode"`
 		SBSDRequest
 	}
+	openWire struct {
+		Task string `json:"task"`
+		Mode Mode   `json:"mode"`
+		OpenRequest
+	}
 )
 
-// SolveSensor and SolveSBSD fail with *evade.APIError: auth and quota
+// SolveSensor, SolveSBSD and Open fail with *evade.APIError: auth and quota
 // refusals carry its Code, /solve's own failures an ErrorResponse body in
 // Message.
 func SolveSensor(ctx context.Context, c *evade.Client, r SensorRequest) (SensorResponse, error) {
@@ -34,7 +39,13 @@ func SolveSBSD(ctx context.Context, c *evade.Client, r SBSDRequest) (SBSDRespons
 	return solve[SBSDResponse](ctx, c, sbsdWire{Task: Task, Mode: ModeSBSD, SBSDRequest: r})
 }
 
-func solve[T SensorResponse | SBSDResponse](ctx context.Context, c *evade.Client, wire any) (T, error) {
+// Open opens a session without a post, or stages a script on one; it is
+// not billed (its 201 is not a solve).
+func Open(ctx context.Context, c *evade.Client, r OpenRequest) (OpenResponse, error) {
+	return solve[OpenResponse](ctx, c, openWire{Task: Task, Mode: ModeOpen, OpenRequest: r})
+}
+
+func solve[T SensorResponse | SBSDResponse | OpenResponse](ctx context.Context, c *evade.Client, wire any) (T, error) {
 	var response T
 	if _, err := c.Call(ctx, http.MethodPost, "/solve", wire, &response); err != nil {
 		var zero T

@@ -17,13 +17,14 @@ type wireRequest struct {
 }
 
 // Solve runs the whole reCAPTCHA flow on the server (loader, release,
-// anchor, reload, clr, bcn; the v2 invisible bframe and userverify) over
-// r.Proxy as r.UserAgent and answers the token synchronously. A refusal
-// is an *evade.APIError with its catalog code: invalid_request,
-// device_unsupported, site_unsupported, no_witness, generation_failed,
-// proxy_failed, proxy_timeout, target_error, solve_canceled,
-// solve_failed, and the auth and quota codes (rate_limited carries
-// Retry-After).
+// anchor, reload, clr, bcn; the v2 invisible bframe and userverify, an
+// image challenge solved server-side) over r.Proxy as r.UserAgent and
+// answers the token synchronously. A refusal is an *evade.APIError with
+// its code: invalid_request, device_unsupported, site_unsupported,
+// generation_failed, challenged (the server demanded a challenge the flow
+// has no solver for), challenge_unsolved, storage_unavailable, proxy_failed,
+// proxy_timeout, target_error, solve_canceled, solve_failed, and the auth
+// and quota codes (rate_limited carries Retry-After).
 func Solve(ctx context.Context, c *evade.Client, r Request) (Response, error) {
 	var response Response
 	if _, err := c.Call(ctx, http.MethodPost, "/solve", wireRequest{Task: Task, Request: r}, &response); err != nil {

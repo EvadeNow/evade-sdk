@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"unicode/utf8"
 
 	evade "github.com/EvadeNow/evade-sdk"
@@ -17,12 +16,13 @@ type wireRequest struct {
 	Request
 }
 
-// Solve fails with *evade.APIError; a solve_failed may carry ChallengeVariantID.
+// Solve fails with *evade.APIError; a failure past request validation
+// carries ChallengeVariantID once the challenge was read.
 // A source body JSON cannot carry byte for byte fails with *NotUTF8Error
 // before any request.
 func Solve(ctx context.Context, c *evade.Client, r Request) (Response, error) {
 	for _, source := range [...]struct{ field, body string }{
-		{"page_html", r.PageHTML}, {"loader_source", r.LoaderSource}, {"challenge_source", r.ChallengeSource},
+		{"page_html", r.PageHTML}, {"loader_source", r.LoaderSource},
 	} {
 		if !utf8.ValidString(source.body) {
 			return Response{}, &NotUTF8Error{Field: source.field, Offset: invalidUTF8Offset(source.body)}
@@ -35,8 +35,8 @@ func Solve(ctx context.Context, c *evade.Client, r Request) (Response, error) {
 	return response, nil
 }
 
-// NotUTF8Error is a source body (page_html, loader_source,
-// challenge_source) holding a byte that is not UTF-8. JSON text is UTF-8,
+// NotUTF8Error is a source body (page_html, loader_source) holding a byte
+// that is not UTF-8. JSON text is UTF-8,
 // so the encoder would replace the byte and the solver would read another
 // body than the browser received; Solve refuses it instead. A page served
 // in another charset must be sent as the text the browser decoded, which
@@ -59,12 +59,6 @@ func invalidUTF8Offset(s string) int {
 		}
 	}
 	return len(s)
-}
-
-// CloseSession succeeds even if the session is already closed or unknown.
-func CloseSession(ctx context.Context, c *evade.Client, sessionID string) error {
-	_, err := c.Call(ctx, http.MethodDelete, "/solve/session/"+url.PathEscape(sessionID), nil, evade.NoContent{})
-	return err
 }
 
 // ReportOutcome records r on its solve; repeated reports replace earlier ones.

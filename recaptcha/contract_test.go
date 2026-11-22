@@ -44,14 +44,14 @@ func TestRequestMatchesGolden(t *testing.T) {
 	}
 }
 
-const goldenResponse = `{"success":true,"task":"recaptcha","token":"03AFcWeA-token","score":null,"verification":null,"genMs":12.5}`
+const goldenResponse = `{"success":true,"task":"recaptcha","token":"03AFcWeA-token","score":null,"verification":null,"genMs":12.5,"profileId":"profile-7"}`
 
 func wantResponse() recaptcha.Response {
-	return recaptcha.Response{Success: true, Task: recaptcha.Task, Token: "03AFcWeA-token", GenMS: 12.5}
+	return recaptcha.Response{Success: true, Task: recaptcha.Task, Token: "03AFcWeA-token", GenMS: 12.5, ProfileID: "profile-7"}
 }
 
-// score and verification are null on the wire and nil here: neither is
-// observable client-side.
+// score is null on the wire and nil here: it is not observable
+// client-side; verification is null when no image challenge was served.
 func TestResponseGoldenDecodesEveryField(t *testing.T) {
 	var got recaptcha.Response
 	if err := json.Unmarshal([]byte(goldenResponse), &got); err != nil {
@@ -65,6 +65,31 @@ func TestResponseGoldenDecodesEveryField(t *testing.T) {
 	}
 	if encoded := encode(t, got); string(encoded) != goldenResponse {
 		t.Fatalf("re-encoded response\n got %s\nwant %s", encoded, goldenResponse)
+	}
+}
+
+// The solved image challenge rides as verification.challenge in gman's
+// ChallengeSolve/ChallengeRound shape (gman/core/recaptcha/challenge.go).
+const goldenChallengeResponse = `{"success":true,"task":"recaptcha","token":"03AFcWeA-token","score":null,"verification":{"challenge":{"type":"dynamic","rounds":2,"tiles":[[1,4],[2]],"steps":[{"round":1,"class":"dynamic","tiles":[[1,4]],"replaceimage":2,"reserved_grid":false,"answer":"next:dynamic","ms":5400},{"round":2,"class":"dynamic","replaceimage":0,"reserved_grid":true,"answer":"solved","ms":3100}]}},"genMs":12.5,"profileId":"profile-7"}`
+
+func TestResponseDecodesChallengeVerification(t *testing.T) {
+	var got recaptcha.Response
+	if err := json.Unmarshal([]byte(goldenChallengeResponse), &got); err != nil {
+		t.Fatal(err)
+	}
+	want := wantResponse()
+	want.Verification = &recaptcha.Verification{Challenge: &recaptcha.Challenge{
+		Type: "dynamic", Rounds: 2, Tiles: [][]int{{1, 4}, {2}},
+		Steps: []recaptcha.Step{
+			{Round: 1, Class: "dynamic", Tiles: [][]int{{1, 4}}, ReplaceImage: 2, Answer: "next:dynamic", MS: 5400},
+			{Round: 2, Class: "dynamic", ReservedGrid: true, Answer: "solved", MS: 3100},
+		},
+	}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("response\n got %+v\nwant %+v", got, want)
+	}
+	if encoded := encode(t, got); string(encoded) != goldenChallengeResponse {
+		t.Fatalf("re-encoded response\n got %s\nwant %s", encoded, goldenChallengeResponse)
 	}
 }
 
@@ -90,25 +115,30 @@ func server(t *testing.T, status int, header http.Header, body []byte) (*evade.C
 	return client, &line, &sent
 }
 
-// The one task name rides first on the wire, the widget and surface as
-// fields after proxy (absent when unset); unknown response keys are
-// tolerated.
+// The one task name rides first on the wire, the widget, surface and page
+// fields after proxy in gman's FlowInput order (absent when unset);
+// unknown response keys are tolerated.
 func TestSolveSendsTaskAndToleratesUnknownResponseKeys(t *testing.T) {
 	const proxyEnd = `"proxy":"http://user:pass@host:port"`
 	for _, test := range []struct {
-		name       string
-		version    string
-		enterprise *bool
-		fields     string
+		name   string
+		set    func(*recaptcha.Request)
+		fields string
 	}{
-		{"v3 surface unstated", "", nil, ""},
-		{"v3 api2", recaptcha.VersionV3, new(false), `,"version":"v3","enterprise":false`},
-		{"v2-invisible enterprise", recaptcha.VersionV2Invisible, new(true), `,"version":"v2-invisible","enterprise":true`},
+		{"v3 surface unstated", func(*recaptcha.Request) {}, ""},
+		{"v3 api2", func(r *recaptcha.Request) { r.Version, r.Enterprise = recaptcha.VersionV3, new(false) }, `,"version":"v3","enterprise":false`},
+		{"v2-invisible enterprise", func(r *recaptcha.Request) { r.Version, r.Enterprise = recaptcha.VersionV2Invisible, new(true) }, `,"version":"v2-invisible","enterprise":true`},
+		{"v2-checkbox", func(r *recaptcha.Request) { r.Version = recaptcha.VersionV2Checkbox }, `,"version":"v2-checkbox"`},
+		{"page facts", func(r *recaptcha.Request) {
+			r.PageScripts = []recaptcha.PageScript{{Name: "inline#1", Body: []byte("var a=1;")}}
+			r.Popup = &recaptcha.PopupWindow{Width: 500, Height: 600}
+			r.PageHTML, r.Referrer, r.PageNavigationMS = "<html></html>", "https://www.example.com/cart", 1500
+		}, `,"pageScripts":[{"name":"inline#1","body":"dmFyIGE9MTs="}],"popup":{"width":500,"height":600},"pageHTML":"<html></html>","referrer":"https://www.example.com/cart","pageNavigationMs":1500`},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			client, line, sent := server(t, http.StatusOK, nil, []byte(`{"stages":[{"name":"reload","status":200}],"success":true,"task":"recaptcha","token":"03AFcWeA-token","score":null,"verification":null,"genMs":12.5}`))
+			client, line, sent := server(t, http.StatusOK, nil, []byte(`{"stages":[{"name":"reload","status":200}],"success":true,"task":"recaptcha","token":"03AFcWeA-token","score":null,"verification":null,"genMs":12.5,"profileId":"profile-7"}`))
 			request := checkoutRequest()
-			request.Version, request.Enterprise = test.version, test.enterprise
+			test.set(&request)
 			got, err := recaptcha.Solve(context.Background(), client, request)
 			if err != nil {
 				t.Fatalf("Solve: %v", err)
