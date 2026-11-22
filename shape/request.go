@@ -10,11 +10,6 @@ type Request struct {
 	ShapeJSURL      string `json:"shape_js_url"`
 	TargetAPI       string `json:"target_api"`
 	TargetAPIMethod string `json:"target_api_method"` // GET, POST or PUT
-	// InteractionBody is the protected request's exact body. The solver
-	// types each field the page's statement types in the shape of its value
-	// (never keeping the value). It is required for Target credential
-	// validation and any other solve following fresh user input.
-	InteractionBody string `json:"interaction_body,omitempty"`
 	Referer         string `json:"referer,omitempty"`
 	// PageHTML is the exact body the caller's browser received for TargetURL
 	// when that navigation was answered with a Shape interstitial (an inline

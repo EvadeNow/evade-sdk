@@ -37,7 +37,6 @@ func fullRequest() shape.Request {
 		ShapeJSURL:               "https://www.example.com/assets/scripts/common.js",
 		TargetAPI:                "https://www.example.com/api/booking/v1/shopping",
 		TargetAPIMethod:          "POST",
-		InteractionBody:          `{"origin":"AAA"}`,
 		Referer:                  "https://www.example.com/",
 		PageHTML:                 "<html><head><title>Fares & Deals</title></head></html>",
 		LoaderSource:             "exact session loader",
@@ -61,7 +60,7 @@ func fullRequest() shape.Request {
 
 // fullRequestGolden is fullRequest's wire form: cookies keep the browser's
 // order, not encoding/json's sorted map order.
-const fullRequestGolden = `{"session_id":"0123456789abcdef0123456789abcdef","proxy":"http://username:password@127.0.0.1:8080","target_url":"https://www.example.com/booking/select.html","shape_js_url":"https://www.example.com/assets/scripts/common.js","target_api":"https://www.example.com/api/booking/v1/shopping","target_api_method":"POST","interaction_body":"{\"origin\":\"AAA\"}","referer":"https://www.example.com/","page_html":"<html><head><title>Fares & Deals</title></head></html>","loader_source":"exact session loader","challenge_ready_unix_ms":1767225599500.5,"loader_request_start_unix_ms":1767225599000.25,"navigation_start_unix_ms":1767225598000.25,"document_request_unix_ms":1767225599021.25,"ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151.0.0.0 Safari/537.36","fingerprint_record_id":"rec-0123","locale":"en-US","accept_language":"en-US,en;q=0.9","time_zone":"America/New_York","cookies":{"z_session":"opaque-browser-cookie","authenticated_session":"first-party"},"request_transport":"fetch","retain_session":true,"skip_zeronaught":false,"debug":true,"target_device_info":true}`
+const fullRequestGolden = `{"session_id":"0123456789abcdef0123456789abcdef","proxy":"http://username:password@127.0.0.1:8080","target_url":"https://www.example.com/booking/select.html","shape_js_url":"https://www.example.com/assets/scripts/common.js","target_api":"https://www.example.com/api/booking/v1/shopping","target_api_method":"POST","referer":"https://www.example.com/","page_html":"<html><head><title>Fares & Deals</title></head></html>","loader_source":"exact session loader","challenge_ready_unix_ms":1767225599500.5,"loader_request_start_unix_ms":1767225599000.25,"navigation_start_unix_ms":1767225598000.25,"document_request_unix_ms":1767225599021.25,"ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151.0.0.0 Safari/537.36","fingerprint_record_id":"rec-0123","locale":"en-US","accept_language":"en-US,en;q=0.9","time_zone":"America/New_York","cookies":{"z_session":"opaque-browser-cookie","authenticated_session":"first-party"},"request_transport":"fetch","retain_session":true,"skip_zeronaught":false,"debug":true,"target_device_info":true}`
 
 func TestRequestMatchesGolden(t *testing.T) {
 	tests := []struct {
