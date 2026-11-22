@@ -1,0 +1,2 @@
+# Captures and fixtures are compared byte for byte; never convert their line endings on checkout.
+* -text

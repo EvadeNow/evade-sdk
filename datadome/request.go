@@ -33,6 +33,16 @@ type TagsRequest struct {
 	CorrelationID *string `json:"correlation_id,omitempty"`
 	// LocalStorageSession: localStorage holds the DataDome session item and sessionByHeader is off.
 	LocalStorageSession bool `json:"local_storage_session"`
+	// DataDomeCookieCount is how many datadome cookies the browser holds for
+	// the page (the beacon's nddc); nil means 1, or 0 when CID is ".keep".
+	DataDomeCookieCount *int `json:"datadome_cookie_count,omitempty"`
+	// NavigationTiming is the page's nt_* navigation-timing members as the
+	// collector reads them; nil draws them from the device, and a TagsType
+	// "le" call reuses its page's first ones.
+	NavigationTiming map[string]any `json:"navigation_timing,omitempty"`
+	// BeaconPayloadCount is an "le" beacon's bpc, the page collector's
+	// payload count so far; nil means 2.
+	BeaconPayloadCount *int `json:"beacon_payload_count,omitempty"`
 }
 
 type InterstitialRequest struct {

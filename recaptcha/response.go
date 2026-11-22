@@ -8,6 +8,8 @@ type Response struct {
 	// the site's own server-side siteverify call sees it.
 	Score *float64 `json:"score"`
 	// Verification is nil unless the solve answered an image challenge.
+	// It is informational (which challenge, how many rounds): Token is
+	// already the answered challenge's token, and nothing else is sent.
 	Verification *Verification `json:"verification"`
 	GenMS        float64       `json:"genMs"`     // the reload mint, generator entry to serialized bytes; network excluded
 	ProfileID    string        `json:"profileId"` // the stored device profile the solve ran as

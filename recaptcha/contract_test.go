@@ -134,6 +134,12 @@ func TestSolveSendsTaskAndToleratesUnknownResponseKeys(t *testing.T) {
 			r.Popup = &recaptcha.PopupWindow{Width: 500, Height: 600}
 			r.PageHTML, r.Referrer, r.PageNavigationMS = "<html></html>", "https://www.example.com/cart", 1500
 		}, `,"pageScripts":[{"name":"inline#1","body":"dmFyIGE9MTs="}],"popup":{"width":500,"height":600},"pageHTML":"<html></html>","referrer":"https://www.example.com/cart","pageNavigationMs":1500`},
+		{"every field", func(r *recaptcha.Request) {
+			r.Version, r.Enterprise, r.Host = recaptcha.VersionV3, new(true), "recaptcha.net"
+			r.PageScripts = []recaptcha.PageScript{{Name: "https://www.example.com/app.js", Body: []byte("x()")}}
+			r.Popup = &recaptcha.PopupWindow{Width: 500, Height: 600}
+			r.PageHTML, r.Referrer, r.PageNavigationMS = "<p>&</p>", "https://www.example.com/", 900
+		}, `,"version":"v3","enterprise":true,"host":"recaptcha.net","pageScripts":[{"name":"https://www.example.com/app.js","body":"eCgp"}],"popup":{"width":500,"height":600},"pageHTML":"<p>&</p>","referrer":"https://www.example.com/","pageNavigationMs":900`},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			client, line, sent := server(t, http.StatusOK, nil, []byte(`{"stages":[{"name":"reload","status":200}],"success":true,"task":"recaptcha","token":"03AFcWeA-token","score":null,"verification":null,"genMs":12.5,"profileId":"profile-7"}`))
@@ -157,38 +163,135 @@ func TestSolveSendsTaskAndToleratesUnknownResponseKeys(t *testing.T) {
 	}
 }
 
-// Every refusal is the shared envelope with its catalog code; a rate
-// limit carries Retry-After.
-func TestSolveFailuresReturnZeroAndAPIError(t *testing.T) {
+// Every refusal is the shared envelope with its catalog code, surfaced as
+// *recaptcha.Error unwrapping to the *evade.APIError; a rate limit carries
+// Retry-After.
+func TestSolveFailuresReturnZeroAndTypedError(t *testing.T) {
 	tests := []struct {
-		name   string
-		status int
-		header http.Header
-		body   string
-		code   evade.Code
-		retry  time.Duration
+		name      string
+		status    int
+		header    http.Header
+		body      string
+		code      evade.Code
+		retryable bool
+		retry     time.Duration
 	}{
-		{"device", http.StatusUnprocessableEntity, nil, `{"success":false,"error":{"code":"device_unsupported","message":"no admitted Record for \"Mozilla/5.0 …\" on the running collector bundle"}}`, evade.CodeDeviceUnsupported, 0},
-		{"page", http.StatusBadRequest, nil, `{"success":false,"error":{"code":"invalid_request","message":"page https://www.example.com has no enterprise v3 loader"}}`, evade.CodeInvalidRequest, 0},
-		{"site", http.StatusUnprocessableEntity, nil, `{"success":false,"error":{"code":"site_unsupported","message":"v3: no J page laws for https://www.example.com"}}`, evade.CodeSiteUnsupported, 0},
-		{"short", http.StatusUnprocessableEntity, nil, `{"success":false,"error":{"code":"generation_failed","message":"reload token is SHORT (2001 bytes, NORMAL is at least 2100)"}}`, evade.CodeGenerationFailed, 0},
-		{"proxy", http.StatusServiceUnavailable, nil, `{"success":false,"error":{"code":"proxy_failed","message":"recaptcha exit: dial tcp: connection refused"}}`, evade.CodeProxyFailed, 0},
-		{"rate", http.StatusTooManyRequests, http.Header{"Retry-After": {"7"}}, `{"success":false,"error":{"code":"rate_limited","message":"too many requests for this account"}}`, evade.CodeRateLimited, 7 * time.Second},
+		{"device", http.StatusUnprocessableEntity, nil, `{"success":false,"error":{"code":"device_unsupported","message":"no admitted Record for \"Mozilla/5.0 …\" on the running collector bundle"}}`, evade.CodeDeviceUnsupported, false, 0},
+		{"page", http.StatusBadRequest, nil, `{"success":false,"error":{"code":"invalid_request","message":"page https://www.example.com has no enterprise v3 loader"}}`, evade.CodeInvalidRequest, false, 0},
+		{"site", http.StatusUnprocessableEntity, nil, `{"success":false,"error":{"code":"site_unsupported","message":"v3: no J page laws for https://www.example.com"}}`, evade.CodeSiteUnsupported, false, 0},
+		{"short", http.StatusUnprocessableEntity, nil, `{"success":false,"error":{"code":"generation_failed","message":"reload token is SHORT (2001 bytes, NORMAL is at least 2100)"}}`, evade.CodeGenerationFailed, false, 0},
+		{"challenged", http.StatusUnprocessableEntity, nil, `{"success":false,"error":{"code":"challenged","message":"userverify demanded an audio challenge"}}`, evade.CodeChallenged, false, 0},
+		{"unsolved", http.StatusUnprocessableEntity, nil, `{"success":false,"error":{"code":"challenge_unsolved","message":"dynamic challenge rejected after 3 rounds"}}`, evade.CodeChallengeUnsolved, false, 0},
+		{"target", http.StatusServiceUnavailable, nil, `{"success":false,"error":{"code":"target_error","message":"reload answered 403"}}`, evade.CodeTargetError, false, 0},
+		{"failed", http.StatusBadGateway, nil, `{"success":false,"error":{"code":"solve_failed","message":"checkbox flow is not run"}}`, evade.CodeSolveFailed, false, 0},
+		{"proxy", http.StatusServiceUnavailable, nil, `{"success":false,"error":{"code":"proxy_failed","message":"recaptcha exit: dial tcp: connection refused"}}`, evade.CodeProxyFailed, true, 0},
+		{"proxy_timeout", http.StatusGatewayTimeout, nil, `{"success":false,"error":{"code":"proxy_timeout","message":"anchor: context deadline exceeded"}}`, evade.CodeProxyTimeout, true, 0},
+		{"rate", http.StatusTooManyRequests, http.Header{"Retry-After": {"7"}}, `{"success":false,"error":{"code":"rate_limited","message":"too many requests for this account"}}`, evade.CodeRateLimited, true, 7 * time.Second},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			client, _, _ := server(t, test.status, test.header, []byte(test.body+"\n"))
 			got, err := recaptcha.Solve(context.Background(), client, checkoutRequest())
-			var apiErr *evade.APIError
-			if !errors.As(err, &apiErr) || apiErr.Status != test.status || apiErr.Code != test.code || apiErr.Message == "" {
-				t.Fatalf("error = %v", err)
+			var failure *recaptcha.Error
+			if !errors.As(err, &failure) || failure.Status != test.status || failure.Code != test.code || failure.Message == "" ||
+				failure.Retryable != test.retryable {
+				t.Fatalf("error = %#v", err)
 			}
-			if apiErr.RateLimit.RetryAfter != test.retry {
-				t.Fatalf("Retry-After = %s, want %s", apiErr.RateLimit.RetryAfter, test.retry)
+			var apiErr *evade.APIError
+			if !errors.As(err, &apiErr) || apiErr.RateLimit.RetryAfter != test.retry {
+				t.Fatalf("unwrapped *evade.APIError = %#v, want Retry-After %s", apiErr, test.retry)
 			}
 			if !reflect.DeepEqual(got, recaptcha.Response{}) {
 				t.Fatalf("failed Solve returned %+v", got)
 			}
 		})
+	}
+}
+
+// TestValidateMirrorsServer: each refusal carries the message gman's
+// FlowInput.Validate (core/recaptcha/flow.go) answers, and Solve sends
+// nothing.
+func TestValidateMirrorsServer(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		set     func(*recaptcha.Request)
+		message string
+	}{
+		{"empty url", func(r *recaptcha.Request) { r.URL = "" }, "url is required"},
+		{"blank sitekey", func(r *recaptcha.Request) { r.SiteKey = " " }, "sitekey is required"},
+		{"empty userAgent", func(r *recaptcha.Request) { r.UserAgent = "" }, "userAgent is required"},
+		{"empty proxy", func(r *recaptcha.Request) { r.Proxy = "" }, "proxy is required"},
+		{"non-https url", func(r *recaptcha.Request) { r.URL = "http://www.example.com/login" }, `url "http://www.example.com/login" is not an https page URL`},
+		{"hostless url", func(r *recaptcha.Request) { r.URL = "https:///login" }, `url "https:///login" is not an https page URL`},
+		{"unknown version", func(r *recaptcha.Request) { r.Version = "v4" }, `version "v4" is not "v3", "v2-invisible" or "v2-checkbox"`},
+		{"version before fields", func(r *recaptcha.Request) { r.Version, r.URL = "enterprise", "" }, `version "enterprise" is not "v3", "v2-invisible" or "v2-checkbox"`},
+		{"unknown host", func(r *recaptcha.Request) { r.Host = "www.gstatic.com" }, `host "www.gstatic.com" is not www.google.com or recaptcha.net`},
+		{"unfetched script", func(r *recaptcha.Request) {
+			r.PageScripts = []recaptcha.PageScript{{Name: "https://www.example.com/app.js"}}
+		}, "pageScripts[0] https://www.example.com/app.js has no body: fetch it"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			client, line, _ := server(t, http.StatusOK, nil, []byte(goldenResponse))
+			request := checkoutRequest()
+			test.set(&request)
+			_, err := recaptcha.Solve(context.Background(), client, request)
+			var failure *recaptcha.Error
+			if !errors.As(err, &failure) || failure.Code != evade.CodeInvalidRequest || failure.Status != 0 || failure.Message != test.message {
+				t.Fatalf("error = %#v, want invalid_request %q", err, test.message)
+			}
+			if *line != "" {
+				t.Fatalf("an invalid request was sent: %s", *line)
+			}
+		})
+	}
+	for _, host := range []string{"", "www.google.com", "recaptcha.net", "www.recaptcha.net"} {
+		request := checkoutRequest()
+		request.Host = host
+		if err := request.Validate(); err != nil {
+			t.Fatalf("host %q: %v", host, err)
+		}
+	}
+}
+
+// A non-boolean enterprise is a JSON error on the server (FlowInput's
+// *bool) and on this type alike.
+func TestEnterpriseNonBoolIsJSONError(t *testing.T) {
+	var request recaptcha.Request
+	var typeErr *json.UnmarshalTypeError
+	if err := json.Unmarshal([]byte(`{"enterprise":"true"}`), &request); !errors.As(err, &typeErr) || typeErr.Field != "enterprise" {
+		t.Fatalf("decode = %v, want a JSON type error on enterprise", err)
+	}
+}
+
+// TestPageScripts mirrors g-live's sitePageScripts
+// (cmds/g-live/flow_recaptchademo.go): classic scripts in document order,
+// non-empty inline ones numbered, external ones by absolute URL to fetch,
+// module and data scripts and the sitekey's loader left out.
+func TestPageScripts(t *testing.T) {
+	const page = `<!doctype html><html><head>
+<script src="https://www.google.com/recaptcha/enterprise.js?render=6LcKey"></script>
+<script>var a = 1;</script>
+<script src="/static/app.js?v=3" defer></script>
+<script type="module" src="/static/mod.js"></script>
+<script type="application/ld+json">{"@type":"Organization"}</script>
+<script>   </script>
+</head><body>
+<script type="text/javascript">grecaptcha.enterprise.ready(go);</script>
+<script src="https://cdn.example.net/lib.js" async></script>
+<script src="https://www.google.com/recaptcha/api.js?render=6LcOther"></script>
+</body></html>`
+	got, err := recaptcha.PageScripts("https://www.example.com/login/", page, "6LcKey")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []recaptcha.PageScript{
+		{Name: "inline#1", Body: []byte("var a = 1;")},
+		{Name: "https://www.example.com/static/app.js?v=3"},
+		{Name: "inline#2", Body: []byte("grecaptcha.enterprise.ready(go);")},
+		{Name: "https://cdn.example.net/lib.js"},
+		{Name: "https://www.google.com/recaptcha/api.js?render=6LcOther"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("PageScripts\n got %q\nwant %q", got, want)
 	}
 }

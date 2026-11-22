@@ -95,6 +95,13 @@ func TestRequestsMatchGolden(t *testing.T) {
 		{"sbsd", sbsdRequest(), sbsdGolden},
 		{"sbsd_telemetry", telemetryRequest(), telemetryGolden},
 		{"open", openRequest(), openGolden},
+		{"open_record", akamai.OpenRequest{
+			URL: "https://www.example.com/booking", UA: ua, Timezone: "Australia/Sydney", ExitCountry: "AU", RecordID: "6745a1b2c3d4e5f601234567",
+		}, `{"url":"https://www.example.com/booking","ua":"` + ua + `","timezone":"Australia/Sydney","exit_country":"AU","record_id":"6745a1b2c3d4e5f601234567"}`},
+		{"open_stage", akamai.OpenRequest{
+			URL: "https://www.example.com/booking", UA: ua, Session: "c2Vzc2lvbi10b2tlbg",
+			SBSDSource: &akamai.SBSDSource{ScriptURL: "https://www.example.com/.well-known/sbsd/x1?v=2", Script: []byte("sbsd.init();")},
+		}, `{"url":"https://www.example.com/booking","ua":"` + ua + `","sbsd_source":{"script_url":"https://www.example.com/.well-known/sbsd/x1?v=2","script":"c2JzZC5pbml0KCk7"},"session":"c2Vzc2lvbi10b2tlbg"}`},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -168,7 +175,6 @@ func wantTelemetry() akamai.SBSDResponse {
 func TestResponseGoldensDecodeEveryField(t *testing.T) {
 	var sensor akamai.SensorResponse
 	var sbsd, telemetry akamai.SBSDResponse
-	var failure akamai.ErrorResponse
 	var open akamai.OpenResponse
 	tests := []struct {
 		name      string
@@ -179,10 +185,6 @@ func TestResponseGoldensDecodeEveryField(t *testing.T) {
 		{"sbsd", sbsdResponseGolden, &sbsd, wantSBSD()},
 		{"sbsd_telemetry", telemetryResponseGolden, &telemetry, wantTelemetry()},
 		{"open", openResponseGolden, &open, wantOpen()},
-		{"error", notDueGolden, &failure, akamai.ErrorResponse{
-			ErrorCode: "sbsd_telemetry_not_due", Message: "current-script telemetry input threshold is not met",
-			Stage: "telemetry", Reason: "second_post_input",
-		}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -210,7 +212,7 @@ func solveServer(t *testing.T, status int, body []byte) (*evade.Client, *[]byte,
 		_, _ = w.Write(body)
 	}))
 	t.Cleanup(server.Close)
-	client, err := evade.NewClient(evade.Config{BaseURL: server.URL, APIKey: "k"})
+	client, err := evade.NewClient(evade.Config{BaseURL: server.URL, APIKey: "k", MaxRetries: new(0)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -239,7 +241,7 @@ func TestSolveModesSendTaskAndModeAndDecode(t *testing.T) {
 		{"sbsd_telemetry", akamai.ModeSBSD, http.StatusOK, telemetryGolden, telemetryResponseGolden,
 			func(c *evade.Client) (any, error) { return akamai.SolveSBSD(ctx, c, telemetryRequest()) }, wantTelemetry()},
 		{"open", akamai.ModeOpen, http.StatusCreated, openGolden, openResponseGolden,
-			func(c *evade.Client) (any, error) { return akamai.Open(ctx, c, openRequest()) }, wantOpen()},
+			func(c *evade.Client) (any, error) { return akamai.SolveOpen(ctx, c, openRequest()) }, wantOpen()},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -262,35 +264,50 @@ func TestSolveModesSendTaskAndModeAndDecode(t *testing.T) {
 	}
 }
 
-// TestSolveFailureReturnsZeroAndAPIError: /solve's own failure body is not
-// the shared envelope, so Message carries it whole (an ErrorResponse); an
-// auth refusal is the envelope and carries Code.
-func TestSolveFailureReturnsZeroAndAPIError(t *testing.T) {
+// TestSolveFailureReturnsZeroAndTypedError: /solve's own body (error_code,
+// stage, reason) and the shared envelope of an auth refusal both arrive as
+// *akamai.Error, which unwraps to the *evade.APIError.
+func TestSolveFailureReturnsZeroAndTypedError(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name    string
-		status  int
-		body    string
-		solve   func(*evade.Client) (any, error)
-		zero    any
-		code    evade.Code
-		message string
+		name   string
+		status int
+		body   string
+		solve  func(*evade.Client) (any, error)
+		zero   any
+		want   akamai.Error
 	}{
-		{"solve", http.StatusConflict, notDueGolden,
+		{"telemetry", http.StatusConflict, notDueGolden,
 			func(c *evade.Client) (any, error) { return akamai.SolveSBSD(ctx, c, telemetryRequest()) },
-			akamai.SBSDResponse{}, "", notDueGolden},
+			akamai.SBSDResponse{}, akamai.Error{Status: http.StatusConflict, Code: akamai.CodeTelemetryNotDue,
+				Message: "current-script telemetry input threshold is not met", Stage: "telemetry", Reason: "second_post_input"}},
+		{"exit_region_missing", http.StatusBadRequest, `{"success":false,"error_code":"exit_region_missing","message":"the attempt's exit region: exit country is required","stage":"device"}`,
+			func(c *evade.Client) (any, error) { return akamai.SolveOpen(ctx, c, openRequest()) },
+			akamai.OpenResponse{}, akamai.Error{Status: http.StatusBadRequest, Code: akamai.CodeExitRegionMissing,
+				Message: "the attempt's exit region: exit country is required", Stage: "device"}},
+		{"device_unavailable", http.StatusServiceUnavailable, `{"success":false,"error_code":"device_unavailable","message":"no admitted Akamai Record is available","stage":"device"}`,
+			func(c *evade.Client) (any, error) { return akamai.SolveSensor(ctx, c, sensorRequest()) },
+			akamai.SensorResponse{}, akamai.Error{Status: http.StatusServiceUnavailable, Code: akamai.CodeDeviceUnavailable,
+				Message: "no admitted Akamai Record is available", Stage: "device", Retryable: true}},
 		{"auth", http.StatusForbidden, `{"success":false,"error":{"code":"insufficient_scope","message":"key lacks solver akamai"}}`,
 			func(c *evade.Client) (any, error) { return akamai.SolveSensor(ctx, c, sensorRequest()) },
-			akamai.SensorResponse{}, evade.CodeInsufficientScope, "key lacks solver akamai"},
+			akamai.SensorResponse{}, akamai.Error{Status: http.StatusForbidden, Code: evade.CodeInsufficientScope, Message: "key lacks solver akamai"}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			client, _, _ := solveServer(t, test.status, []byte(test.body+"\n"))
 			got, err := test.solve(client)
+			var failure *akamai.Error
+			if !errors.As(err, &failure) {
+				t.Fatalf("error = %#v, want *akamai.Error", err)
+			}
+			if failure.Status != test.want.Status || failure.Code != test.want.Code || failure.Message != test.want.Message ||
+				failure.Stage != test.want.Stage || failure.Reason != test.want.Reason || failure.Retryable != test.want.Retryable {
+				t.Fatalf("error = %+v\nwant %+v", *failure, test.want)
+			}
 			var apiErr *evade.APIError
-			if !errors.As(err, &apiErr) || apiErr.Status != test.status || apiErr.Code != test.code ||
-				apiErr.Message != test.message {
-				t.Fatalf("error = %#v", err)
+			if !errors.As(err, &apiErr) || apiErr.Status != test.status {
+				t.Fatalf("error does not unwrap to the *evade.APIError: %#v", err)
 			}
 			if !reflect.DeepEqual(got, test.zero) {
 				t.Fatalf("failed solve returned %+v", got)

@@ -1,5 +1,6 @@
 // Package akamai is the client for the Akamai Bot Manager solve API, whose
-// sensor and SBSD posts share one session on one device.
+// sensor and SBSD posts share one session on one device. Session drives a
+// page's posts in order; the Solve* calls are the raw requests under it.
 package akamai
 
 type Mode string
@@ -40,6 +41,10 @@ type SensorRequest struct {
 	// previous sensor post (SensorResponse.PacedMS); false never holds.
 	Pace      *bool `json:"pace,omitempty"`
 	Telemetry bool  `json:"telemetry,omitempty"` // asks for SensorResponse.Telemetry
+	// RecordID names the admitted device Record a fresh session runs as;
+	// empty is the newest admitted one, whose User-Agent GET /user-agents
+	// lists. UA must be the Record's.
+	RecordID string `json:"record_id,omitempty"`
 }
 
 // SBSDSource stages the page's SBSD script before the first sensor post.
@@ -49,10 +54,11 @@ type SBSDSource struct {
 }
 
 // OpenRequest without Session opens a session with no post: URL and UA are
-// required, the locale fields are as in SensorRequest (ExitCountry and
-// Timezone required), and no script rides it. With Session it stages a
-// script on that open session: Script (with its ScriptURL; ScriptID, when
-// set, must match it) or SBSDSource, at least one.
+// required, the locale fields and RecordID are as in SensorRequest
+// (ExitCountry and Timezone required), and no script rides it. With
+// Session it stages a script on that open session: Script (with its
+// ScriptURL; ScriptID, when set, must match it) or SBSDSource, at least
+// one.
 type OpenRequest struct {
 	URL            string      `json:"url"`
 	UA             string      `json:"ua"`
@@ -65,6 +71,7 @@ type OpenRequest struct {
 	Timezone       string      `json:"timezone,omitempty"`
 	ExitCountry    string      `json:"exit_country,omitempty"`
 	Session        string      `json:"session,omitempty"`
+	RecordID       string      `json:"record_id,omitempty"`
 }
 
 // SBSDRequest without Session opens a session, its locale fields as in
@@ -92,6 +99,7 @@ type SBSDRequest struct {
 	Pace *bool `json:"pace,omitempty"`
 	// PageResources is read by fingerprint posts only.
 	PageResources *PageResources `json:"page_resources,omitempty"`
+	RecordID      string         `json:"record_id,omitempty"` // as SensorRequest.RecordID
 }
 
 // PageResources: PageURL must equal SBSDRequest.URL and both lists be

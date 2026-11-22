@@ -26,8 +26,8 @@ type ErrorBody struct {
 // constant's comment names the targets whose /solve, /user-agents or
 // /solve/outcome answer it today. "every target" is recaptcha, shape,
 // datadome, akamai and cloudflare. Akamai's own /solve failures are not
-// this envelope (see akamai.ErrorResponse); only its auth, quota and
-// /user-agents refusals are.
+// this envelope (akamai.Error decodes them, its codes are akamai.Code*);
+// only its auth, quota and /user-agents refusals are.
 type Code string
 
 // Caller codes: the request, the key, the session, the proxy or the target

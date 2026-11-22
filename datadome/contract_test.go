@@ -62,6 +62,10 @@ func TestRequestsMatchGolden(t *testing.T) {
 		want    string
 	}{
 		{"tags", tagsRequest(), tagsGolden},
+		{"tags_page_counters", datadome.TagsRequest{
+			Session: datadome.Session{SessionID: "s"}, TagsType: "le",
+			DataDomeCookieCount: new(2), NavigationTiming: map[string]any{"nt_dns": 0.0, "nt_ttrd": nil}, BeaconPayloadCount: new(3),
+		}, `{"session_id":"s","cid":"","ddk":"","referer":"","tags_type":"le","script":"","hsv":null,"local_storage_session":false,"datadome_cookie_count":2,"navigation_timing":{"nt_dns":0,"nt_ttrd":null},"beacon_payload_count":3}`},
 		{"tags_continuation", datadome.TagsRequest{
 			Session: datadome.Session{SessionID: "s"}, TagsType: "ch",
 		}, `{"session_id":"s","cid":"","ddk":"","referer":"","tags_type":"ch","script":"","hsv":null,"local_storage_session":false}`},

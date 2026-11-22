@@ -97,6 +97,11 @@ captcha, err := datadome.SolveCaptcha(ctx, client, datadome.CaptchaRequest{
 // GET captcha.Payload with captcha.Headers added.
 ```
 
+A tags call may state the page's counters the server otherwise defaults:
+`DataDomeCookieCount` (datadome cookies the browser holds, `nddc`),
+`NavigationTiming` (the page's `nt_*` members; an `le` call reuses its page's
+first ones) and `BeaconPayloadCount` (an `le` beacon's `bpc`).
+
 ## Cloudflare
 
 Challenge page (`Just a moment...`):
@@ -125,80 +130,118 @@ res, err := cloudflare.Solve(ctx, client, cloudflare.Request{
 
 ## Akamai
 
-`ua` must be the User-Agent `client.UserAgents(ctx, akamai.Task)` lists. The
-first sensor call opens a session; opening needs the proxy exit's country and
-IANA zone (`geo.Reader.Locate` through the proxy gives both), or it is refused
-`exit_region_missing`:
+`akamai.Session` drives one page's posts in the order the page sends them and
+keeps what every call must repeat: the session token, the page URL and
+User-Agent, the staged scripts (resent when the server's cache lost them), and
+the device's header values. `ua` must be the User-Agent
+`client.UserAgents(ctx, akamai.Task)` lists. Opening needs the proxy exit's
+country and IANA zone (`geo.Reader.Locate` through the proxy gives both), or
+it is refused `exit_region_missing`. `cookie` below reads your client's jar.
 
 ```go
-req := akamai.SensorRequest{
-	URL:         pageURL,
-	UA:          ua,
-	Abck:        abck,     // _abck cookie
-	BmSz:        bmSz,     // bm_sz cookie
-	ScriptID:    scriptID, // hex SHA-256 of sensorJS
-	ScriptURL:   sensorURL,
-	ExitCountry: exit.CountryCode,
-	Timezone:    exit.TimeZone,
-}
-sensor, err := akamai.SolveSensor(ctx, client, req)
-var apiErr *evade.APIError
-var body akamai.ErrorResponse
-if errors.As(err, &apiErr) && json.Unmarshal([]byte(apiErr.Message), &body) == nil &&
-	body.ErrorCode == "script_cache_miss" {
-	req.Script = sensorJS // the server lacks the script: resend its source
-	sensor, err = akamai.SolveSensor(ctx, client, req)
-}
-// POST {"sensor_data": sensor.SensorData} to sensorURL with sensor.UA, sensor.Language,
-// sensor.AcceptEncoding and every non-empty sensor.ClientHints value added.
-```
-
-Later sensor and SBSD calls pass `Session: sensor.Session`:
-
-```go
-sbsd, err := akamai.SolveSBSD(ctx, client, akamai.SBSDRequest{
-	URL:       pageURL,
-	UA:        ua,
-	Script:    sbsdJS,
-	ScriptURL: sbsdURL,
-	SBSDo:     bmSo, // bm_so cookie
-	Session:   sensor.Session,
+s, err := akamai.Open(ctx, client, akamai.OpenRequest{
+	URL: pageURL, UA: ua, ExitCountry: exit.CountryCode, Timezone: exit.TimeZone,
 })
-// POST {"body": sbsd.Body} to sbsdURL without its query.
+err = s.UploadSensorScript(ctx, sensorURL, sensorJS) // as the page fetched it
+sensor, err := s.Sensor(ctx, cookie("_abck"), cookie("bm_sz"))
+post, err := s.SensorPost(sensor.SensorData) // send it
+
+err = s.UploadSBSDScript(ctx, sbsdURL, sbsdJS) // sbsdLoaded: when the page finished loading it
+fp, err := s.SBSDFingerprint(ctx, cookie("bm_so"))
+err = akamai.WaitForFingerprint(ctx, sbsdLoaded, fp)
+post, err = s.SBSDPost(fp.Body) // send it
+
+for {
+	more, err := s.NeedsSensor(cookie("_abck")) // the _abck post-count field, at most three posts
+	if err != nil || !more {
+		break
+	}
+	sensor, err = s.Sensor(ctx, cookie("_abck"), cookie("bm_sz"))
+	post, err = s.SensorPost(sensor.SensorData) // send it
+}
+for {
+	telemetry, err := s.SBSDTelemetry(ctx, cookie("bm_so"))
+	var done *akamai.Done
+	if errors.As(err, &done) { // 409 complete or not due: the page sends no more
+		break
+	}
+	post, err = s.SBSDPost(telemetry.Body) // send it
+}
 ```
 
-`akamai.Open` opens a session without a post (URL, UA and the exit region),
-or, with `Session`, stages a sensor script or `SBSDSource` on it; it answers
-201 and is not billed.
+`SensorPost` and `SBSDPost` build the target requests: the sensor POST to the
+sensor script URL (`{"sensor_data":…}`, `text/plain;charset=UTF-8`), the SBSD
+POST to the SBSD script URL without its query (`{"body":…}`,
+`application/json`), bodies escaped as the page's `JSON.stringify` escapes,
+each with the device's `user-agent`, `accept-language`, `accept-encoding` and
+low-entropy `sec-ch-ua`, `sec-ch-ua-mobile` and `sec-ch-ua-platform`. Add what
+the page's XHR sends besides (`origin`, `referer`, `sec-fetch-*`, `priority`,
+cookies), order the headers with `transport.OrderUniversal` (`ClassXHR`,
+`Calls: []string{"content-type"}`) and `transport.ApplyWireOrder`, and send
+through the page's own client (same proxy; `DisableCompression`, since
+`accept-encoding` is set). The server holds each answer until the post's send
+instant (`PacedMS` reports the hold): send at once. `WaitUntil` paces a post
+sent with `Pace: false` yourself.
 
-`/solve`'s own failures are not the shared error envelope: they return
-`*evade.APIError` with an empty `Code` and the `akamai.ErrorResponse` JSON in
-`Message`. Auth and quota refusals carry `Code` as for every solver.
+Every refusal is an `*akamai.Error` (unwrapping to the `*evade.APIError`):
+`Code` is `/solve`'s `error_code` (the `akamai.Code*` constants) or the shared
+code of an auth or quota refusal, `Stage` the server stage that refused,
+`Reason` set by the 409 telemetry answers, and `Retryable` true when the same
+call may succeed later. `invalid_session` and `send_instant_passed` end the
+session: open a new one. `RecordID` (on `OpenRequest` and the raw requests)
+names the admitted device Record a fresh session runs as; empty is the one
+whose User-Agent `/user-agents` lists.
+
+`SolveSensor`, `SolveSBSD` and `SolveOpen` are the raw calls under `Session`,
+with the request and response structs as the server reads and writes them.
 
 ## reCAPTCHA (task `recaptcha`)
 
 Synchronous: the server runs the whole reCAPTCHA flow (loader, release,
 anchor, reload, clr, bcn; for v2 invisible the bframe and userverify, an
 image challenge solved server-side) over your proxy as `UserAgent` and
-answers the token; it never fetches your page — the token binds to `URL`'s
-origin and `Action`. `ua` must be a User-Agent
-`client.UserAgents(ctx, recaptcha.Task)` lists. `Proxy` is
-`scheme://user:pass@host:port` (http, https, socks4, socks4a, socks5,
-socks5h) or `host:port:user:pass`.
+answers the token. It never fetches your page: you send the page (`PageHTML`)
+and its classic scripts (`PageScripts`), which the token's page share is read
+from; a v3 solve without them fails `site_unsupported`. A Squarespace login
+(v3 enterprise, action `login`), with `get` and `post` your own client on the
+solve's proxy as `ua`:
 
 ```go
+uas, err := client.UserAgents(ctx, recaptcha.Task)
+ua, proxyURL := uas[0], "http://user:pass@host:port"
+
+// 1. The page, through the proxy as ua; pageURL is where its redirects end.
+pageURL, page := get("https://login.squarespace.com/")
+
+// 2. The sitekey its loader renders; the action is the page bundle's.
+loader := regexp.MustCompile(`enterprise\.js\?render=([0-9A-Za-z_-]+)`)
+siteKey := loader.FindStringSubmatch(page)[1]
+
+// 3. Its classic scripts in order; fetch the external ones the same way.
+scripts, err := recaptcha.PageScripts(pageURL, page, siteKey)
+for i := range scripts {
+	if scripts[i].Body == nil {
+		_, body := get(scripts[i].Name)
+		scripts[i].Body = []byte(body)
+	}
+}
+
+// 4. Solve.
 res, err := recaptcha.Solve(ctx, client, recaptcha.Request{
-	URL:        "https://www.example.com/checkout", // the page the token is for
-	SiteKey:    "6Lc…",                             // the sitekey the page renders
-	Action:     "checkout",
-	UserAgent:  ua,
-	Proxy:      "http://user:pass@host:port",
-	Version:    recaptcha.VersionV3, // or recaptcha.VersionV2Invisible; empty is v3
-	Enterprise: new(true),           // the page loads enterprise.js (false: api.js)
+	URL: pageURL, SiteKey: siteKey, Action: "login", UserAgent: ua, Proxy: proxyURL,
+	Version: recaptcha.VersionV3, Enterprise: new(true), Host: "www.google.com",
+	PageHTML: page, PageScripts: scripts,
 })
-// res.Token is the token; res.Score is nil; res.Verification is nil unless
-// an image challenge was solved (res.Verification.Challenge says how).
+
+// 5. Submit where the page does, same proxy and ua, within two minutes:
+// Squarespace's JSON login POST carries it as squarespace-recaptcha-token.
+answer := post("https://login.squarespace.com/api/1/login/user", loginJSON,
+	"squarespace-recaptcha-token", res.Token)
 ```
+
+Other pages take the token as the `g-recaptcha-response` form field or a
+member of their own JSON call. `Proxy` is `scheme://user:pass@host:port`
+(http, https, socks4, socks4a, socks5, socks5h) or `host:port:user:pass`.
 
 There is one task name, `recaptcha`; the widget is `Version` (`v3` default,
 `v2-invisible`, `v2-checkbox`; the checkbox is witnessed only on the
@@ -207,19 +250,28 @@ www.google.com/sorry first-party page, which `Solve` does not run, so it fails
 (loader `api.js`) — is resolved by the server: the loader the page states
 when `PageHTML` or `PageScripts` carry it, else `Enterprise`, else a
 hypothesis: an `Action` means enterprise. api2 sites with an action exist, so
-set `Enterprise` whenever you know the page's loader. The optional page facts
-(`PageHTML`, `PageScripts`, `Referrer`, `Popup`, `PageNavigationMS`) describe
-the page the token is minted for. The loader is fetched from www.google.com;
-`Host: "recaptcha.net"` selects the other API host (the site never observes
-which host served its widget; both issue the same token). `score` is never
-answered: it is not observable client-side (only the site's own siteverify
-call sees it). `ProfileID` names the stored device profile the solve ran as.
-Refusals are `*evade.APIError` with `invalid_request` (a malformed field, an
-unknown task, version or host, a non-boolean `enterprise`),
-`device_unsupported`, `site_unsupported`, `generation_failed` (decoder
-refusal or a SHORT token), `challenged`, `challenge_unsolved`,
-`storage_unavailable`, `proxy_failed`, `proxy_timeout`, `target_error`,
-`solve_canceled` or `solve_failed`.
+set `Enterprise` whenever you know the page's loader. `Referrer`, `Popup` and
+`PageNavigationMS` add the navigation's referrer, a popup window's size and
+how long before the solve the page navigation started. The loader is fetched
+from www.google.com; `Host: "recaptcha.net"` selects the other API host (the
+site never observes which host served its widget; both issue the same
+token). `score` is never answered: it is not observable client-side (only the
+site's own siteverify call sees it). `Verification` is informational: nil, or
+the image challenge the server answered (class, rounds, tiles); the token
+already carries it. `ProfileID` names the stored device profile the solve ran
+as.
+
+`Solve` first runs `Request.Validate`, which refuses what the server would,
+with its messages (an unknown version or host, an empty `URL`, `SiteKey`,
+`UserAgent` or `Proxy`, a non-https `URL`), and a page script left unfetched.
+Every refusal is a `*recaptcha.Error` with the server's code
+(`invalid_request`, `device_unsupported`, `site_unsupported`,
+`generation_failed`, `challenged`, `challenge_unsolved`, `proxy_failed`,
+`proxy_timeout`, `target_error`, `storage_unavailable`, `solve_canceled`,
+`solve_failed`, and the auth and quota codes), unwrapping to the
+`*evade.APIError`; `Retryable` is true for `proxy_failed` and `proxy_timeout`
+(with a fresh proxy endpoint), `storage_unavailable`, `quota_unavailable` and
+`rate_limited`.
 
 ## User-Agents
 

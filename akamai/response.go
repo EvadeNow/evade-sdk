@@ -54,20 +54,9 @@ type SBSDResponse struct {
 	FingerprintMS *int64 `json:"fingerprint_ms,omitempty"`
 }
 
-// OpenResponse answers Open (201): the opened session, or the one a
-// staging Open named.
+// OpenResponse answers SolveOpen (201): the opened session, or the one a
+// staging open named.
 type OpenResponse struct {
 	Success bool   `json:"success"`
 	Session string `json:"session"`
-}
-
-// ErrorResponse is the body of /solve's own failures. It is not the shared
-// evade.ErrorEnvelope, so it arrives as an *evade.APIError with an empty
-// Code and this JSON in Message. Reason is set by 409 sbsd_telemetry_* only.
-type ErrorResponse struct {
-	Success   bool   `json:"success"`
-	ErrorCode string `json:"error_code"`
-	Message   string `json:"message,omitempty"`
-	Stage     string `json:"stage,omitempty"`
-	Reason    string `json:"reason,omitempty"`
 }

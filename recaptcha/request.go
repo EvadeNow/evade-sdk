@@ -1,5 +1,16 @@
 package recaptcha
 
+import (
+	"bytes"
+	"fmt"
+	"net/url"
+	"strings"
+
+	evade "github.com/EvadeNow/evade-sdk"
+	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
+)
+
 // The widget versions Request.Version names: VersionV3 a score key (the
 // reload token is the token), VersionV2Invisible an invisible key (the
 // token is the bframe's userverify answer, an image challenge solved
@@ -24,9 +35,11 @@ const (
 //     without api2. api2 sites with an action exist (myanimelist), so set
 //     Enterprise whenever you know the page's loader.
 //
-// The page fields (PageHTML through PageNavigationMS) are optional facts
-// about the page the token is minted for; the solver never fetches the
-// page itself.
+// The page fields (PageHTML through PageNavigationMS) are facts about the
+// page the token is minted for; the solver never fetches the page itself.
+// PageHTML and PageScripts are what the solver reads the token's page
+// share from: send both (PageScripts lists the scripts to fetch), as every
+// live flow does; a v3 solve without PageScripts fails site_unsupported.
 type Request struct {
 	URL       string `json:"url"`       // the page the token is for, absolute HTTPS (never fetched)
 	SiteKey   string `json:"sitekey"`   // the sitekey the page renders
@@ -43,10 +56,13 @@ type Request struct {
 	// Enterprise states the surface (true: enterprise.js, false: api.js)
 	// when the page's own loader is not discoverable; nil leaves it to the
 	// action rule above.
-	Enterprise *bool  `json:"enterprise,omitempty"`
-	Host       string `json:"host,omitempty"` // API host the loader is fetched from: www.google.com (default) or recaptcha.net
+	Enterprise *bool `json:"enterprise,omitempty"`
+	// Host is the API host the loader is fetched from: www.google.com (the
+	// default), recaptcha.net or www.recaptcha.net.
+	Host string `json:"host,omitempty"`
 	// PageScripts are the page's classic scripts in execution order, read
-	// for the token's page share; the solver appends the loader it fetched.
+	// for the token's page share (see PageScripts); the solver appends the
+	// loader it fetched.
 	PageScripts []PageScript `json:"pageScripts,omitempty"`
 	// Popup is the window.open size when the widget runs in a popup.
 	Popup *PopupWindow `json:"popup,omitempty"`
@@ -59,9 +75,9 @@ type Request struct {
 	PageNavigationMS int64 `json:"pageNavigationMs,omitempty"`
 }
 
-// PageScript is one classic script of the page: Name its URL or an inline
-// label, Body its source (base64 on the wire, as encoding/json writes a
-// []byte).
+// PageScript is one classic script of the page: Name its absolute URL or
+// an inline label (inline#1, inline#2, ...), Body its source (base64 on
+// the wire, as encoding/json writes a []byte).
 type PageScript struct {
 	Name string `json:"name"`
 	Body []byte `json:"body"`
@@ -71,4 +87,114 @@ type PageScript struct {
 type PopupWindow struct {
 	Width  int `json:"width"`
 	Height int `json:"height"`
+}
+
+// hosts are the API hosts the server accepts (gman v3.Hosts).
+var hosts = map[string]bool{"www.google.com": true, "recaptcha.net": true, "www.recaptcha.net": true}
+
+// Validate refuses what the server's FlowInput.Validate refuses, with its
+// messages: an unknown Version, an empty URL, SiteKey, UserAgent or Proxy,
+// a URL that is not an https page, an unknown Host. It also refuses, before
+// any request, a PageScript without a Body (PageScripts leaves external
+// scripts for the caller to fetch). A refusal is an *Error with
+// Code invalid_request and Status 0.
+func (r Request) Validate() error {
+	switch r.Version {
+	case "", VersionV3, VersionV2Invisible, VersionV2Checkbox:
+	default:
+		return invalid("version %q is not %q, %q or %q", r.Version, VersionV3, VersionV2Invisible, VersionV2Checkbox)
+	}
+	for _, f := range []struct{ name, value string }{{"url", r.URL}, {"sitekey", r.SiteKey}, {"userAgent", r.UserAgent}, {"proxy", r.Proxy}} {
+		if strings.TrimSpace(f.value) == "" {
+			return invalid("%s is required", f.name)
+		}
+	}
+	if u, err := url.Parse(r.URL); err != nil || u.Scheme != "https" || u.Host == "" {
+		return invalid("url %q is not an https page URL", r.URL)
+	}
+	if r.Host != "" && !hosts[r.Host] {
+		return invalid("host %q is not www.google.com or recaptcha.net", r.Host)
+	}
+	for i, script := range r.PageScripts {
+		if script.Body == nil {
+			return invalid("pageScripts[%d] %s has no body: fetch it", i, script.Name)
+		}
+	}
+	return nil
+}
+
+func invalid(format string, args ...any) error {
+	return &Error{Code: evade.CodeInvalidRequest, Message: fmt.Sprintf(format, args...)}
+}
+
+// PageScripts lists the classic scripts of page, the HTML served at
+// pageURL, in document order as Request.PageScripts wants them: inline
+// ones (named inline#1, inline#2, ... skipping empty ones) with their
+// Body, external ones named by their absolute URL with a nil Body the
+// caller fills by fetching it (through the solve's proxy, as its
+// UserAgent, following redirects). Module and non-JavaScript scripts are
+// left out, and so is the reCAPTCHA loader rendering siteKey: the solver
+// fetches its own.
+func PageScripts(pageURL, page, siteKey string) ([]PageScript, error) {
+	base, err := url.Parse(pageURL)
+	if err != nil {
+		return nil, fmt.Errorf("recaptcha: page URL: %w", err)
+	}
+	doc, err := html.Parse(strings.NewReader(page))
+	if err != nil {
+		return nil, fmt.Errorf("recaptcha: page scripts: %w", err)
+	}
+	var scripts []PageScript
+	inline := 0
+	var walk func(*html.Node) error
+	walk = func(n *html.Node) error {
+		if n.Type == html.ElementNode && n.DataAtom == atom.Script {
+			src, classic := "", true
+			for _, a := range n.Attr {
+				switch strings.ToLower(a.Key) {
+				case "src":
+					src = strings.TrimSpace(a.Val)
+				case "type":
+					switch strings.ToLower(strings.TrimSpace(a.Val)) {
+					case "", "text/javascript", "application/javascript", "application/x-javascript":
+					default:
+						classic = false
+					}
+				}
+			}
+			switch {
+			case !classic:
+			case src == "":
+				var body bytes.Buffer
+				for c := n.FirstChild; c != nil; c = c.NextSibling {
+					if c.Type == html.TextNode {
+						body.WriteString(c.Data)
+					}
+				}
+				if len(bytes.TrimSpace(body.Bytes())) != 0 {
+					inline++
+					scripts = append(scripts, PageScript{Name: fmt.Sprintf("inline#%d", inline), Body: body.Bytes()})
+				}
+			default:
+				ref, err := url.Parse(src)
+				if err != nil {
+					return fmt.Errorf("recaptcha: script src %q: %w", src, err)
+				}
+				resolved := base.ResolveReference(ref)
+				if !strings.Contains(resolved.Path, "/recaptcha/") || resolved.Query().Get("render") != siteKey {
+					scripts = append(scripts, PageScript{Name: resolved.String()})
+				}
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			if err := walk(c); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if err := walk(doc); err != nil {
+		return nil, err
+	}
+	return scripts, nil
 }
