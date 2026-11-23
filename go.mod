@@ -6,7 +6,6 @@ require (
 	github.com/bogdanfinn/fhttp v0.7.3
 	github.com/bogdanfinn/tls-client v1.18.1
 	github.com/bogdanfinn/utls v1.8.2-barnius
-	github.com/oschwald/maxminddb-golang/v2 v2.6.0
 	golang.org/x/net v0.59.0
 )
 
@@ -19,6 +18,7 @@ require (
 	github.com/klauspost/compress v1.20.1 // indirect
 	github.com/molecule-man/go-brrr v1.2.0 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
+	github.com/stretchr/testify v1.12.1 // indirect
 	github.com/tam7t/hpkp v0.0.0-20160821193359-2b70b4024ed5 // indirect
 	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
