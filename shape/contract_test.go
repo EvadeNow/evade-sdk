@@ -192,7 +192,8 @@ func TestHeadersRefuseWhatHasNoOrderedForm(t *testing.T) {
 }
 
 func TestSolveSendsTaskAndToleratesUnknownResponseKeys(t *testing.T) {
-	body := []byte(`{"payload_decode":{"decode_source":"x"},"vm_url":"https://example.test/vm.js","session_reused":true,` +
+	body := []byte(`{"target_device_info":{"match":"fixed","capture_id":"capture-1","device_info":{"user_agent":"profile-browser","canvas":"first"},"later_canvas":"later","match_reason":"fixed profile"},` +
+		`"payload_decode":{"decode_source":"x"},"vm_url":"https://example.test/vm.js","session_reused":true,` +
 		`"debug":{"device_record":"rec-0123","document_anchor":{"path":"token_issue"}},` + responseGolden[1:])
 	var method, path string
 	var sent []byte
@@ -206,18 +207,23 @@ func TestSolveSendsTaskAndToleratesUnknownResponseKeys(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := shape.Solve(context.Background(), client, fullRequest())
+	request := fullRequest()
+	request.TargetDeviceInfo = true
+	got, err := shape.Solve(context.Background(), client, request)
 	if err != nil {
 		t.Fatalf("Solve: %v", err)
 	}
 	if method != http.MethodPost || path != "/solve" {
 		t.Fatalf("request line = %s %s", method, path)
 	}
-	want := []byte(`{"task":"shape",` + fullRequestGolden[1:])
+	want := []byte(`{"task":"shape",` + strings.TrimSuffix(fullRequestGolden[1:], "}") + `,"target_device_info":true}`)
 	if sent = bytes.TrimSuffix(sent, []byte("\n")); !bytes.Equal(sent, want) {
 		t.Fatalf("wire body\n got %s\nwant %s", sent, want)
 	}
-	if !reflect.DeepEqual(got, wantResponse()) {
+	expected := wantResponse()
+	expected.TargetDeviceInfo = &shape.TargetDeviceInfo{Match: "fixed", CaptureID: "capture-1",
+		DeviceInfo: json.RawMessage(`{"user_agent":"profile-browser","canvas":"first"}`), LaterCanvas: "later", MatchReason: "fixed profile"}
+	if !reflect.DeepEqual(got, expected) {
 		t.Fatalf("response = %+v", got)
 	}
 }

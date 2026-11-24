@@ -42,7 +42,20 @@ type Response struct {
 	// Timing reports each generated or observed instant with its
 	// provenance; present on a debug request (Request.Debug) only.
 	Timing *TimingContract `json:"timing,omitempty"`
+
+	TargetDeviceInfo *TargetDeviceInfo `json:"target_device_info,omitempty"`
 }
+
+// TargetDeviceInfo is the fixed Target application profile requested by
+// Request.TargetDeviceInfo. It does not describe the generated Shape fingerprint.
+type TargetDeviceInfo struct {
+	Match       string          `json:"match"`
+	CaptureID   string          `json:"capture_id"`
+	DeviceInfo  json.RawMessage `json:"device_info"`
+	LaterCanvas string          `json:"later_canvas"`
+	MatchReason string          `json:"match_reason,omitempty"`
+}
+
 type TimingSource string
 
 const (
