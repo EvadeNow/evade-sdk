@@ -49,12 +49,6 @@ type Request struct {
 	RetainSession       bool            `json:"retain_session,omitempty"`
 	SkipZeronaught      *bool           `json:"skip_zeronaught,omitempty"` // nil leaves the server default; never true on a retained Target authentication session
 	Debug               bool            `json:"debug,omitempty"`           // needs a debug- or internal-scope key
-	// TargetDeviceInfo asks a fresh solve for the target's device_info
-	// capture its device record pairs with (Response.TargetDeviceInfo), so a
-	// caller sends the target's own fingerprint object from the same device
-	// the Shape payload states. It is required on the opening Target sign-in
-	// solve; a continuation refuses it.
-	TargetDeviceInfo bool `json:"target_device_info,omitempty"`
 }
 
 // Cookie is one cookie the caller's browser sends with the challenge script GET.
