@@ -86,28 +86,17 @@ type TimingInstant struct {
 	Semantic TimingSemantic `json:"semantic"`
 }
 
-type LoaderIssueCompatibility string
-
-const (
-	LoaderIssueCompatible             LoaderIssueCompatibility = "compatible"
-	LoaderIssueUnverifiedMissingStart LoaderIssueCompatibility = "unverified_missing_start"
-	LoaderIssueUnavailable            LoaderIssueCompatibility = "unavailable"
-)
-
 // TimingContract distinguishes modeled instants from caller observations.
-// LoaderIssueCompatible means only that token issue lies in the complete
-// loader interval; it does not prove exact cross-host clock equality.
 type TimingContract struct {
-	NavigationStart        TimingInstant            `json:"navigation_start"`
-	DocumentRequestStart   TimingInstant            `json:"document_request_start"`
-	LoaderRequestStart     TimingInstant            `json:"loader_request_start"`
-	LoaderComplete         TimingInstant            `json:"loader_complete"`
-	CollectorStart         TimingInstant            `json:"collector_start"`
-	Finalize               TimingInstant            `json:"finalize"`
-	ModeledFetchInvocation TimingInstant            `json:"modeled_fetch_invocation"`
-	TransportHandoff       TimingInstant            `json:"transport_handoff"`
-	HeadersWritten         TimingInstant            `json:"headers_written"`
-	LoaderIssue            LoaderIssueCompatibility `json:"loader_issue_compatibility"`
+	NavigationStart        TimingInstant `json:"navigation_start"`
+	DocumentRequestStart   TimingInstant `json:"document_request_start"`
+	LoaderRequestStart     TimingInstant `json:"loader_request_start"`
+	LoaderComplete         TimingInstant `json:"loader_complete"`
+	CollectorStart         TimingInstant `json:"collector_start"`
+	Finalize               TimingInstant `json:"finalize"`
+	ModeledFetchInvocation TimingInstant `json:"modeled_fetch_invocation"`
+	TransportHandoff       TimingInstant `json:"transport_handoff"`
+	HeadersWritten         TimingInstant `json:"headers_written"`
 }
 
 // WaitForSend blocks until SendAfterUnixMS (at once when it is 0 or past)
