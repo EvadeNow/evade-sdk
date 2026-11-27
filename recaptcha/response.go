@@ -7,12 +7,16 @@ type Response struct {
 	// Score is always nil: the score is not observable client-side, only
 	// the site's own server-side siteverify call sees it.
 	Score *float64 `json:"score"`
-	// Verification is nil unless the solve answered an image challenge.
-	// It is informational (which challenge, how many rounds): Token is
-	// already the answered challenge's token, and nothing else is sent.
+	// Verification is normally nil on the current public route, which
+	// refuses visible challenges. The optional shape is decoded for
+	// server responses that carry challenge metadata; it is not a promise
+	// of public image-challenge support or site verification.
 	Verification *Verification `json:"verification"`
-	GenMS        float64       `json:"genMs"`     // the reload mint, generator entry to serialized bytes; network excluded
-	ProfileID    string        `json:"profileId"` // the stored device profile the solve ran as
+	// GenMS times only Mint/MintFrame plus reload-body serialization.
+	// It excludes own decode, network requests, readiness waits and the
+	// rest of the solve; it is not end-to-end latency.
+	GenMS     float64 `json:"genMs"`
+	ProfileID string  `json:"profileId"` // output device id, not a public request selector
 }
 
 // Verification reports the image challenge the solver answered server-side.

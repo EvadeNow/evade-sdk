@@ -18,13 +18,13 @@ type wireRequest struct {
 	Request
 }
 
-// Solve validates r (Request.Validate), then runs the whole reCAPTCHA flow
-// on the server (loader, release, anchor, reload, clr, bcn; the v2
-// invisible bframe and userverify, an image challenge solved server-side)
-// over r.Proxy as r.UserAgent and answers the token synchronously. Submit
-// the token where the page does (the g-recaptcha-response form field, or
-// the header or JSON member the page's own call carries) from the same
-// proxy exit as the same UserAgent, within the token's two-minute life.
+// Solve validates r, then runs the reCAPTCHA flow through r.Proxy as the
+// full supported r.UserAgent and returns the token in one HTTP response.
+// The server's clr/bcn telemetry can finish after that response. Visible
+// image challenges are refused; the public route attaches no image solver.
+// Submit the token where the page does, from the same proxy exit as the
+// same UserAgent, promptly and only once (normally within two minutes).
+// Issuance does not establish site acceptance or a Google-verified score.
 // A refusal is an *Error.
 func Solve(ctx context.Context, c *evade.Client, r Request) (Response, error) {
 	if err := r.Validate(); err != nil {
@@ -51,12 +51,12 @@ func Solve(ctx context.Context, c *evade.Client, r Request) (Response, error) {
 //     refusals before any request, with Status 0), an unknown version or
 //     host, a non-boolean enterprise;
 //   - device_unsupported: no stored device for UserAgent;
-//   - site_unsupported: the page's widget or loader is not one the solver
-//     runs, or PageScripts is missing;
+//   - site_unsupported: an unsupported widget or page law; not proof
+//     that switching versions is correct;
 //   - generation_failed: the token failed the solver's own decode or came
 //     out short;
-//   - challenged: Google demanded a challenge the flow has no solver for;
-//   - challenge_unsolved: the image challenge was not solved;
+//   - challenged, challenge_unsupported: a challenge the public flow
+//     does not support; challenge_unsolved is also a recognized server code;
 //   - proxy_failed, proxy_timeout: the proxy could not carry the flow;
 //   - target_error: a Google endpoint answered an unexpected status;
 //   - solve_canceled, solve_failed, storage_unavailable, and the shared

@@ -140,6 +140,29 @@ func TestSolveSendsTaskAndToleratesUnknownResponseKeys(t *testing.T) {
 			r.Popup = &recaptcha.PopupWindow{Width: 500, Height: 600}
 			r.PageHTML, r.Referrer, r.PageNavigationMS = "<p>&</p>", "https://www.example.com/", 900
 		}, `,"version":"v3","enterprise":true,"host":"recaptcha.net","pageScripts":[{"name":"https://www.example.com/app.js","body":"eCgp"}],"popup":{"width":500,"height":600},"pageHTML":"<p>&</p>","referrer":"https://www.example.com/","pageNavigationMs":900`},
+		{"observed NGI options", func(r *recaptcha.Request) {
+			r.Enterprise, r.Host = new(false), "www.google.com"
+			r.ReferrerPolicy, r.PageProtocol = "no-referrer", "http/1.1"
+			r.FrameAssets, r.ExecuteAfterReady = true, new(true)
+		}, `,"enterprise":false,"host":"www.google.com","referrerPolicy":"no-referrer","pageProtocol":"http/1.1","frameAssets":true,"executeAfterReady":true`},
+		{"explicit false and empty page facts", func(r *recaptcha.Request) {
+			r.ExecuteAfterReady, r.PriorReleaseLoad, r.TokenCallback = new(false), new(false), new("")
+			r.PageCookieNames = new([]string{})
+			r.ValuedFields, r.TypedChars = [][]string{{}}, []int{0}
+			r.PageHistoryLength, r.GoogleStorageKeys, r.AnchorSeen = new(1), new(0), new(false)
+		}, `,"executeAfterReady":false,"priorReleaseLoad":false,"tokenCallback":"","pageCookieNames":[],"valuedFields":[[]],"typedChars":[0],"pageHistoryLength":1,"googleStorageKeys":0,"anchorSeen":false`},
+		{"supplied page context", func(r *recaptcha.Request) {
+			r.PageScripts = []recaptcha.PageScript{{Name: "inline#1", Body: []byte("x()"), Inserted: true}}
+			r.PageStylesheets = []recaptcha.PageScript{{Name: "https://www.example.com/a.css", Body: []byte("a{}")}}
+			r.PageLoad = &recaptcha.PageLoad{LoaderMS: 0, BlockingDoneMS: new(int64(0)), ElapsedMS: new(int64(1))}
+			r.PageElements = []recaptcha.MintElements{{
+				Active:      &recaptcha.PageElement{Tag: "BUTTON", ID: "login"},
+				ScriptFocus: []*recaptcha.PageElement{{Tag: "INPUT"}},
+				Moments:     []recaptcha.PageMoment{{From: "navigation", Active: &recaptcha.PageElement{Tag: "BODY"}, ValuedFields: []string{}, URL: "https://www.example.com"}},
+			}}
+			r.PageMutations = []recaptcha.MutationWindow{{Attributes: []string{"class"}, Tags: []string{"DIV"}, ChangesMin: 1, ChangesMax: 2}}
+			r.PageHeap = &recaptcha.HeapBand{MinBytes: 1000, MaxBytes: 2000, GrowthBP: []int64{-1, 1}}
+		}, `,"pageScripts":[{"name":"inline#1","body":"eCgp","inserted":true}],"pageStylesheets":[{"name":"https://www.example.com/a.css","body":"YXt9"}],"pageLoad":{"loaderMs":0,"blockingDoneMs":0,"elapsedMs":1},"pageElements":[{"active":{"tag":"BUTTON","id":"login","class":"","text":""},"pointer":null,"scriptFocus":[{"tag":"INPUT","id":"","class":"","text":""}],"moments":[{"from":"navigation","active":{"tag":"BODY","id":"","class":"","text":""},"valuedFields":[],"url":"https://www.example.com","alertWords":0}]}],"pageMutations":[{"attributes":["class"],"tags":["DIV"],"changesMin":1,"changesMax":2}],"pageHeap":{"minBytes":1000,"maxBytes":2000,"growthBP":[-1,1]}`},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			client, line, sent := server(t, http.StatusOK, nil, []byte(`{"stages":[{"name":"reload","status":200}],"success":true,"task":"recaptcha","token":"03AFcWeA-token","score":null,"verification":null,"genMs":12.5,"profileId":"profile-7"}`))
@@ -292,6 +315,6 @@ func TestPageScripts(t *testing.T) {
 		{Name: "https://www.google.com/recaptcha/api.js?render=6LcOther"},
 	}
 	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("PageScripts\n got %q\nwant %q", got, want)
+		t.Fatalf("PageScripts\n got %+v\nwant %+v", got, want)
 	}
 }

@@ -13,10 +13,10 @@ import (
 
 // The widget versions Request.Version names: VersionV3 a score key (the
 // reload token is the token), VersionV2Invisible an invisible key (the
-// token is the bframe's userverify answer, an image challenge solved
-// server-side when one is served), VersionV2Checkbox the checkbox widget.
-// The checkbox is witnessed only on the www.google.com/sorry first-party
-// page, which Solve does not run: a checkbox request fails (solve_failed).
+// token is the bframe's userverify answer). The public solver refuses
+// visible image challenges; it does not attach an image solver.
+// VersionV2Checkbox is accepted syntactically but cannot run through the
+// public API: its witnessed first-party context is unavailable (solve_failed).
 const (
 	VersionV3          = "v3"
 	VersionV2Invisible = "v2-invisible"
@@ -35,11 +35,11 @@ const (
 //     without api2. api2 sites with an action exist (myanimelist), so set
 //     Enterprise whenever you know the page's loader.
 //
-// The page fields (PageHTML through PageNavigationMS) are facts about the
-// page the token is minted for; the solver never fetches the page itself.
-// PageHTML and PageScripts are what the solver reads the token's page
-// share from: send both (PageScripts lists the scripts to fetch), as every
-// live flow does; a v3 solve without PageScripts fails site_unsupported.
+// Page fields are optional facts about the page the token is minted for;
+// the solver never fetches that page or its scripts. Without them it uses
+// the URL and its own fetched reCAPTCHA loader, not a captured page context.
+// Supplying accurate facts is not a guarantee of a Google score or site
+// acceptance. UserAgent is a full supported HTTP User-Agent string.
 type Request struct {
 	URL       string `json:"url"`       // the page the token is for, absolute HTTPS (never fetched)
 	SiteKey   string `json:"sitekey"`   // the sitekey the page renders
@@ -73,6 +73,49 @@ type Request struct {
 	// PageNavigationMS is how long before the solve the page navigation
 	// started, in milliseconds.
 	PageNavigationMS int64 `json:"pageNavigationMs,omitempty"`
+	// ReferrerPolicy is the page response's observed policy. Empty uses
+	// the default origin-only cross-origin referrer; no-referrer sends none.
+	ReferrerPolicy string `json:"referrerPolicy,omitempty"`
+	// PageProtocol is the observed page-navigation protocol: h2 (default),
+	// http/1.1 or h3.
+	PageProtocol string `json:"pageProtocol,omitempty"`
+	// FrameAssets fetches the anchor's webworker, not its stylesheet/logo.
+	// False is the server default, so omission preserves that behaviour.
+	FrameAssets bool `json:"frameAssets,omitempty"`
+	// ExecuteAfterReady states whether execute runs after client readiness.
+	// Nil is unstated; new(false) sends an explicit false.
+	ExecuteAfterReady *bool `json:"executeAfterReady,omitempty"`
+	// PriorReleaseLoad states an earlier release load in the same browser
+	// session. Nil lets the live flow derive its own fresh-session history.
+	PriorReleaseLoad *bool `json:"priorReleaseLoad,omitempty"`
+	// TokenCallback is the callback's source text as served; nil unstated,
+	// new("") explicitly no callback.
+	TokenCallback *string `json:"tokenCallback,omitempty"`
+	// PageStylesheets are linked stylesheet URLs and their source bodies,
+	// in document order, for resource-origin extraction.
+	PageStylesheets []PageScript `json:"pageStylesheets,omitempty"`
+	// PageLoad is a measured navigation clock, mutually exclusive with
+	// nonzero PageNavigationMS.
+	PageLoad *PageLoad `json:"pageLoad,omitempty"`
+	// PageCookieNames lists document.cookie names, not values or HttpOnly
+	// cookies. Nil is unstated; a pointer to [] states no visible cookies.
+	PageCookieNames *[]string `json:"pageCookieNames,omitempty"`
+	// PageElements and PageMutations describe page facts per mint (reload,
+	// then bcn), not caller-defined visitor interaction plans.
+	PageElements  []MintElements   `json:"pageElements,omitempty"`
+	PageMutations []MutationWindow `json:"pageMutations,omitempty"`
+	// ValuedFields lists nonempty INPUT/TEXTAREA names per mint.
+	ValuedFields [][]string `json:"valuedFields,omitempty"`
+	// TypedChars is cumulative per-mint typed-character counts.
+	TypedChars []int `json:"typedChars,omitempty"`
+	// PageHistoryLength is window.history.length, at least one.
+	PageHistoryLength *int `json:"pageHistoryLength,omitempty"`
+	// GoogleStorageKeys (excluding rc::d*) and AnchorSeen must be stated
+	// together. Pointers preserve zero and false.
+	GoogleStorageKeys *int  `json:"googleStorageKeys,omitempty"`
+	AnchorSeen        *bool `json:"anchorSeen,omitempty"`
+	// PageHeap is the observed fresh-page heap band, not a score preset.
+	PageHeap *HeapBand `json:"pageHeap,omitempty"`
 }
 
 // PageScript is one classic script of the page: Name its absolute URL or
@@ -81,6 +124,9 @@ type Request struct {
 type PageScript struct {
 	Name string `json:"name"`
 	Body []byte `json:"body"`
+	// Inserted marks script source added after the page loaded. It is
+	// excluded from the initial page-globals snapshot, not other readers.
+	Inserted bool `json:"inserted,omitempty"`
 }
 
 // PopupWindow is the width and height window.open was given.
@@ -89,15 +135,70 @@ type PopupWindow struct {
 	Height int `json:"height"`
 }
 
+// PageLoad measures times from one navigation, proxy CONNECT/TLS excluded.
+// LoaderMS is delivery of the loader element; BlockingDoneMS is completion
+// of preceding parser-blocking resources; ElapsedMS is elapsed time at solve
+// handoff. All are nonnegative; elapsed cannot precede completed resources.
+type PageLoad struct {
+	LoaderMS       int64  `json:"loaderMs"`
+	BlockingDoneMS *int64 `json:"blockingDoneMs,omitempty"`
+	ElapsedMS      *int64 `json:"elapsedMs,omitempty"`
+}
+
+// PageElement is an element at a mint: tagName, live id/className and
+// textContent. Tag is required on every stated element.
+type PageElement struct {
+	Tag   string `json:"tag"`
+	ID    string `json:"id"`
+	Class string `json:"class"`
+	Text  string `json:"text"`
+}
+
+// MintElements describes the active element and last observed pointer target.
+// Nil Active is unstated; nil Pointer states no pointer target at this mint.
+// ScriptFocus and Moments are states produced by the page's own handlers.
+type MintElements struct {
+	Active      *PageElement   `json:"active"`
+	Pointer     *PageElement   `json:"pointer"`
+	ScriptFocus []*PageElement `json:"scriptFocus,omitempty"`
+	Moments     []PageMoment   `json:"moments,omitempty"`
+}
+
+// PageMoment is a page state held from navigation, click (the handler that
+// issues execute), or execute (the previous mint). It is not an event timeline.
+type PageMoment struct {
+	From         string       `json:"from"`
+	Pointer      *PageElement `json:"pointer,omitempty"`
+	Active       *PageElement `json:"active"`
+	ValuedFields []string     `json:"valuedFields"`
+	URL          string       `json:"url"`
+	AlertWords   int          `json:"alertWords"`
+}
+
+// MutationWindow states attribute/tag names changed since load or the
+// previous mint, in first-seen order, and the observed change-count range.
+type MutationWindow struct {
+	Attributes []string `json:"attributes"`
+	Tags       []string `json:"tags"`
+	ChangesMin int      `json:"changesMin"`
+	ChangesMax int      `json:"changesMax"`
+}
+
+// HeapBand states 0 < MinBytes <= MaxBytes and at least two ascending
+// witnessed growths in basis points, each greater than -10000.
+type HeapBand struct {
+	MinBytes int64   `json:"minBytes"`
+	MaxBytes int64   `json:"maxBytes"`
+	GrowthBP []int64 `json:"growthBP"`
+}
+
 // hosts are the API hosts the server accepts (gman v3.Hosts).
 var hosts = map[string]bool{"www.google.com": true, "recaptcha.net": true, "www.recaptcha.net": true}
 
-// Validate refuses what the server's FlowInput.Validate refuses, with its
-// messages: an unknown Version, an empty URL, SiteKey, UserAgent or Proxy,
-// a URL that is not an https page, an unknown Host. It also refuses, before
-// any request, a PageScript without a Body (PageScripts leaves external
-// scripts for the caller to fetch). A refusal is an *Error with
-// Code invalid_request and Status 0.
+// Validate checks the original required/version/host fields locally and
+// refuses an unfetched PageScript. The server validates the optional page
+// facts and their conditional relationships. A local refusal is an *Error
+// with Code invalid_request and Status 0.
 func (r Request) Validate() error {
 	switch r.Version {
 	case "", VersionV3, VersionV2Invisible, VersionV2Checkbox:

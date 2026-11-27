@@ -197,81 +197,119 @@ with the request and response structs as the server reads and writes them.
 
 ## reCAPTCHA (task `recaptcha`)
 
-Synchronous: the server runs the whole reCAPTCHA flow (loader, release,
-anchor, reload, clr, bcn; for v2 invisible the bframe and userverify, an
-image challenge solved server-side) over your proxy as `UserAgent` and
-answers the token. It never fetches your page: you send the page (`PageHTML`)
-and its classic scripts (`PageScripts`), which the token's page share is read
-from; a v3 solve without them fails `site_unsupported`. A Squarespace login
-(v3 enterprise, action `login`), with `get` and `post` your own client on the
-solve's proxy as `ua`:
+The configured production origin for this solver is
+`https://gman.evade.now`; configure a client for that origin rather than
+assuming another solver's API origin routes reCAPTCHA:
 
 ```go
-uas, err := client.UserAgents(ctx, recaptcha.Task)
-ua, proxyURL := uas[0], "http://user:pass@host:port"
-
-// 1. The page, through the proxy as ua; pageURL is where its redirects end.
-pageURL, page := get("https://login.squarespace.com/")
-
-// 2. The sitekey its loader renders; the action is the page bundle's.
-loader := regexp.MustCompile(`enterprise\.js\?render=([0-9A-Za-z_-]+)`)
-siteKey := loader.FindStringSubmatch(page)[1]
-
-// 3. Its classic scripts in order; fetch the external ones the same way.
-scripts, err := recaptcha.PageScripts(pageURL, page, siteKey)
-for i := range scripts {
-	if scripts[i].Body == nil {
-		_, body := get(scripts[i].Name)
-		scripts[i].Body = []byte(body)
-	}
-}
-
-// 4. Solve.
-res, err := recaptcha.Solve(ctx, client, recaptcha.Request{
-	URL: pageURL, SiteKey: siteKey, Action: "login", UserAgent: ua, Proxy: proxyURL,
-	Version: recaptcha.VersionV3, Enterprise: new(true), Host: "www.google.com",
-	PageHTML: page, PageScripts: scripts,
+rcClient, err := evade.NewClient(evade.Config{
+	BaseURL: "https://gman.evade.now", APIKey: os.Getenv("EVADE_API_KEY"),
+	Timeout: 120 * time.Second, MaxRetries: new(0),
 })
-
-// 5. Submit where the page does, same proxy and ua, within two minutes:
-// Squarespace's JSON login POST carries it as squarespace-recaptcha-token.
-answer := post("https://login.squarespace.com/api/1/login/user", loginJSON,
-	"squarespace-recaptcha-token", res.Token)
+if err != nil {
+	return err
+}
+uas, err := rcClient.UserAgents(ctx, recaptcha.Task)
+if err != nil {
+	return err
+}
+if len(uas) == 0 {
+	return fmt.Errorf("no supported reCAPTCHA User-Agents")
+}
+// Use this complete HTTP UA string, not a version number or device label.
+ua := uas[0]
+res, err := recaptcha.Solve(ctx, rcClient, recaptcha.Request{
+	URL: "https://www.example.com/login", SiteKey: "REPLACE_WITH_PAGE_SITEKEY",
+	Action: "login", UserAgent: ua, Proxy: os.Getenv("EVADE_PROXY"),
+	Version: recaptcha.VersionV3, Enterprise: new(false),
+})
+if err != nil {
+	return err
+}
+// Submit res.Token in the page's own form/header/JSON field, once and
+// promptly, using the same full ua, proxy exit and target-page cookies.
 ```
 
-Other pages take the token as the `g-recaptcha-response` form field or a
-member of their own JSON call. `Proxy` is `scheme://user:pass@host:port`
-(http, https, socks4, socks4a, socks5, socks5h) or `host:port:user:pass`.
+This standard-v3 example needs a real page URL/key/action and working
+`EVADE_PROXY` (for example `http://user:pass@host:port`); the replacement
+sitekey is not usable. The API key needs reCAPTCHA access and `solve`
+scope. All solves require `URL`, `SiteKey`, full `UserAgent` and `Proxy`;
+the SDK adds `task: "recaptcha"`. UA listing is unmetered and describes
+current support, not score ranking. No universally best UA is established.
 
-There is one task name, `recaptcha`; the widget is `Version` (`v3` default,
-`v2-invisible`, `v2-checkbox`; the checkbox is witnessed only on the
-www.google.com/sorry first-party page, which `Solve` does not run, so it fails
-`solve_failed`) and the surface — enterprise (loader `enterprise.js`) or api2
-(loader `api.js`) — is resolved by the server: the loader the page states
-when `PageHTML` or `PageScripts` carry it, else `Enterprise`, else a
-hypothesis: an `Action` means enterprise. api2 sites with an action exist, so
-set `Enterprise` whenever you know the page's loader. `Referrer`, `Popup` and
-`PageNavigationMS` add the navigation's referrer, a popup window's size and
-how long before the solve the page navigation started. The loader is fetched
-from www.google.com; `Host: "recaptcha.net"` selects the other API host (the
-site never observes which host served its widget; both issue the same
-token). `score` is never answered: it is not observable client-side (only the
-site's own siteverify call sees it). `Verification` is informational: nil, or
-the image challenge the server answered (class, rounds, tiles); the token
-already carries it. `ProfileID` names the stored device profile the solve ran
-as.
+`Version` is `v3` by default or `v2-invisible`. `v2-checkbox` is accepted
+syntactically but cannot run on the public route: its witnessed first-party
+context is unavailable (`502 solve_failed`). Visible image challenges are
+refused (`422 challenged` / `challenge_unsupported`); the public route has
+no image solver. There is no public `data-s` workaround.
 
-`Solve` first runs `Request.Validate`, which refuses what the server would,
-with its messages (an unknown version or host, an empty `URL`, `SiteKey`,
-`UserAgent` or `Proxy`, a non-https `URL`), and a page script left unfetched.
-Every refusal is a `*recaptcha.Error` with the server's code
-(`invalid_request`, `device_unsupported`, `site_unsupported`,
-`generation_failed`, `challenged`, `challenge_unsolved`, `proxy_failed`,
-`proxy_timeout`, `target_error`, `storage_unavailable`, `solve_canceled`,
-`solve_failed`, and the auth and quota codes), unwrapping to the
-`*evade.APIError`; `Retryable` is true for `proxy_failed` and `proxy_timeout`
-(with a fresh proxy endpoint), `storage_unavailable`, `quota_unavailable` and
-`rate_limited`.
+`Enterprise` selects the loader surface (`true`: enterprise.js, `false`:
+api.js) unless a loader is discovered in supplied `PageHTML`/`PageScripts`,
+which wins. When neither is stated, a nonempty `Action` defaults to
+enterprise. **Standard v3 sites with an action must explicitly set
+`Enterprise: new(false)` absent a page loader.** Send the exact action the
+page uses; omit it when none. `Host` defaults to `www.google.com` and also
+accepts `recaptcha.net` / `www.recaptcha.net`; it is the loader host, not the
+target hostname. There is no `apiDomain` field.
+
+### Optional observed page facts
+
+The server never fetches the target page. Without page facts it uses the
+URL and its fetched reCAPTCHA loader; page scripts are **not mandatory**
+for a plain source-only request. To supply a fuller page context, obtain
+the page through your own client using the same UA/proxy, then
+`recaptcha.PageScripts(pageURL, page, siteKey)` lists classic scripts in
+document order. Fetch each external script whose `Body` is nil before
+passing it; `[]byte` bodies encode as base64 JSON. `PageHTML` is the
+document at execute (including inserted markup), not a different site's
+template. `PageScript.Inserted` marks source added after initial load.
+
+| Request fields | Meaning / omission |
+|---|---|
+| `Referrer`, `ReferrerPolicy` | Navigation referrer and observed response policy. Empty policy uses origin-only cross-origin referer; `no-referrer` / `same-origin` suppress it. Full-URL policies are refused. |
+| `PageProtocol` | Actual navigation protocol, `h2` default / `http/1.1` / `h3`. |
+| `FrameAssets` | `true` fetches the anchor webworker, not all frame assets; false/omission is the default. |
+| `ExecuteAfterReady` | `nil` unstated; `new(false)` and `new(true)` preserve the actual execute/readiness fact. Not a wait-duration knob. |
+| `PriorReleaseLoad` | Earlier release in this browser session; nil lets the live flow derive its fresh lifecycle. Offline/lab requirements do not add a mandatory public field. |
+| `TokenCallback` | Callback source as served; nil unstated, `new("")` explicitly none. |
+| `PageStylesheets` | Linked stylesheet URLs and source bodies in document order; absent bodies can produce `domains_partial` in the raw API response. |
+| `Popup`, `PageNavigationMS` | `window.open` size and elapsed navigation clock. |
+| `PageLoad` | Measured `loaderMs`, optional `blockingDoneMs`/`elapsedMs`, all on one navigation clock; mutually exclusive with nonzero `PageNavigationMS`. |
+| `PageCookieNames` | Pointer to document.cookie names, not values or HttpOnly cookies. Nil unstated; pointer to empty slice explicitly none. |
+| `PageElements`, `PageMutations` | Per-mint page-handler element state and observed DOM mutation windows (reload then bcn), not visitor interaction overrides. |
+| `ValuedFields`, `TypedChars` | Per-mint nonempty input names and cumulative typed-character counts; stated empty inner field list / zero count are preserved. |
+| `PageHistoryLength` | Pointer to actual history length, at least one. |
+| `GoogleStorageKeys`, `AnchorSeen` | Both or neither; pointers preserve zero/false. |
+| `PageHeap` | Actual fresh-page heap band and witnessed growth range, not a score preset. |
+
+Do not supply private `profileId`, `region`, `research`, `synchronous`, or
+caller interaction plans. They are not SDK request fields or public tuning
+controls. Accurate page facts are not a Google-score guarantee.
+
+### Result and errors
+
+The call returns the token in one HTTP response; mandatory clr/bcn
+telemetry may finish afterwards on the server. `Score` is always nil
+(`score: null`), since only the site's server-side verification sees the
+score. `Verification` is normally nil and is not proof of site acceptance
+or public image solving. `ProfileID` is the selected device's output id,
+not a public request selector. `GenMS` times native minting and reload-body
+serialization only: own decode, device/exit lookup, waits and network are
+excluded. Measure your own wall time for end-to-end latency.
+
+`Solve` validates required fields/version/host locally, plus supplied
+script bodies; optional page-fact relationships are validated by the
+server. Errors are `*recaptcha.Error`, wrapping `*evade.APIError` for server
+refusals. `site_unsupported` can mean unsupported page laws, not just a
+wrong widget; do not automatically change versions. Quota exhaustion is
+`429 quota_exceeded`, rate limiting `429 rate_limited`; auth is normal
+bearer-key auth. `Retryable` is advisory, not an automatic solve retry.
+
+The generic client defaults to a 60-second HTTP timeout and three retries
+for 429/503. The example explicitly chooses 120 seconds and no retries;
+that is a caller choice, **not** a server whole-flow deadline or a speed
+promise. There is no public timeout/retry/synchronous field in solve JSON.
+Only successful token issuance is billed; issuance is not site acceptance.
 
 ## User-Agents
 
