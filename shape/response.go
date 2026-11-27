@@ -42,11 +42,20 @@ type Response struct {
 	// Timing reports each generated or observed instant with its
 	// provenance; present on a debug request (Request.Debug) only.
 	Timing *TimingContract `json:"timing,omitempty"`
-	// TargetDeviceInfo is the target's device_info capture the session
-	// record pairs with, on a fresh solve that asked for it
-	// (Request.TargetDeviceInfo) only.
+
 	TargetDeviceInfo *TargetDeviceInfo `json:"target_device_info,omitempty"`
 }
+
+// TargetDeviceInfo is the fixed Target application profile requested by
+// Request.TargetDeviceInfo. It does not describe the generated Shape fingerprint.
+type TargetDeviceInfo struct {
+	Match       string          `json:"match"`
+	CaptureID   string          `json:"capture_id"`
+	DeviceInfo  json.RawMessage `json:"device_info"`
+	LaterCanvas string          `json:"later_canvas"`
+	MatchReason string          `json:"match_reason,omitempty"`
+}
+
 type TimingSource string
 
 const (
@@ -77,42 +86,17 @@ type TimingInstant struct {
 	Semantic TimingSemantic `json:"semantic"`
 }
 
-type LoaderIssueCompatibility string
-
-const (
-	LoaderIssueCompatible             LoaderIssueCompatibility = "compatible"
-	LoaderIssueUnverifiedMissingStart LoaderIssueCompatibility = "unverified_missing_start"
-	LoaderIssueUnavailable            LoaderIssueCompatibility = "unavailable"
-)
-
 // TimingContract distinguishes modeled instants from caller observations.
-// LoaderIssueCompatible means only that token issue lies in the complete
-// loader interval; it does not prove exact cross-host clock equality.
 type TimingContract struct {
-	NavigationStart        TimingInstant            `json:"navigation_start"`
-	DocumentRequestStart   TimingInstant            `json:"document_request_start"`
-	LoaderRequestStart     TimingInstant            `json:"loader_request_start"`
-	LoaderComplete         TimingInstant            `json:"loader_complete"`
-	CollectorStart         TimingInstant            `json:"collector_start"`
-	Finalize               TimingInstant            `json:"finalize"`
-	ModeledFetchInvocation TimingInstant            `json:"modeled_fetch_invocation"`
-	TransportHandoff       TimingInstant            `json:"transport_handoff"`
-	HeadersWritten         TimingInstant            `json:"headers_written"`
-	LoaderIssue            LoaderIssueCompatibility `json:"loader_issue_compatibility"`
-}
-
-// TargetDeviceInfo is the stored target device_info capture a solve's device
-// record pairs with: Match "exact" (the capture of the record's User-Agent,
-// screen and platform) or "closest" (another capture of its class with the
-// record's own fields restated, MatchReason saying why). DeviceInfo is the
-// capture's first k() call, its keys in the stored order; LaterCanvas is
-// the canvas its later calls returned.
-type TargetDeviceInfo struct {
-	Match       string          `json:"match"`
-	CaptureID   string          `json:"capture_id"`
-	DeviceInfo  json.RawMessage `json:"device_info"`
-	LaterCanvas string          `json:"later_canvas"`
-	MatchReason string          `json:"match_reason,omitempty"`
+	NavigationStart        TimingInstant `json:"navigation_start"`
+	DocumentRequestStart   TimingInstant `json:"document_request_start"`
+	LoaderRequestStart     TimingInstant `json:"loader_request_start"`
+	LoaderComplete         TimingInstant `json:"loader_complete"`
+	CollectorStart         TimingInstant `json:"collector_start"`
+	Finalize               TimingInstant `json:"finalize"`
+	ModeledFetchInvocation TimingInstant `json:"modeled_fetch_invocation"`
+	TransportHandoff       TimingInstant `json:"transport_handoff"`
+	HeadersWritten         TimingInstant `json:"headers_written"`
 }
 
 // WaitForSend blocks until SendAfterUnixMS (at once when it is 0 or past)
